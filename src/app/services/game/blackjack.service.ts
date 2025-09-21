@@ -40,6 +40,10 @@ export class BlackjackService {
   private tableSubject = new BehaviorSubject<any | null>(null);
   table$ = this.tableSubject.asObservable();
 
+  // nouvel observable d'erreurs personnelles (messages server -> user)
+  private errorSubject = new BehaviorSubject<string | null>(null);
+  error$ = this.errorSubject.asObservable();
+
   private stomp?: Client;
   private currentTableId?: number | string;
   private onConnectedResolvers: Array<() => void> = [];
@@ -73,7 +77,6 @@ export class BlackjackService {
 
     this.stomp = new Client({
       webSocketFactory: () => new SockJS(urlWithToken),
-      // ⬇️ très important: envoyer le JWT aussi dans les headers STOMP CONNECT
       connectHeaders: {
         Authorization: `Bearer ${token}`,
         token
@@ -82,13 +85,19 @@ export class BlackjackService {
       heartbeatIncoming: 10000,
       heartbeatOutgoing: 10000,
       onConnect: () => {
-        // débloque les promesses d'attente
         const toResolve = [...this.onConnectedResolvers];
         this.onConnectedResolvers.length = 0;
         toResolve.forEach(r => r());
 
-        // (ré)abonnements
         this.stomp!.subscribe('/topic/bj/lobby', (msg) => this.zone.run(() => this.onLobby(msg)));
+        this.stomp!.subscribe('/user/queue/bj/errors', (msg) => this.zone.run(() => {
+          try {
+            const p = JSON.parse(msg.body);
+            this.errorSubject.next(p?.error || p?.msg || 'Erreur serveur');
+            // effacer automatiquement après 5s (optionnel)
+            setTimeout(() => this.clearError(), 5000);
+          } catch (e) {}
+        }));
         if (this.currentTableId != null) {
           this.subscribeTableTopic(this.currentTableId);
         }
@@ -97,6 +106,10 @@ export class BlackjackService {
     });
 
     this.stomp.activate();
+  }
+
+  clearError() {
+    this.errorSubject.next(null);
   }
 
 
@@ -115,6 +128,50 @@ export class BlackjackService {
       this.zone.run(() => this.onTableEvent(msg))
     );
   }
+
+  // src/app/services/game/blackjack.service.ts (ajoute)
+  closeTable(tableId: number | string) {
+    return this.http.delete(`${this.apiBase}/table/${tableId}`);
+  }
+
+  private rankToValue(rank: string): { value: number; isAce: boolean } {
+    const r = String(rank ?? '').toUpperCase();
+    if (r === 'A' || r === 'ACE') return { value: 11, isAce: true };
+    if (r === 'K' || r === 'KING') return { value: 10, isAce: false };
+    if (r === 'Q' || r === 'QUEEN') return { value: 10, isAce: false };
+    if (r === 'J' || r === 'JACK') return { value: 10, isAce: false };
+    if (r === '10' || r === 'T' || r === 'TEN') return { value: 10, isAce: false };
+    if (r === '9' || r === 'NINE') return { value: 9, isAce: false };
+    if (r === '8' || r === 'EIGHT') return { value: 8, isAce: false };
+    if (r === '7' || r === 'SEVEN') return { value: 7, isAce: false };
+    if (r === '6' || r === 'SIX') return { value: 6, isAce: false };
+    if (r === '5' || r === 'FIVE') return { value: 5, isAce: false };
+    if (r === '4' || r === 'FOUR') return { value: 4, isAce: false };
+    if (r === '3' || r === 'THREE') return { value: 3, isAce: false };
+    if (r === '2' || r === 'TWO') return { value: 2, isAce: false };
+    // fallback
+    const n = parseInt(r, 10);
+    if (!Number.isNaN(n)) return { value: Math.max(0, n), isAce: false };
+    return { value: 0, isAce: false };
+  }
+
+  private computeBestTotal(cards: any[] | undefined): number {
+    if (!Array.isArray(cards) || cards.length === 0) return 0;
+    let sum = 0;
+    let aces = 0;
+    for (const c of cards) {
+      const rank = c?.rank ?? c; // parfois payloade contient juste la string
+      const { value, isAce } = this.rankToValue(rank);
+      sum += value;
+      if (isAce) aces++;
+    }
+    while (sum > 21 && aces > 0) {
+      sum -= 10;
+      aces--;
+    }
+    return sum;
+  }
+
   private onTableEvent(msg: IMessage) {
     try {
       const evt = JSON.parse(msg.body);
@@ -128,13 +185,15 @@ export class BlackjackService {
           break;
         }
         case 'HAND_START': {
-          if (!curr) break;
-          const s = { ...curr };
-          s.seats = this.normalizeSeatsMap(evt.payload.players);
-          // s.dealerUp possible mais on affiche via phase
-          s.phase = 'PLAYING';
-          s.deadline = evt.payload.deadline ?? s.deadline;
-          this.tableSubject.next(s);
+          // on part d'un état courant (ou d'un squelette)
+          const base = curr ?? this.normalizeState({});
+          base.seats = this.normalizeSeatsMap(evt.payload.players);
+          // dealerUp peut être une carte unique ; on veut un tableau de cartes
+          const dealerUp = evt.payload?.dealerUp ? [evt.payload.dealerUp] : (base.dealer?.cards ?? []);
+          base.dealer = { cards: dealerUp, total: this.computeBestTotal(dealerUp) };
+          base.phase = 'PLAYING';
+          base.deadline = evt.payload.deadline ?? base.deadline;
+          this.tableSubject.next(base);
           break;
         }
         case 'PLAYER_TURN': {
@@ -156,8 +215,13 @@ export class BlackjackService {
           if (!curr) break;
           const s = { ...curr };
           const i = evt.payload.seat;
-          if (s.seats?.[i] && evt.payload.hand) {
-            s.seats[i] = { ...s.seats[i], hand: { ...s.seats[i].hand, ...evt.payload.hand } };
+          if (s.seats?.[i]) {
+            if (evt.payload.hand) {
+              // Met à jour la main côté client et recalcule total
+              const newHand = { ...s.seats[i].hand, ...evt.payload.hand };
+              newHand.total = this.computeBestTotal(newHand.cards);
+              s.seats[i] = { ...s.seats[i], hand: newHand };
+            }
           }
           this.tableSubject.next(s);
           break;
@@ -165,8 +229,10 @@ export class BlackjackService {
         case 'DEALER_TURN_START': {
           if (!curr) break;
           const s = { ...curr, phase: 'DEALER_TURN' };
-          // evt.payload.dealer a la main en cours du dealer (révélée progressivement)
-          if (evt.payload?.dealer) s.dealer = evt.payload.dealer;
+          if (evt.payload?.dealer) {
+            const dealerCards = evt.payload.dealer.cards ?? evt.payload.dealer;
+            s.dealer = { cards: dealerCards, total: this.computeBestTotal(dealerCards) };
+          }
           s.currentSeatIndex = undefined;
           this.tableSubject.next(s);
           break;
@@ -174,11 +240,15 @@ export class BlackjackService {
         case 'DEALER_TURN_END': {
           if (!curr) break;
           const s = { ...curr };
-          if (evt.payload?.dealer) s.dealer = evt.payload.dealer; // main finale révélée
+          if (evt.payload?.dealer) {
+            const dealerCards = evt.payload.dealer.cards ?? evt.payload.dealer;
+            s.dealer = { cards: dealerCards, total: this.computeBestTotal(dealerCards) };
+          }
           this.tableSubject.next(s);
           break;
         }
         case 'PAYOUTS': {
+          console.debug('WS EVENT PAYOUTS payload:', evt.payload);
           if (!curr) break;
           const s = { ...curr, phase: 'PAYOUT', lastPayouts: evt.payload?.payouts ?? [] };
           this.tableSubject.next(s);
@@ -187,7 +257,9 @@ export class BlackjackService {
         default:
           break;
       }
-    } catch {}
+    } catch (e) {
+      // ignore parse errors
+    }
   }
 
   // ---- NOUVEAU: normalisations ----
@@ -202,37 +274,54 @@ export class BlackjackService {
     maxSeats: any;
     id: string;
     seats: BJSeat[];
-    shoeCount: any
+    shoeCount: any;
+    creatorEmail?: string;
+    deadline?: number;
   } {
+    // Normalise le dealer et les seats ; calcule les totals
+    const seats = this.normalizeSeatsMap(payload.seats);
+    const dealerObj = payload.dealer ?? { cards: [], total: 0 };
+    const dealerCards = dealerObj.cards ?? [];
+    const dealerTotal = this.computeBestTotal(dealerCards);
+
     return {
       id: String(payload.tableId ?? payload.id ?? ''),
       name: payload.name ?? undefined,
       maxSeats: payload.maxSeats ?? (payload.seats ? Object.keys(payload.seats).length : 5),
-      seats: this.normalizeSeatsMap(payload.seats),
-      dealer: payload.dealer ?? { cards: [], total: 0 },
+      seats: seats,
+      dealer: { cards: dealerCards, total: dealerTotal },
       phase: this.normPhase(payload.phase),
       minBet: payload.minBet ?? 0,
       maxBet: payload.maxBet ?? 0,
       createdAt: payload.createdAt ?? undefined,
       shoeCount: payload.shoeCount ?? undefined,
-      currentSeatIndex: payload.currentSeatIndex ?? undefined
+      currentSeatIndex: payload.currentSeatIndex ?? undefined,
+      creatorEmail: payload.creatorEmail ?? undefined,
+      deadline: payload.deadline ?? undefined
     };
   }
 
+
+
   private normalizeSeatsMap(seatsMap: any): BJSeat[] {
     if (!seatsMap) return [];
-    // seatsMap est un objet: { "0": Seat, "1": Seat, ... }
     return Object.keys(seatsMap)
       .map(k => Number(k))
       .sort((a, b) => a - b)
       .map(i => {
-        const s = seatsMap[i];
+        const s = seatsMap[i] ?? {};
+        const hand = s.hand ?? { cards: [], standing: false, busted: false, bet: 0 };
+        // calc total localement
+        const total = this.computeBestTotal(hand.cards);
         return {
           index: i,
           userId: s.userId,
           email: s.email,
           status: s.status,
-          hand: s.hand
+          hand: {
+            ...hand,
+            total: total
+          }
         } as BJSeat;
       });
   }

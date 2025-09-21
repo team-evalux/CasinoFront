@@ -1,6 +1,8 @@
 // src/app/services/game/blackjack.models.ts
 export type BJSeatStatus = 'EMPTY' | 'OCCUPIED' | 'DISCONNECTED';
-export type BJPhase = 'WAITING' | 'BETTING' | 'PLAYING' | 'SETTLING';
+// AJOUTS: inclure toutes les phases que le backend envoie
+export type BJPhase = 'WAITING' | 'BETTING' | 'PLAYING' | 'DEALER_TURN' | 'PAYOUT';
+
 
 export interface BJCard {
   rank: string;               // "A","2",...,"K"
@@ -44,6 +46,9 @@ export interface BJTableState {
   shoeCount?: number;
   currentSeatIndex?: number;
   deadline?: number;
+
+  // <-- NOUVEAU : email du créateur (utilisé pour afficher le bouton "Fermer la table")
+  creatorEmail?: string;
 
   // <-- NOUVEAU : on garde le dernier résultat pour affichage
   lastPayouts?: BJPayout[];

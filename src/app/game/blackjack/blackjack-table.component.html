@@ -1,5 +1,33 @@
 <!-- en-tête -->
-<h2 *ngIf="state as s">Table {{ s.id }}</h2>
+<div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+  <div>
+    <h2 *ngIf="state as s">Table {{ s.id }}</h2>
+    <div *ngIf="state as s" style="font-size:0.95rem;color:#555">
+      <span>Phase: <strong>{{ s.phase }}</strong></span>
+      <span *ngIf="remainingSeconds > 0" style="margin-left:12px;">
+        • Temps restant: <strong>{{ remainingSeconds }}s</strong>
+      </span>
+      <span *ngIf="s.currentSeatIndex != null" style="margin-left:12px;">
+        • Joueur actif: {{ s.currentSeatIndex }}
+      </span>
+      <span *ngIf="myTurn()" style="margin-left:12px;color:#0a7;">
+        • C'est ton tour !
+      </span>
+    </div>
+  </div>
+
+  <div *ngIf="state?.creatorEmail === meEmail">
+    <button (click)="closeTable()">Fermer la table</button>
+  </div>
+</div>
+
+<!-- message de résultat utilisateur -->
+<div *ngIf="state?.phase === 'PAYOUT' && resultMessage" style="margin:12px 0;">
+  <div style="padding:10px;border-radius:8px;background:#f3f7ec;border:1px solid #dbe9cf;font-weight:700;">
+    {{ resultMessage }}
+  </div>
+</div>
+
 <p *ngIf="!state">Chargement…</p>
 
 <div *ngIf="state as s">
@@ -9,9 +37,9 @@
     <!-- pendant PLAYING: on montre 1 carte visible + une face cachée -->
     <ng-container *ngIf="s.phase === 'PLAYING'; else dealerRevealed">
       <div class="cards">
-<span class="card" *ngIf="s.dealer?.cards?.length">
-  {{ asCardText(s.dealer.cards[0].rank, s.dealer.cards[0].suit) }}
-</span>
+        <span class="card" *ngIf="s.dealer?.cards?.length">
+          {{ asCardText(s.dealer.cards[0].rank, s.dealer.cards[0].suit) }}
+        </span>
         <span class="card back">🂠</span>
       </div>
       <small>Total: ??</small>
@@ -22,7 +50,7 @@
       <div class="cards">
         <span class="card" *ngFor="let c of s.dealer?.cards">{{ asCardText(c.rank, c.suit) }}</span>
       </div>
-      <small>Total: {{ s.dealer?.total }}</small>
+      <small>Total: {{ s.dealer.total }}</small>
     </ng-template>
   </section>
 
@@ -42,8 +70,7 @@
       <p *ngIf="seat.hand">Total: {{ seat.hand.total }} • Mise: {{ seat.hand.bet || 0 }}</p>
 
       <!-- Résultat dernière manche si dispo -->
-      <div class="result"
-           *ngIf="s.lastPayouts as pays">
+      <div class="result" *ngIf="s.lastPayouts as pays">
         <ng-container *ngFor="let p of pays">
           <div *ngIf="p.seat === seat.index">
             <strong *ngIf="p.outcome==='WIN'">✅ +{{ p.credit - (p.bet) }}</strong>
@@ -62,7 +89,8 @@
         <button (click)="surrender()" [disabled]="!myTurn()">Surrender</button>
       </div>
 
-      <button *ngIf="!seat.email" (click)="sit(seat.index)">S’asseoir ici</button>
+      <!-- n'affiche le bouton que si le siège est libre ET que l'utilisateur n'est pas déjà assis -->
+      <button *ngIf="!seat.email && !mySeat()" (click)="sit(seat.index)">S’asseoir ici</button>
     </article>
   </section>
 
@@ -70,6 +98,6 @@
   <section class="betting" *ngIf="s.phase==='BETTING' && mySeat() as me">
     <input type="number" [(ngModel)]="betAmount" min="1">
     <button (click)="bet()">Miser</button>
-    <small *ngIf="s.deadline">Temps restant: {{ (s.deadline - Date.now())/1000 | number:'1.0-0' }}s</small>
+    <small *ngIf="state?.deadline">Temps restant: {{ remainingSeconds }}s</small>
   </section>
 </div>
