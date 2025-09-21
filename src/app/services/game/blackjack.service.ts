@@ -48,6 +48,11 @@ export class BlackjackService {
   private currentTableId?: number | string;
   private onConnectedResolvers: Array<() => void> = [];
 
+  // <-- nouvelles références aux subscriptions STOMP
+  private lobbySubscription?: any;
+  private errorsSubscription?: any;
+  private tableSubscription?: any;
+
   constructor(private http: HttpClient, private zone: NgZone) {}
 
   // --- REST ---
@@ -67,7 +72,6 @@ export class BlackjackService {
     return new Promise<void>((resolve) => this.onConnectedResolvers.push(resolve));
   }
 
-  // src/app/services/game/blackjack.service.ts
   // src/app/services/game/blackjack.service.ts (méthode connectIfNeeded)
   connectIfNeeded() {
     if (this.stomp && this.stomp.active) return;
@@ -85,20 +89,35 @@ export class BlackjackService {
       heartbeatIncoming: 10000,
       heartbeatOutgoing: 10000,
       onConnect: () => {
+        // résout les promises waitConnected()
         const toResolve = [...this.onConnectedResolvers];
         this.onConnectedResolvers.length = 0;
         toResolve.forEach(r => r());
 
-        this.stomp!.subscribe('/topic/bj/lobby', (msg) => this.zone.run(() => this.onLobby(msg)));
-        this.stomp!.subscribe('/user/queue/bj/errors', (msg) => this.zone.run(() => {
-          try {
-            const p = JSON.parse(msg.body);
-            this.errorSubject.next(p?.error || p?.msg || 'Erreur serveur');
-            // effacer automatiquement après 5s (optionnel)
-            setTimeout(() => this.clearError(), 5000);
-          } catch (e) {}
-        }));
+        // Si on avait des subscriptions de l'ancienne instance, unsubscribe-les d'abord
+        try { this.lobbySubscription?.unsubscribe(); } catch {}
+        try { this.errorsSubscription?.unsubscribe(); } catch {}
+        try { this.tableSubscription?.unsubscribe(); } catch {}
+
+        // (re)subscribe lobby (unique)
+        this.lobbySubscription = this.stomp!.subscribe('/topic/bj/lobby', (msg) =>
+          this.zone.run(() => this.onLobby(msg))
+        );
+
+        // errors queue (unique)
+        this.errorsSubscription = this.stomp!.subscribe('/user/queue/bj/errors', (msg) =>
+          this.zone.run(() => {
+            try {
+              const p = JSON.parse(msg.body);
+              this.errorSubject.next(p?.error || p?.msg || 'Erreur serveur');
+              setTimeout(() => this.clearError(), 5000);
+            } catch (e) {}
+          })
+        );
+
+        // ré-subscribe au topic de la table courante si demandé
         if (this.currentTableId != null) {
+          // subscribeTableTopic fera l'unsubscribe s'il y avait une précédente
           this.subscribeTableTopic(this.currentTableId);
         }
       },
@@ -112,9 +131,6 @@ export class BlackjackService {
     this.errorSubject.next(null);
   }
 
-
-
-
   private onLobby(msg: IMessage) {
     try {
       const payload: BJTableSummary[] = JSON.parse(msg.body);
@@ -123,10 +139,26 @@ export class BlackjackService {
   }
 
   private subscribeTableTopic(tableId: number | string) {
-    // Assure-toi que ça matche bien le back: "/topic/bj/table/{id}"
-    this.stomp?.subscribe(`/topic/bj/table/${tableId}`, (msg) =>
+    // si c'est déjà la même table et qu'on a une subscription, rien à faire
+    if (String(this.currentTableId) === String(tableId) && this.tableSubscription) return;
+
+    // unsubscribe si actif
+    try { this.tableSubscription?.unsubscribe(); } catch {}
+    this.tableSubscription = undefined;
+
+    // met à jour l'id courant (utile pour reconnexion)
+    this.currentTableId = tableId;
+
+    // souscrit au nouveau topic
+    this.tableSubscription = this.stomp?.subscribe(`/topic/bj/table/${tableId}`, (msg) =>
       this.zone.run(() => this.onTableEvent(msg))
     );
+  }
+
+  private unsubscribeTableTopic() {
+    try { this.tableSubscription?.unsubscribe(); } catch {}
+    this.tableSubscription = undefined;
+    this.currentTableId = undefined;
   }
 
   // src/app/services/game/blackjack.service.ts (ajoute)
@@ -342,10 +374,42 @@ export class BlackjackService {
 
   /** Commence à recevoir l’état de la table (abonnement garanti après connexion). */
   async watchTable(tableId: number | string) {
-    this.currentTableId = tableId;
+    // si on demande la même table, pas besoin de ré-souscrire
+    if (String(this.currentTableId) === String(tableId) && this.tableSubscription) {
+      return;
+    }
+
+    // assure connexion WS
+    this.currentTableId = tableId; // on stocke l'intention
     this.connectIfNeeded();
     await this.waitConnected();
+    // use subscribeTableTopic that will unsubscribe old one
     this.subscribeTableTopic(tableId);
+  }
+
+  disconnectTable() {
+    // annule subscription table (ne touche pas au socket global)
+    this.unsubscribeTableTopic();
+    // ne remplace pas la tableSubject si on veut forcer null côté UI
+    this.tableSubject.next(null);
+    this.currentTableId = undefined;
+  }
+
+  disconnectAll() {
+    // cleanup toutes les subscriptions et stop le stomp client
+    try { this.lobbySubscription?.unsubscribe(); } catch {}
+    try { this.errorsSubscription?.unsubscribe(); } catch {}
+    try { this.tableSubscription?.unsubscribe(); } catch {}
+
+    this.lobbySubscription = undefined;
+    this.errorsSubscription = undefined;
+    this.tableSubscription = undefined;
+    this.currentTableId = undefined;
+
+    this.lobbySubject.next(null);
+    this.tableSubject.next(null);
+    try { this.stomp?.deactivate(); } catch {}
+    this.stomp = undefined;
   }
 
   // --- Envois d’actions via WS ---
@@ -377,18 +441,5 @@ export class BlackjackService {
   private publish(dest: string, body: any) {
     if (!this.stomp || !this.stomp.connected) return;
     this.stomp.publish({ destination: dest, body: JSON.stringify(body) });
-  }
-
-  disconnectTable() {
-    this.currentTableId = undefined;
-    this.tableSubject.next(null);
-  }
-
-  disconnectAll() {
-    this.currentTableId = undefined;
-    this.lobbySubject.next(null);
-    this.tableSubject.next(null);
-    try { this.stomp?.deactivate(); } catch {}
-    this.stomp = undefined;
   }
 }
