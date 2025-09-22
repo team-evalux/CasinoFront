@@ -29,13 +29,13 @@
 
   <section class="grid">
     <article *ngFor="let t of tables" class="card">
-      <!-- On n’utilise QUE les champs réellement renvoyés par l’API -->
-      <h3>Table {{ (t.id + '').slice(0,6) }}</h3>
+      <h3>{{ t.name ? t.name : ('Table ' + (t.id + '').slice(0,6)) }}</h3>
       <p>
         <small>
           {{ t.maxSeats }} sièges
           • Phase: {{ t.phase }}
           • {{ t.isPrivate ? 'Privée' : 'Publique' }}
+          <span *ngIf="t.minBet || t.maxBet"> • Mise: {{ t.minBet || 0 }} - {{ t.maxBet || '∞' }}</span>
         </small>
       </p>
       <button (click)="goTable(t)">Rejoindre</button>

@@ -10,14 +10,20 @@ import {BJSeat, BJTableState} from './blackjack.models';
 export interface BJCreateTableReq {
   privateTable?: boolean;
   maxSeats?: number;
-  code?: string;        // optionnel si privé
+  code?: string;
+  name?: string;
+  minBet?: number;
+  maxBet?: number;
 }
 
 export interface BJTableSummary {
-  id: number;           // Long côté back => number ici
+  id: number;
   maxSeats: number;
   isPrivate: boolean;
   phase: string;
+  name?: string;
+  minBet?: number;
+  maxBet?: number;
 }
 
 export interface JoinOrCreateMsg {

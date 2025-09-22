@@ -20,7 +20,9 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
   loading = true;
   error: string | null = null;
 
-  betAmount = 100;
+  betAmount = 0;                 // <-- initialisé à 0
+  userEditedBet = false;
+
   private sub?: Subscription;
   private subErr?: Subscription;
 
@@ -60,6 +62,15 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
       this.state = s;
       this.loading = false;
 
+      if (s?.phase === 'BETTING') {
+        if (!this.userEditedBet && s.minBet != null && Number(s.minBet) > 0) {
+          this.betAmount = Number(s.minBet);
+        }
+      } else {
+        // quand on quitte BETTING on autorise une ré-initialisation future
+        this.userEditedBet = false;
+      }
+
       // --- logique résultat PAYOUT
       if (s?.phase === 'PAYOUT' && s?.lastPayouts) {
         this.myPayoutObj = this.findMyPayout(s);
@@ -96,6 +107,10 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
         setTimeout(() => { this.error = null; this.bj.clearError(); }, 4000);
       }
     });
+  }
+
+  onBetInputChange() {
+    this.userEditedBet = true;
   }
 
   ngOnDestroy(): void {
@@ -209,11 +224,50 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
     }
   }
 
+  canPlaceBet(s: BJTableState | null): boolean {
+    if (!s) return false;
+    const min = s.minBet ?? 0;
+    const max = s.maxBet ?? 0;
+    const amount = Number(this.betAmount) || 0;
+    if (amount <= 0) return false;
+    if (min > 0 && amount < min) return false;
+    if (max > 0 && amount > max) return false;
+    return true;
+  }
+
   // --- actions WS
   async sit(index: number) { await this.bj.wsSit(this.tableId, index); }
   async leave() { const me = this.mySeat(); if (me) await this.bj.wsLeave(this.tableId, me.index); }
-  async bet() { if (!this.betAmount || this.betAmount <= 0) return; const me = this.mySeat(); if (!me) return; this.bj.wsBet(this.tableId, this.betAmount, me.index); }
-  async hit() { const me = this.mySeat(); if (me) { await this.bj.wsAction(this.tableId, 'HIT', me.index); this.dealCard(200, 200, 'hearts_ace.svg'); } }
+  async bet() {
+    if (!this.betAmount || this.betAmount <= 0) return;
+    const me = this.mySeat();
+    if (!me) { this.error = 'Tu dois être assis pour miser.'; return; }
+    // client-side validation
+    const s = this.state;
+    if (s) {
+      const min = s.minBet ?? 0;
+      const max = s.maxBet ?? 0;
+      if (min > 0 && this.betAmount < min) {
+        this.error = `Mise minimale: ${min}`;
+        setTimeout(() => this.error = null, 3500);
+        return;
+      }
+      if (max > 0 && this.betAmount > max) {
+        this.error = `Mise maximale: ${max}`;
+        setTimeout(() => this.error = null, 3500);
+        return;
+      }
+    }
+    this.error = null;
+    try {
+      await this.bj.wsBet(this.tableId, this.betAmount, me.index);
+    } catch (e: any) {
+      this.error = e?.message || 'Erreur lors de la mise';
+      setTimeout(() => this.error = null, 3500);
+    }
+  }
+
+  async hit() { const me = this.mySeat(); if (me) { await this.bj.wsAction(this.tableId, 'HIT', me.index); } }
   async stand() { const me = this.mySeat(); if (me) await this.bj.wsAction(this.tableId, 'STAND', me.index); }
   async double() { const me = this.mySeat(); if (me) await this.bj.wsAction(this.tableId, 'DOUBLE', me.index); }
   async surrender() { const me = this.mySeat(); if (me) await this.bj.wsAction(this.tableId, 'SURRENDER', me.index); }

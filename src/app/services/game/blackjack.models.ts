@@ -58,7 +58,10 @@ export interface BJTableSummary {
   id: number;
   maxSeats: number;
   isPrivate: boolean;
-  phase: BJPhase | string;
+  phase: string;
+  name?: string;
+  minBet?: number;
+  maxBet?: number;
 }
 
 // --- REST create (ton back actuel) ---
@@ -66,6 +69,9 @@ export interface BJCreateTableReq {
   privateTable?: boolean;
   maxSeats?: number;
   code?: string;
+  name?: string;
+  minBet?: number;
+  maxBet?: number;
 }
 
 export interface BJCreateTableRes {

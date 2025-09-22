@@ -1,7 +1,7 @@
 <!-- en-tête -->
 <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
   <div>
-    <h2 *ngIf="state as s">Table {{ s.id }}</h2>
+    <h2 *ngIf="state as s">Table {{ s.name ? (s.name + ' — ') : '' }}{{ s.id }}</h2>
     <div *ngIf="state as s" style="font-size:0.95rem;color:#555">
       <span>Phase: <strong>{{ s.phase }}</strong></span>
       <span *ngIf="remainingSeconds > 0" style="margin-left:12px;">
@@ -81,8 +81,20 @@
 
   <!-- zone mise -->
   <section class="betting" *ngIf="s.phase==='BETTING' && mySeat() as me">
-    <input type="number" [(ngModel)]="betAmount" min="1">
-    <button (click)="bet()">Miser</button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input type="number"
+             [(ngModel)]="betAmount"
+             (ngModelChange)="onBetInputChange()"
+             [min]="s.minBet || 1"
+             [max]="(s.maxBet && s.maxBet>0) ? s.maxBet : null"
+             [placeholder]="s.minBet ? ('Mise (' + s.minBet + '–' + (s.maxBet && s.maxBet>0 ? s.maxBet : '∞') + ')') : 'Mise'">
+      <button (click)="bet()" [disabled]="!canPlaceBet(s)">Miser</button>
+    </div>
+    <small *ngIf="s.minBet || s.maxBet" style="display:block;margin-top:6px;color:#555">
+      Limites : min = {{ s.minBet || 0 }}
+      <span *ngIf="s.maxBet && s.maxBet>0"> • max = {{ s.maxBet }}</span>
+    </small>
     <small *ngIf="state?.deadline">Temps restant: {{ remainingSeconds }}s</small>
+    <div *ngIf="error" style="color:#b12;margin-top:6px;">{{ error }}</div>
   </section>
 </div>
