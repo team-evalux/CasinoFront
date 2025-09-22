@@ -31,32 +31,30 @@
 <p *ngIf="!state">Chargement…</p>
 
 <div *ngIf="state as s">
+  <!-- Croupier -->
   <section class="dealer card">
     <h3>Croupier</h3>
-
-    <!-- pendant PLAYING: on montre 1 carte visible + une face cachée -->
-    <ng-container *ngIf="s.phase === 'PLAYING'; else dealerRevealed">
+    <ng-container *ngIf="state?.phase === 'PLAYING'; else dealerRevealed">
       <div class="cards">
-        <span class="card" *ngIf="s.dealer?.cards?.length">
-          {{ asCardText(s.dealer.cards[0].rank, s.dealer.cards[0].suit) }}
-        </span>
-        <span class="card back">🂠</span>
+        <img class="card-img" *ngIf="state?.dealer?.cards?.length"
+             [src]="'assets/cards/' + cardFileName(state.dealer.cards[0])" alt="carte">
+        <!-- 🔹 chemin direct pour le dos -->
+        <img class="card-img back" src="assets/cards/back.svg" alt="dos de carte">
       </div>
       <small>Total: ??</small>
     </ng-container>
-
-    <!-- après dealer_turn/payout: montrer toute la main et le total -->
     <ng-template #dealerRevealed>
       <div class="cards">
-        <span class="card" *ngFor="let c of s.dealer?.cards">{{ asCardText(c.rank, c.suit) }}</span>
+        <img class="card-img" *ngFor="let c of state?.dealer?.cards"
+             [src]="'assets/cards/' + cardFileName(c)" alt="carte">
       </div>
-      <small>Total: {{ s.dealer.total }}</small>
+      <small>Total: {{ state?.dealer?.total }}</small>
     </ng-template>
   </section>
 
-  <!-- SEATS -->
+  <!-- Sièges -->
   <section class="seats">
-    <article class="seat" *ngFor="let seat of s.seats">
+    <article class="seat" *ngFor="let seat of state?.seats">
       <header>
         <strong>Siège {{ seat.index }}</strong>
         <small *ngIf="seat.email">{{ seat.email }}</small>
@@ -64,32 +62,19 @@
       </header>
 
       <div class="cards" *ngIf="seat.hand?.cards?.length">
-        <span class="card" *ngFor="let c of seat.hand.cards">{{ asCardText(c.rank, c.suit) }}</span>
+        <img class="card-img" *ngFor="let c of seat.hand.cards"
+             [src]="'assets/cards/' + cardFileName(c)" alt="carte">
       </div>
 
-      <p *ngIf="seat.hand">Total: {{ seat.hand.total }} • Mise: {{ seat.hand.bet || 0 }}</p>
+      <p>Total: {{ seat.hand.total }} • Mise: {{ seat.hand.bet || 0 }}</p>
 
-      <!-- Résultat dernière manche si dispo -->
-      <div class="result" *ngIf="s.lastPayouts as pays">
-        <ng-container *ngFor="let p of pays">
-          <div *ngIf="p.seat === seat.index">
-            <strong *ngIf="p.outcome==='WIN'">✅ +{{ p.credit - (p.bet) }}</strong>
-            <strong *ngIf="p.outcome==='BLACKJACK'">🖤 +{{ p.credit - (p.bet) }} (Blackjack)</strong>
-            <strong *ngIf="p.outcome==='PUSH'">➖ 0 (Push)</strong>
-            <strong *ngIf="p.outcome==='LOSE'">❌ -{{ p.bet }}</strong>
-          </div>
-        </ng-container>
-      </div>
-
-      <!-- actions rapides (à adapter selon ton guard isMySeat etc.) -->
       <div class="actions" *ngIf="mySeat()?.index === seat.index">
-        <button (click)="hit()"    [disabled]="!myTurn()">Hit</button>
-        <button (click)="stand()"  [disabled]="!myTurn()">Stand</button>
-        <button (click)="double()" [disabled]="!myTurn()">Double</button>
-        <button (click)="surrender()" [disabled]="!myTurn()">Surrender</button>
+        <button (click)="hit()" [disabled]="!myTurn() || (seat.hand.bet || 0) <= 0">Hit</button>
+        <button (click)="stand()" [disabled]="!myTurn() || (seat.hand.bet || 0) <= 0">Stand</button>
+        <button (click)="double()" [disabled]="!myTurn() || (seat.hand.bet || 0) <= 0">Double</button>
+        <button (click)="surrender()" [disabled]="!myTurn() || (seat.hand.bet || 0) <= 0">Surrender</button>
       </div>
 
-      <!-- n'affiche le bouton que si le siège est libre ET que l'utilisateur n'est pas déjà assis -->
       <button *ngIf="!seat.email && !mySeat()" (click)="sit(seat.index)">S’asseoir ici</button>
     </article>
   </section>

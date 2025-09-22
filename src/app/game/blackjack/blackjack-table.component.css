@@ -1,6 +1,73 @@
-
 .card { padding: 8px; border: 1px solid #333; border-radius: 6px; margin-bottom: 8px; }
-.cards { display:flex; gap:8px; margin:6px 0; }
-.card.back { filter: grayscale(1); }
-.seats { display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
+.cards { display:flex; gap:8px; margin:6px 0; flex-wrap:wrap; }
 .result { margin-top:6px; }
+
+.card-img {
+  width: 70px;
+  height: auto;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+.card-img.back {
+  filter: grayscale(1);
+}
+
+.seats {
+  display:grid;
+  grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+  gap:12px;
+}
+
+/* Pile centrale */
+.deck {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+  position: relative;
+}
+.deck-card {
+  width: 70px;
+  height: auto;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+/* cartes en vol */
+.flying-cards {
+  position: relative;
+}
+
+.card-anim {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform-style: preserve-3d;
+  animation: deal-slide 1.2s ease-out forwards;
+}
+
+@keyframes deal-slide {
+  0% {
+    transform: translate(0,0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--tx), var(--ty)) rotate(var(--rot));
+    opacity: 1;
+  }
+}
+
+/* faces recto/verso */
+.card-face {
+  width: 70px;
+  height: auto;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  position: absolute;
+  backface-visibility: hidden;
+}
+.card-face.back {
+  transform: rotateY(180deg);
+}
