@@ -28,9 +28,11 @@ export interface BJTableSummary {
 
 export interface JoinOrCreateMsg {
   tableId?: number | string;
+  code?: string;
+  // (les autres champs optionnels de création si nécessaire)
 }
 
-export interface SitMsg { tableId: number | string; seatIndex: number; }
+export interface SitMsg { tableId: number | string; seatIndex: number; code?: string | null; }
 export interface BetMsg { tableId: number | string; amount: number; seatIndex?: number; }
 export type ActionType = 'HIT'|'STAND'|'DOUBLE'|'SPLIT'|'SURRENDER';
 export interface ActionMsg { tableId: number | string; seatIndex: number; type: ActionType; }
@@ -58,12 +60,18 @@ export class BlackjackService {
   private lobbySubscription?: any;
   private errorsSubscription?: any;
   private tableSubscription?: any;
+  private currentTableIsPrivate: boolean = false;
+
 
   constructor(private http: HttpClient, private zone: NgZone) {}
 
   // --- REST ---
   listTables(): Observable<BJTableSummary[]> {
     return this.http.get<BJTableSummary[]>(`${this.apiBase}/tables`);
+  }
+
+  getTableMeta(tableId: number | string) {
+    return this.http.get<any>(`${this.apiBase}/table/${tableId}`);
   }
 
   createTable(req: BJCreateTableReq) {
@@ -95,6 +103,7 @@ export class BlackjackService {
       heartbeatIncoming: 10000,
       heartbeatOutgoing: 10000,
       onConnect: () => {
+        console.log('[WS] connected, subscribing lobby + errors etc.');
         // résout les promises waitConnected()
         const toResolve = [...this.onConnectedResolvers];
         this.onConnectedResolvers.length = 0;
@@ -114,18 +123,24 @@ export class BlackjackService {
         this.errorsSubscription = this.stomp!.subscribe('/user/queue/bj/errors', (msg) =>
           this.zone.run(() => {
             try {
+              console.log('[WS] received /user/queue/bj/errors raw:', msg);
               const p = JSON.parse(msg.body);
+              console.log('[WS] parsed user error:', p);
               this.errorSubject.next(p?.error || p?.msg || 'Erreur serveur');
+              // conserve le clearError existant
               setTimeout(() => this.clearError(), 5000);
-            } catch (e) {}
+            } catch (e) {
+              console.warn('[WS] error parsing /user/queue/bj/errors', e);
+            }
           })
         );
 
         // ré-subscribe au topic de la table courante si demandé
         if (this.currentTableId != null) {
-          // subscribeTableTopic fera l'unsubscribe s'il y avait une précédente
-          this.subscribeTableTopic(this.currentTableId);
+          console.log('[WS] re-subscribing to current table', this.currentTableId, 'isPrivate=', this.currentTableIsPrivate);
+          this.subscribeTableTopic(this.currentTableId, this.currentTableIsPrivate);
         }
+
       },
       onStompError: () => {}
     });
@@ -144,7 +159,7 @@ export class BlackjackService {
     } catch {}
   }
 
-  private subscribeTableTopic(tableId: number | string) {
+  private subscribeTableTopic(tableId: number | string, isPrivate = false) {
     // si c'est déjà la même table et qu'on a une subscription, rien à faire
     if (String(this.currentTableId) === String(tableId) && this.tableSubscription) return;
 
@@ -152,14 +167,20 @@ export class BlackjackService {
     try { this.tableSubscription?.unsubscribe(); } catch {}
     this.tableSubscription = undefined;
 
-    // met à jour l'id courant (utile pour reconnexion)
+    // met à jour l'id courant (utile pour reconnexion) et si privé/public
     this.currentTableId = tableId;
+    this.currentTableIsPrivate = !!isPrivate;
 
-    // souscrit au nouveau topic
-    this.tableSubscription = this.stomp?.subscribe(`/topic/bj/table/${tableId}`, (msg) =>
+    if (!this.stomp) return;
+
+    const dest = isPrivate ? `/user/queue/bj/table/${tableId}` : `/topic/bj/table/${tableId}`;
+    console.log('[WS] subscribe to table destination ->', dest);
+
+    this.tableSubscription = this.stomp!.subscribe(dest, (msg) =>
       this.zone.run(() => this.onTableEvent(msg))
     );
   }
+
 
   private unsubscribeTableTopic() {
     try { this.tableSubscription?.unsubscribe(); } catch {}
@@ -212,7 +233,9 @@ export class BlackjackService {
 
   private onTableEvent(msg: IMessage) {
     try {
+      console.log('[WS] onTableEvent raw:', msg);
       const evt = JSON.parse(msg.body);
+      console.log('[WS] onTableEvent parsed type=', evt?.type, 'payload=', evt?.payload);
       if (!evt || !evt.type) return;
       const curr = this.tableSubject.value ? { ...this.tableSubject.value } : null;
 
@@ -380,18 +403,29 @@ export class BlackjackService {
 
   /** Commence à recevoir l’état de la table (abonnement garanti après connexion). */
   async watchTable(tableId: number | string) {
-    // si on demande la même table, pas besoin de ré-souscrire
     if (String(this.currentTableId) === String(tableId) && this.tableSubscription) {
       return;
     }
 
+    // stocke l'intention
+    this.currentTableId = tableId;
+
     // assure connexion WS
-    this.currentTableId = tableId; // on stocke l'intention
     this.connectIfNeeded();
     await this.waitConnected();
-    // use subscribeTableTopic that will unsubscribe old one
-    this.subscribeTableTopic(tableId);
+
+    // fetch meta to know if private (and subscribe accordingly)
+    try {
+      const meta = await this.getTableMeta(tableId).toPromise();
+      const isPrivate = !!meta?.isPrivate;
+      console.log('[WS] watchTable meta isPrivate=', isPrivate, 'meta=', meta);
+      this.subscribeTableTopic(tableId, isPrivate);
+    } catch (err) {
+      console.warn('[WS] watchTable getTableMeta failed, subscribing to public topic by default', err);
+      this.subscribeTableTopic(tableId, false);
+    }
   }
+
 
   disconnectTable() {
     // annule subscription table (ne touche pas au socket global)
@@ -419,15 +453,16 @@ export class BlackjackService {
   }
 
   // --- Envois d’actions via WS ---
-  async wsJoin(tableId: number | string) {
+  async wsJoin(tableId: number | string, code?: string | null) {
     await this.waitConnected();
-    this.publish('/app/bj/join', <JoinOrCreateMsg>{ tableId });
+    this.publish('/app/bj/join', <JoinOrCreateMsg>{ tableId, code }, code ? { code } : undefined);
   }
 
-  async wsSit(tableId: number | string, seatIndex: number) {
+  async wsSit(tableId: number | string, seatIndex: number, code?: string | null) {
     await this.waitConnected();
-    this.publish('/app/bj/sit', <SitMsg>{ tableId, seatIndex });
+    this.publish('/app/bj/sit', <SitMsg>{ tableId, seatIndex, code }, code ? { code } : undefined);
   }
+
 
   async wsBet(tableId: number | string, amount: number, seatIndex?: number) {
     await this.waitConnected();
@@ -444,8 +479,24 @@ export class BlackjackService {
     this.publish('/app/bj/leave', <SitMsg>{ tableId, seatIndex });
   }
 
-  private publish(dest: string, body: any) {
-    if (!this.stomp || !this.stomp.connected) return;
-    this.stomp.publish({ destination: dest, body: JSON.stringify(body) });
+  private publish(dest: string, body: any, extraHeaders?: Record<string,string>) {
+    if (!this.stomp || !this.stomp.connected) {
+      console.warn('[WS] publish blocked, stomp not connected:', dest, body);
+      return;
+    }
+
+    // assure que le header 'code' est présent si on l'a dans le body
+    const headers: Record<string,string> = {
+      ...(extraHeaders ?? {}),
+      ...(body && body.code ? { code: String(body.code) } : {})
+    };
+
+    console.log('[WS] publish ->', dest, body, 'headers=', headers);
+    this.stomp.publish({
+      destination: dest,
+      body: JSON.stringify(body ?? {}),
+      headers
+    });
   }
+
 }

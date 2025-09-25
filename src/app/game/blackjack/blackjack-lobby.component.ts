@@ -74,8 +74,18 @@ export class BlackjackLobbyComponent implements OnInit, OnDestroy {
   }
 
   goTable(t: BJTableSummary) {
-    this.router.navigate(['/play/blackjack/table', t.id]);
+    if (t.isPrivate) {
+      const provided = window.prompt('Table privée — entrez le code d’accès :');
+      if (!provided) {
+        return;
+      }
+      console.log('[Lobby] navigating to table', t.id, 'with code from prompt');
+      this.router.navigate(['/play/blackjack/table', t.id], { state: { code: provided } });
+    } else {
+      this.router.navigate(['/play/blackjack/table', t.id]);
+    }
   }
+
   async onCreate() {
     if (!this.isLoggedIn) { this.error = 'Connecte-toi pour créer une table.'; return; }
     this.loading = true; this.error = null;
@@ -92,11 +102,20 @@ export class BlackjackLobbyComponent implements OnInit, OnDestroy {
       next: async (res) => {
         this.loading = false;
         const id = res.id;
-        this.router.navigate(['/play/blackjack/table', id]);
+        // si back renvoie le code, on la passe via navigation state pour que le composant table l'utilise
+        const navExtras = res.code ? { state: { code: res.code } } : undefined;
+        console.log(navExtras)
+        if (navExtras) {
+          await this.router.navigate(['/play/blackjack/table', id], navExtras);
+        } else {
+          await this.router.navigate(['/play/blackjack/table', id]);
+        }
         await this.bj.watchTable(id);
-        await this.bj.wsJoin(id);
-        await this.bj.wsSit(id, 0);
+        // envoie le code dans wsJoin/wsSit pour autoriser immédiatement le créateur
+        await this.bj.wsJoin(id, res.code);
+        await this.bj.wsSit(id, 0, res.code);
       },
+
       error: (err) => {
         this.loading = false;
         this.error = err?.error || 'Création impossible';

@@ -54,11 +54,90 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
     if (!raw) { this.error = 'Identifiant de table manquant'; this.loading = false; return; }
     this.tableId = /^\d+$/.test(raw) ? Number(raw) : raw;
 
+    // récupération du code éventuellement transmis via navigation state (on l'utilise si présent)
+    const codeFromState = (history && (history.state as any)?.code) ? (history.state as any).code : undefined;
+    console.log('[Table] ngOnInit, tableId=', this.tableId, 'codeFromState=', codeFromState);
+
+    // commence à écouter la table (subscribe topic)
     await this.bj.watchTable(this.tableId);
-    await this.bj.wsJoin(this.tableId);
-    await this.bj.wsSit(this.tableId, 0);
+
+    let codeToUse: string | null | undefined = codeFromState;
+
+    try {
+      // récupérer meta (utile pour affichages initiaux et pour savoir si la table est privée)
+      const meta = await this.bj.getTableMeta(this.tableId).toPromise().catch(() => null);
+      console.log('[Table] meta=', meta);
+      const isPrivate = !!meta?.isPrivate;
+
+      if (isPrivate && !codeToUse) {
+        // prompt côté client (tu peux remplacer par modal)
+        const provided = window.prompt('Table privée — entrez le code d’accès :');
+        if (!provided) {
+          this.error = 'Code requis pour rejoindre la table privée';
+          this.loading = false;
+          return;
+        }
+        codeToUse = provided;
+      }
+    } catch (e) {
+      console.warn('[Table] getTableMeta failed', e);
+    }
+
+    try {
+      console.log('[Table] sending wsJoin', { tableId: this.tableId, code: codeToUse });
+      await this.bj.wsJoin(this.tableId, codeToUse);
+      console.log('[Table] wsJoin published');
+    } catch (err) {
+      console.error('[Table] wsJoin error (publish failed?)', err);
+      this.error = (err as any)?.message || 'Impossible de rejoindre la table (code invalide?)';
+      this.loading = false;
+      return;
+    }
+
+    // --- NEW: wait for the first TABLE_STATE to determine a free seat, then sit there
+    const tryAutoSit = (state: any | null) => {
+      if (!state) return;
+      // si on est déjà assis, ne rien faire
+      const meAlready = state.seats?.find((s: any) => s.email === this.meEmail);
+      if (meAlready) return;
+
+      // trouve premier siège libre (status undefined/null ou 'EMPTY' ou pas d'email)
+      const empty = state.seats?.find((s: any) =>
+        !s || !s.email || s.status === 'EMPTY' || s.status === undefined
+      );
+      if (empty) {
+        const index = empty.index;
+        console.log('[Table] auto-sit to first empty seat index=', index);
+        this.bj.wsSit(this.tableId, index, codeToUse).catch((e) => {
+          console.warn('[Table] auto wsSit failed', e);
+        });
+      }
+    };
+
+// subscribe one-shot: dès qu'on a un état de table, tente d'assoir
+    const onceSub = this.bj.table$.subscribe(s => {
+      tryAutoSit(s);
+      // unsubscribe immediately to avoid repeated attempts
+      try { onceSub.unsubscribe(); } catch {}
+    });
+
+    // fallback timeout: si après X ms aucune tableState n'arrive -> on stop le chargement
+    const FALLBACK_MS = 3000;
+    let receivedState = false;
+    const fallbackTimer = setTimeout(() => {
+      if (!receivedState) {
+        console.warn('[Table] fallback: no TABLE_STATE received within', FALLBACK_MS, 'ms');
+        // on laisse l'erreur si déjà présente, sinon on met un message générique
+        if (!this.error) this.error = 'Impossible de recevoir l’état de la table. Vérifie le code ou attends.';
+        this.loading = false;
+      }
+    }, FALLBACK_MS);
 
     this.sub = this.bj.table$.subscribe(s => {
+      if (s) {
+        receivedState = true;
+        clearTimeout(fallbackTimer);
+      }
       this.state = s;
       this.loading = false;
 
@@ -67,7 +146,6 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
           this.betAmount = Number(s.minBet);
         }
       } else {
-        // quand on quitte BETTING on autorise une ré-initialisation future
         this.userEditedBet = false;
       }
 
@@ -76,7 +154,6 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
         this.myPayoutObj = this.findMyPayout(s);
         this.resultMessage = this.buildResultMessage(this.myPayoutObj);
 
-        // appliquer delta optimiste
         const net = (this.myPayoutObj && typeof this.myPayoutObj.credit === 'number' && typeof this.myPayoutObj.bet === 'number')
           ? Number(this.myPayoutObj.credit) - Number(this.myPayoutObj.bet)
           : 0;
@@ -103,11 +180,15 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
 
     this.subErr = this.bj.error$.subscribe(msg => {
       if (msg) {
+        console.log('[Table] personal WS error arrived:', msg);
+        // affichage erreur et arrêt du chargement si on était en attente
         this.error = msg;
+        this.loading = false;
         setTimeout(() => { this.error = null; this.bj.clearError(); }, 4000);
       }
     });
   }
+
 
   onBetInputChange() {
     this.userEditedBet = true;

@@ -100,11 +100,11 @@ export interface BJPayout {
 }
 
 // --- WS payloads (alignés avec tes @MessageMapping) ---
-export interface JoinOrCreateMsg { tableId?: string; }
-export interface SitMsg { tableId: string; seatIndex: number; }
-export interface BetMsg { tableId: string; amount: number; }
+export interface JoinOrCreateMsg { tableId?: string; code?: string; }
+export interface SitMsg { tableId: string; seatIndex: number; code?: string; }
+export interface BetMsg { tableId: number | string; amount: number; seatIndex?: number; }
 export type ActionType = 'HIT'|'STAND'|'DOUBLE'|'SPLIT'|'SURRENDER';
-export interface ActionMsg { tableId: string; type: ActionType; }
+export interface ActionMsg { tableId: number | string; seatIndex: number; type: ActionType; }
 
 
 
