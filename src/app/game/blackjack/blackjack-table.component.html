@@ -28,7 +28,8 @@
   </div>
 </div>
 
-<p *ngIf="!state">Chargement…</p>
+<!-- indicateur chargement quand pas d'erreur -->
+<p *ngIf="!state">Chargement… Attends que la manche en cours soit fini bg</p>
 
 <div *ngIf="state as s">
   <!-- Croupier -->
@@ -38,7 +39,7 @@
       <div class="cards">
         <img class="card-img" *ngIf="state?.dealer?.cards?.length"
              [src]="'assets/cards/' + cardFileName(state.dealer.cards[0])" alt="carte">
-        <!-- 🔹 chemin direct pour le dos -->
+        <!-- dos -->
         <img class="card-img back" src="assets/cards/back.svg" alt="dos de carte">
       </div>
       <small>Total: ??</small>
@@ -95,6 +96,5 @@
       <span *ngIf="s.maxBet && s.maxBet>0"> • max = {{ s.maxBet }}</span>
     </small>
     <small *ngIf="state?.deadline">Temps restant: {{ remainingSeconds }}s</small>
-    <div *ngIf="error" style="color:#b12;margin-top:6px;">{{ error }}</div>
   </section>
 </div>
