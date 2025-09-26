@@ -17,7 +17,9 @@
   </div>
 
   <div *ngIf="state?.creatorEmail === meEmail">
-    <button (click)="closeTable()">Fermer la table</button>
+    <button (click)="closeTable()" [disabled]="state?.phase !== 'BETTING'" [title]="state?.phase !== 'BETTING'
+      ? '⏳ Attends la fin de la manche pour fermer la table'
+      : 'Fermer la table'">Fermer la table</button>
   </div>
 </div>
 
