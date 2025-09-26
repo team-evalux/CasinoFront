@@ -7,11 +7,12 @@ import { WalletService } from '../services/wallet.service';
 import { BalanceHeaderComponent } from './balance-header.component';
 import { HttpClient } from '@angular/common/http';
 import { interval, Subscription } from 'rxjs';
+import {FriendsComponent} from '../friends/friends.component';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, FormsModule, BalanceHeaderComponent, RouterLink],
+  imports: [CommonModule, FormsModule, BalanceHeaderComponent, RouterLink, FriendsComponent],
   templateUrl: './header.component.html'
 })
 export class HeaderComponent implements OnInit, OnDestroy {

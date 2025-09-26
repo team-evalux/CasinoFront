@@ -1,8 +1,8 @@
-// src/app/services/auth.service.ts
 import { Injectable, Injector } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { WalletService } from './wallet.service';
+import { FriendsService } from './friends.service';
 
 export interface AuthResponse {
   token: string;
@@ -11,15 +11,13 @@ export interface AuthResponse {
   role: string;
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class AuthService {
   private baseUrl = 'http://localhost:8080/api/auth';
 
   constructor(
     private http: HttpClient,
-    private injector: Injector // injection de l'injector, pas du WalletService directement
+    private injector: Injector
   ) {}
 
   inscription(payload: { email: string; pseudo: string; motDePasse: string }): Observable<AuthResponse> {
@@ -32,16 +30,16 @@ export class AuthService {
         this.saveToken(res.token);
         localStorage.setItem('user', JSON.stringify(res));
 
-        // on récupère WalletService AU MOMENT BESOIN via l'injector pour éviter circular DI
         try {
           const walletService = this.injector.get(WalletService);
-          // démarre SSE et rafraîchit le solde
           walletService.connectSse();
           walletService.refreshBalance();
-        } catch (e) {
-          // si pour une raison quelconque WalletService n'est pas fourni, on ignore (sécurité)
-          // console.warn('WalletService not available yet', e);
-        }
+        } catch {}
+
+        try {
+          const friendsService = this.injector.get(FriendsService);
+          friendsService.setOnline(true).subscribe();
+        } catch {}
       })
     );
   }
@@ -61,9 +59,12 @@ export class AuthService {
     try {
       const walletService = this.injector.get(WalletService);
       walletService.clear();
-    } catch (e) {
-      // ignore
-    }
+    } catch {}
+
+    try {
+      const friendsService = this.injector.get(FriendsService);
+      friendsService.setOnline(false).subscribe();
+    } catch {}
   }
 
   isLoggedIn(): boolean {

@@ -1,10 +1,14 @@
 <div class="conteneur">
+
   <main class="panneau">
     <section class="mb-12">
       <h2 class="titre-page">Bienvenue {{ pseudo }} 🎉</h2>
       <p class="texte-secondaire">Sélectionne un jeu ci-dessous pour commencer.</p>
     </section>
 
+
+
+    <!-- Jeux -->
     <section class="grille-jeux">
       <!-- Coinflip -->
       <article class="carte-jeu">
@@ -51,6 +55,7 @@
         </div>
       </article>
 
+      <!-- Blackjack -->
       <article class="carte-jeu">
         <div class="carte-media">
           <a [routerLink]="['/play/blackjack']"><img src="assets/images/logo-blackjack.png" alt="BJ"></a>
@@ -64,13 +69,9 @@
           <a [routerLink]="['/play/blackjack']" class="bouton bouton--or">Jouer</a>
         </div>
       </article>
-
     </section>
 
-
-
-
-
+    <!-- Historique -->
     <section class="mt-16">
       <app-history-widget></app-history-widget>
     </section>

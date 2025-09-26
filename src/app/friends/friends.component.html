@@ -1,0 +1,55 @@
+<!-- Bouton toggle intégré dans le header -->
+<button *ngIf="isLoggedIn" class="friends-toggle" (click)="toggleSidebar()" title="Voir mes amis">
+  <img src="assets/images/friendlist.jpg" alt="liste amis" />
+</button>
+
+<!-- Sidebar -->
+<aside class="friends-sidebar" [class.open]="showSidebar">
+  <header>
+    <h3>👥 Mes Amis</h3>
+    <button class="close-btn" (click)="toggleSidebar()">✖</button>
+  </header>
+
+  <!-- Onglets -->
+  <nav class="tabs">
+    <button [class.active]="!showRequests" (click)="showRequests=false">👥 Amis</button>
+    <button [class.active]="showRequests" (click)="toggleRequests()">📩 Demandes</button>
+  </nav>
+
+  <!-- Liste amis -->
+  <div *ngIf="!showRequests">
+    <div class="add-friend">
+      <input type="email" [(ngModel)]="newFriendEmail" placeholder="Email de l'ami" />
+      <button class="bouton bouton--primaire" (click)="addFriend()">Ajouter</button>
+    </div>
+
+    <div class="friends-list" *ngIf="friends.length; else noFriends">
+      <div class="friend" *ngFor="let f of friends">
+        <div class="info">
+          <span class="status" [class.online]="f.online"></span>
+          <strong>😀 {{ f.friendEmail }}</strong>
+          <small *ngIf="!f.online">Dernière: {{ f.lastSeen | date:'short' }}</small>
+          <small *ngIf="f.online">En ligne</small>
+        </div>
+        <button class="gift-btn" (click)="sendCredits(f.friendEmail)">
+          <img src="assets/images/friend.png" alt="Envoyer crédits" />
+        </button>
+      </div>
+    </div>
+    <ng-template #noFriends><p>Aucun ami encore.</p></ng-template>
+  </div>
+
+  <!-- Liste demandes -->
+  <div *ngIf="showRequests">
+    <div class="requests" *ngIf="requests.length; else noRequests">
+      <div class="request" *ngFor="let r of requests">
+        <strong>📨 {{ r.fromEmail }}</strong>
+        <div class="actions">
+          <button class="bouton bouton--primaire" (click)="accept(r.id)">✅ Accepter</button>
+          <button class="bouton bouton--danger" (click)="refuse(r.id)">❌ Refuser</button>
+        </div>
+      </div>
+    </div>
+    <ng-template #noRequests><p>Aucune demande en attente.</p></ng-template>
+  </div>
+</aside>

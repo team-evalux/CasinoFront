@@ -1,0 +1,138 @@
+/* Bouton toggle dans le header */
+.friends-toggle {
+  background: none;
+  border: none;
+  font-size: 26px;
+  cursor: pointer;
+  color: var(--or);
+  margin-right: 8px;
+  transition: transform 0.2s;
+}
+.friends-toggle:hover {
+  transform: scale(1.2);
+}
+
+/* Sidebar à gauche */
+.friends-sidebar {
+  position: fixed;
+  top: 0;
+  left: -320px; /* cachée par défaut */
+  width: 300px;
+  height: 100%;
+  background: linear-gradient(180deg,#11171c,#0f1418);
+  border-right: 2px solid var(--or);
+  box-shadow: 5px 0 20px rgba(0,0,0,.5);
+  transition: left .3s ease;
+  padding: 16px;
+  z-index: 1500;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.friends-sidebar.open {
+  left: 0;
+}
+
+.friends-sidebar header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+  padding-bottom: 8px;
+}
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--gris-2);
+  font-size: 20px;
+  cursor: pointer;
+}
+.add-friend {
+  display: flex;
+  gap: 8px;
+}
+.add-friend input {
+  flex: 1;
+}
+.friends-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.friend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255,255,255,.04);
+  padding: 8px;
+  border-radius: 10px;
+}
+.friend .info {
+  display: flex;
+  flex-direction: column;
+}
+.friend .status {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-bottom: 3px;
+}
+.friend .status.online {
+  background: var(--accent);
+}
+.friend .status:not(.online) {
+  background: var(--gris);
+}
+
+.friends-toggle {
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 6px; /* espace entre img et ☰ */
+  cursor: pointer;
+  color: var(--or);
+}
+
+.friends-toggle img {
+  width: 80px;   /* taille fixe plus petite */
+  height: 80px;  /* idem pour carré propre */
+  object-fit: cover;
+  border-radius: 6px; /* optionnel pour coins arrondis */
+}
+
+/* Bouton toggle dans le header */
+.friends-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+
+/* Sidebar à gauche */
+.friends-sidebar {
+  position: fixed;
+  top: 0;
+  left: -320px;
+  width: 300px;
+  height: 100%;
+  background: linear-gradient(180deg,#11171c,#0f1418);
+  border-right: 2px solid var(--or);
+  box-shadow: 5px 0 20px rgba(0,0,0,.5);
+  transition: left .3s ease;
+  padding: 16px;
+  z-index: 1500;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.friends-sidebar.open {
+  left: 0;
+}

@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import {HistoryWidgetComponent} from '../history/history-widget.component';
+import { FriendsComponent } from '../friends/friends.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterModule, HistoryWidgetComponent],
+  imports: [CommonModule, RouterModule, HistoryWidgetComponent,FriendsComponent],
   templateUrl: './home.component.html'
 })
 export class HomeComponent {
