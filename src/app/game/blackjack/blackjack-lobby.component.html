@@ -24,7 +24,7 @@
     </div>
   </header>
 
-  <div *ngIf="loading">Chargementcacacacc…</div>
+  <div *ngIf="loading">Chargement…</div>
   <div *ngIf="error" class="err">{{ error }}</div>
 
   <section class="grid">
@@ -38,7 +38,18 @@
           <span *ngIf="t.minBet || t.maxBet"> • Mise: {{ t.minBet || 0 }} - {{ t.maxBet || '∞' }}</span>
         </small>
       </p>
-      <button (click)="goTable(t)">Rejoindre</button>
+      <div style="display:flex; gap:8px;">
+        <button (click)="goTable(t)">Rejoindre</button>
+        <!-- Bouton visible seulement pour le créateur -->
+        <button *ngIf="t.creatorEmail === (JSON.parse(localStorage.getItem('user')||'{}')?.email || null)"
+                (click)="closeTableFromLobby(t.id)"
+                [disabled]="t.phase !== 'BETTING'"
+                [title]="t.phase !== 'BETTING'
+                ? '⏳ Attends la fin de la manche pour fermer la table'
+                : 'Fermer la table'">
+          ❌ Fermer
+        </button>
+      </div>
     </article>
   </section>
 </div>

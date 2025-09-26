@@ -24,6 +24,7 @@ export interface BJTableSummary {
   name?: string;
   minBet?: number;
   maxBet?: number;
+  creatorEmail?: string;
 }
 
 export interface JoinOrCreateMsg {
