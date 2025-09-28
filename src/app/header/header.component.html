@@ -40,7 +40,17 @@
       </ng-container>
 
       <ng-template #showLogin>
-        <!-- ton formulaire login -->
+        <form (ngSubmit)="submitLogin()" class="d-flex aic gap-8">
+          <input [(ngModel)]="email" name="email" type="email" placeholder="email" class="champ" style="width:180px;">
+          <input [(ngModel)]="motDePasse" name="motDePasse" type="password" placeholder="mot de passe" class="champ" style="width:160px;">
+          <button type="submit" [disabled]="loading" class="bouton bouton--primaire">
+            {{ loading ? 'Connexion…' : 'Se connecter' }}
+          </button>
+          <button type="button" (click)="router.navigate(['/register'])" class="bouton">
+            S'inscrire
+          </button>
+        </form>
+        <div *ngIf="error" style="color:#ffb3b3;margin-left:12px;">{{ error }}</div>
       </ng-template>
     </div>
   </div>
