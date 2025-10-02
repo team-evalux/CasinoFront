@@ -389,11 +389,12 @@ export class BlackjackService {
   }
 
   private normPhase(p: any): any {
-    if (!p) return 'WAITING';
+    if (!p) return 'BETTING';
     if (typeof p === 'string') return p;
-    // enum serialisé → .name ?
-    return p.name ?? 'WAITING';
+    return p.name ?? 'BETTING';
   }
+
+
 
   private onTableState(msg: IMessage) {
     try {

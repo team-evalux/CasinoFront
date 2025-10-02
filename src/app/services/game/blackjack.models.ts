@@ -1,7 +1,7 @@
 // src/app/services/game/blackjack.models.ts
 export type BJSeatStatus = 'EMPTY' | 'OCCUPIED' | 'DISCONNECTED';
 // AJOUTS: inclure toutes les phases que le backend envoie
-export type BJPhase = 'WAITING' | 'BETTING' | 'PLAYING' | 'DEALER_TURN' | 'PAYOUT';
+export type BJPhase =  'BETTING' | 'PLAYING' | 'DEALER_TURN' | 'PAYOUT';
 
 
 export interface BJCard {
