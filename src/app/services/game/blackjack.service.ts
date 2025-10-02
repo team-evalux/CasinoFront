@@ -1,10 +1,11 @@
 // src/app/services/game/blackjack.service.ts
 import { Injectable, NgZone } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
+import {BehaviorSubject, Observable, throwError} from 'rxjs';
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import {BJSeat, BJTableState} from './blackjack.models';
+import {catchError} from 'rxjs/operators';
 
 // --- DTOs alignés avec ton back ---
 export interface BJCreateTableReq {
@@ -78,8 +79,15 @@ export class BlackjackService {
   createTable(req: BJCreateTableReq) {
     return this.http.post<{ id: number | string; code?: string; private: boolean }>(
       `${this.apiBase}/table`, req
+    ).pipe(
+      catchError(err => {
+        const msg = err.error?.error || "Erreur inconnue";
+        this.errorSubject.next(msg);
+        return throwError(() => new Error(msg));
+      })
     );
   }
+
 
   // --- WS connection promise ---
   private waitConnected(): Promise<void> {

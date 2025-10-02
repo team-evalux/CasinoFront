@@ -123,7 +123,7 @@ export class BlackjackLobbyComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.loading = false;
-        this.error = err?.error || 'Création impossible';
+        this.error = err?.error || 'Vous possédez déjà une table. Fermez-la avant d\'en créer une nouvelle.';
       }
     });
   }
