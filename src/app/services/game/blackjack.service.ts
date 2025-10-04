@@ -6,6 +6,7 @@ import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import {BJSeat, BJTableState} from './blackjack.models';
 import {catchError} from 'rxjs/operators';
+import {Router} from '@angular/router';
 
 // --- DTOs alignés avec ton back ---
 export interface BJCreateTableReq {
@@ -65,7 +66,7 @@ export class BlackjackService {
   private currentTableIsPrivate: boolean = false;
 
 
-  constructor(private http: HttpClient, private zone: NgZone) {}
+  constructor(private http: HttpClient, private zone: NgZone,private router: Router) {}
 
   // --- REST ---
   listTables(): Observable<BJTableSummary[]> {
@@ -324,6 +325,17 @@ export class BlackjackService {
           this.tableSubject.next(s);
           break;
         }
+
+        case 'TABLE_CLOSED': {
+          console.log('[WS] Table fermée par le créateur.');
+          this.tableSubject.next(null);
+          // redirige vers le lobby
+          this.zone.run(() => {
+            this.router.navigate(['/play/blackjack']);
+          });
+          break;
+        }
+
         default:
           break;
       }
