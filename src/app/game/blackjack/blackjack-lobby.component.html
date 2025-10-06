@@ -3,23 +3,37 @@
     <h1>Tables Blackjack</h1>
 
     <div class="create-form">
-      <input [(ngModel)]="create.name" placeholder="Nom de la table (optionnel)">
+      <input [(ngModel)]="create.name" maxlength="10" placeholder="Nom de la table (optionnel)">
       <label>Sièges
-        <input type="number" [(ngModel)]="create.maxSeats" min="2" max="7">
+        <input type="number" [(ngModel)]="create.maxSeats" min="2" max="7" maxlength="1">
       </label>
       <label>Min
-        <input type="number" [(ngModel)]="create.minBet" min="1">
+        <input type="number"
+               [(ngModel)]="create.minBet"
+               min="100"
+               max="1000000"
+               placeholder="Min 100"
+               (change)="validateBets()"
+               style="width:90px;">
       </label>
+
       <label>Max
-        <input type="number" [(ngModel)]="create.maxBet" [min]="create.minBet">
+        <input type="number"
+               [(ngModel)]="create.maxBet"
+               min="1000"
+               max="1000000"
+               placeholder="Max 1 000 000"
+               (change)="validateBets()"
+               style="width:110px;">
       </label>
+
       <select [(ngModel)]="create.visibility">
         <option value="PUBLIC">Publique</option>
         <option value="PRIVATE">Privée</option>
       </select>
       <input *ngIf="create.visibility==='PRIVATE'"
              [(ngModel)]="create.code"
-             placeholder="Code d’accès (optionnel)">
+             placeholder="Code d’accès (optionnel)" maxlength="10">
       <button (click)="onCreate()" [disabled]="loading">Créer</button>
     </div>
   </header>

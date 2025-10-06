@@ -95,6 +95,32 @@ export class BlackjackLobbyComponent implements OnInit, OnDestroy {
     }
   }
 
+  validateBets() {
+    const min = Number(this.create.minBet);
+    const max = Number(this.create.maxBet);
+
+    // ✅ impose un minimum de 100
+    if (min < 100) {
+      this.create.minBet = 100;
+    }
+
+    // ✅ impose un minimum de 4 chiffres pour max (>= 1000)
+    if (max < 1000) {
+      this.create.maxBet = 1000;
+    }
+
+    // ✅ plafonne à 1 million
+    if (max > 1000000) {
+      this.create.maxBet = 1000000;
+    }
+
+    // ✅ s’assure que max >= min
+    if (this.create.maxBet < this.create.minBet) {
+      this.create.maxBet = this.create.minBet;
+    }
+  }
+
+
   async onCreate() {
     if (!this.isLoggedIn) { this.error = 'Connecte-toi pour créer une table.'; return; }
     this.loading = true; this.error = null;

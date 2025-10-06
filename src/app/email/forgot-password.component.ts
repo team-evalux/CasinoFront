@@ -16,7 +16,7 @@ type Step = 'EMAIL' | 'CODE' | 'DONE';
       <ng-container [ngSwitch]="step">
         <form *ngSwitchCase="'EMAIL'" [formGroup]="emailForm" (ngSubmit)="envoyer()">
           <label>Email</label>
-          <input type="email" formControlName="email" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;margin:6px 0;">
+          <input type="email" formControlName="email" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;margin:6px 0;" maxlength="40">
           <div *ngIf="emailForm.get('email')?.touched && emailForm.get('email')?.invalid" style="color:#b00020">Email invalide</div>
           <button [disabled]="emailForm.invalid || loading" type="submit"
                   style="padding:8px 12px;border:none;border-radius:6px;background:#1976d2;color:#fff;cursor:pointer;">
@@ -29,11 +29,11 @@ type Step = 'EMAIL' | 'CODE' | 'DONE';
         <form *ngSwitchCase="'CODE'" [formGroup]="codeForm" (ngSubmit)="reset()">
           <p>Un code à 4 chiffres a été envoyé à <strong>{{ emailForm.value.email }}</strong>.</p>
           <label>Code</label>
-          <input type="text" maxlength="4" formControlName="code" style="width:120px;padding:8px;border:1px solid #ccc;border-radius:6px;margin:6px 0;">
+          <input type="text" maxlength="4" formControlName="code" style="width:120px;padding:8px;border:1px solid #ccc;border-radius:6px;margin:6px 0;" >
           <div *ngIf="codeForm.get('code')?.touched && codeForm.get('code')?.invalid" style="color:#b00020">Code requis</div>
 
           <label>Nouveau mot de passe</label>
-          <input type="password" formControlName="nouveauMotDePasse" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;margin:6px 0;">
+          <input type="password" formControlName="nouveauMotDePasse" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;margin:6px 0;" maxlength="20">
           <div *ngIf="codeForm.get('nouveauMotDePasse')?.touched && codeForm.get('nouveauMotDePasse')?.invalid" style="color:#b00020">Min 6 caractères</div>
 
           <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">

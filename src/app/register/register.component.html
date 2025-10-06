@@ -4,7 +4,7 @@
 <form [formGroup]="formulaire" (ngSubmit)="envoyer()">
   <div>
     <label>Email</label><br />
-    <input formControlName="email" type="email" />
+    <input formControlName="email" type="email" maxlength="40"/>
     <div *ngIf="formulaire.get('email')?.touched && formulaire.get('email')?.invalid" style="color:red">
       Email invalide.
     </div>
@@ -12,7 +12,7 @@
 
   <div style="margin-top:8px">
     <label>Pseudo</label><br />
-    <input formControlName="pseudo" />
+    <input formControlName="pseudo" maxlength="10"/>
     <div *ngIf="formulaire.get('pseudo')?.touched && formulaire.get('pseudo')?.invalid" style="color:red">
       Pseudo requis (min 3).
     </div>
@@ -20,7 +20,7 @@
 
   <div style="margin-top:8px">
     <label>Mot de passe</label><br />
-    <input formControlName="motDePasse" type="password" />
+    <input formControlName="motDePasse" type="password" maxlength="20"/>
     <div *ngIf="formulaire.get('motDePasse')?.touched && formulaire.get('motDePasse')?.invalid" style="color:red">
       Mot de passe requis (min 6).
     </div>

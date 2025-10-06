@@ -40,8 +40,8 @@
 
       <ng-template #showLogin>
         <form (ngSubmit)="submitLogin()" class="d-flex aic gap-8">
-          <input [(ngModel)]="email" name="email" type="email" placeholder="email" class="champ" style="width:180px;">
-          <input [(ngModel)]="motDePasse" name="motDePasse" type="password" placeholder="mot de passe" class="champ" style="width:160px;">
+          <input [(ngModel)]="email" name="email" type="email" placeholder="email" class="champ" style="width:180px;" maxlength="40">
+          <input [(ngModel)]="motDePasse" name="motDePasse" type="password" placeholder="mot de passe" class="champ" style="width:160px;" maxlength="20">
           <button type="submit" [disabled]="loading" class="bouton bouton--primaire">
             {{ loading ? 'Connexion…' : 'Se connecter' }}
           </button>
