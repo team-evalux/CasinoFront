@@ -347,18 +347,19 @@ export class BlackjackService {
   // ---- NOUVEAU: normalisations ----
   private normalizeState(payload: any): {
     phase: any;
-    createdAt: any;
     maxBet: any;
     minBet: any;
-    name: any;
-    dealer: any;
+    creatorEmail: any;
     currentSeatIndex: any;
     maxSeats: any;
-    id: string;
     seats: BJSeat[];
     shoeCount: any;
-    creatorEmail?: string;
-    deadline?: number;
+    createdAt: any;
+    name: any;
+    dealer: { total: number; cards: any };
+    id: string;
+    deadline: any;
+    creatorDisplayName: any
   } {
     // Normalise le dealer et les seats ; calcule les totals
     const seats = this.normalizeSeatsMap(payload.seats);
@@ -379,6 +380,7 @@ export class BlackjackService {
       shoeCount: payload.shoeCount ?? undefined,
       currentSeatIndex: payload.currentSeatIndex ?? undefined,
       creatorEmail: payload.creatorEmail ?? undefined,
+      creatorDisplayName: payload.creatorDisplayName ?? (payload.creatorEmail ? String(payload.creatorEmail).split('@')[0] : undefined),
       deadline: payload.deadline ?? undefined
     };
   }
@@ -395,10 +397,16 @@ export class BlackjackService {
         const hand = s.hand ?? { cards: [], standing: false, busted: false, bet: 0 };
         // calc total localement
         const total = this.computeBestTotal(hand.cards);
+
+        // Try to use server-provided displayName, otherwise try username/pseudo/email-local-part
+        const displayName = s.displayName ?? s.username ?? s.pseudo ??
+          (typeof s.email === 'string' ? s.email.split('@')[0] : undefined);
+
         return {
           index: i,
           userId: s.userId,
           email: s.email,
+          displayName: displayName,
           status: s.status,
           hand: {
             ...hand,
@@ -407,6 +415,7 @@ export class BlackjackService {
         } as BJSeat;
       });
   }
+
 
   private normPhase(p: any): any {
     if (!p) return 'BETTING';

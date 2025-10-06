@@ -24,6 +24,7 @@ export interface BJSeat {
   index: number;
   userId?: number;
   email?: string;
+  displayName?: string;   // <-- ajouté
   status: BJSeatStatus;
   hand: BJPlayerState;
 }
@@ -47,10 +48,11 @@ export interface BJTableState {
   currentSeatIndex?: number;
   deadline?: number;
 
-  // <-- NOUVEAU : email du créateur (utilisé pour afficher le bouton "Fermer la table")
+  // infos créateur
   creatorEmail?: string;
+  creatorDisplayName?: string; // <-- ajouté
 
-  // <-- NOUVEAU : on garde le dernier résultat pour affichage
+  // dernier payout
   lastPayouts?: BJPayout[];
 }
 

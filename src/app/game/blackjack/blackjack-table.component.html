@@ -1,102 +1,159 @@
-<!-- en-tête -->
-<div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
-  <div>
-    <h2 *ngIf="state as s">Table {{ s.name ? (s.name + ' — ') : '' }}{{ s.id }}</h2>
-    <div *ngIf="state as s" style="font-size:0.95rem;color:#555">
-      <span>Phase: <strong>{{ s.phase }}</strong></span>
-      <span *ngIf="remainingSeconds > 0" style="margin-left:12px;">
-        • Temps restant: <strong>{{ remainingSeconds }}s</strong>
-      </span>
-      <span *ngIf="s.currentSeatIndex != null" style="margin-left:12px;">
-        • Joueur actif: {{ s.currentSeatIndex }}
-      </span>
-      <span *ngIf="myTurn()" style="margin-left:12px;color:#0a7;">
-        • C'est ton tour !
-      </span>
+<!-- blackjack-table.component.html -->
+<div class="bj-table pannel-like">
+  <!-- HEADER -->
+  <header class="bj-header" *ngIf="state as s">
+    <div class="title-area">
+      <h2 class="table-title">
+        <span class="muted">Table</span>
+        <span class="table-name">{{ s.name ? (s.name + ' — ') : '' }}</span>
+        <span class="table-id">{{ s.id }}</span>
+      </h2>
+
+      <div class="meta">
+        <span class="meta-item">Phase: <strong>{{ s.phase }}</strong></span>
+        <span class="meta-item" *ngIf="remainingSeconds > 0">• Temps: <strong>{{ remainingSeconds }}s</strong></span>
+        <span class="meta-item" *ngIf="s.currentSeatIndex != null">• Actif: <strong>{{ s.currentSeatIndex }}</strong></span>
+        <span class="meta-item you-turn" *ngIf="myTurn()">• C'est ton tour !</span>
+      </div>
     </div>
-  </div>
 
-  <div *ngIf="state?.creatorEmail === meEmail">
-    <button (click)="closeTable()" [disabled]="state?.phase !== 'BETTING'" [title]="state?.phase !== 'BETTING'
-      ? '⏳ Attends la fin de la manche pour fermer la table'
-      : 'Fermer la table'">Fermer la table</button>
-  </div>
-</div>
-
-<!-- message de résultat utilisateur -->
-<div *ngIf="state?.phase === 'PAYOUT' && resultMessage" style="margin:12px 0;">
-  <div style="padding:10px;border-radius:8px;background:#f3f7ec;border:1px solid #dbe9cf;font-weight:700;">
-    {{ resultMessage }}
-  </div>
-</div>
-
-<!-- indicateur chargement quand pas d'erreur -->
-<p *ngIf="!state">Chargement… Attends que la manche en cours soit fini bg</p>
-
-<div *ngIf="state as s">
-  <!-- Croupier -->
-  <section class="dealer card">
-    <h3>Croupier</h3>
-    <ng-container *ngIf="state?.phase === 'PLAYING'; else dealerRevealed">
-      <div class="cards">
-        <img class="card-img" *ngIf="state?.dealer?.cards?.length"
-             [src]="'assets/cards/' + cardFileName(state.dealer.cards[0])" alt="carte">
-        <!-- dos -->
-        <img class="card-img back" src="assets/cards/back.svg" alt="dos de carte">
-      </div>
-      <small>Total: ??</small>
-    </ng-container>
-    <ng-template #dealerRevealed>
-      <div class="cards">
-        <img class="card-img" *ngFor="let c of state?.dealer?.cards"
-             [src]="'assets/cards/' + cardFileName(c)" alt="carte">
-      </div>
-      <small>Total: {{ state?.dealer?.total }}</small>
-    </ng-template>
-  </section>
-
-  <!-- Sièges -->
-  <section class="seats">
-    <article class="seat" *ngFor="let seat of state?.seats">
-      <header>
-        <strong>Siège {{ seat.index }}</strong>
-        <small *ngIf="seat.email">{{ seat.email }}</small>
-        <small *ngIf="!seat.email">Libre</small>
-      </header>
-
-      <div class="cards" *ngIf="seat.hand?.cards?.length">
-        <img class="card-img" *ngFor="let c of seat.hand.cards"
-             [src]="'assets/cards/' + cardFileName(c)" alt="carte">
-      </div>
-
-      <p>Total: {{ seat.hand.total }} • Mise: {{ seat.hand.bet || 0 }}</p>
-
-      <div class="actions" *ngIf="mySeat()?.index === seat.index">
-        <button (click)="hit()" [disabled]="!myTurn() || (seat.hand.bet || 0) <= 0">Hit</button>
-        <button (click)="stand()" [disabled]="!myTurn() || (seat.hand.bet || 0) <= 0">Stand</button>
-        <button (click)="double()" [disabled]="!myTurn() || (seat.hand.bet || 0) <= 0">Double</button>
-        <button (click)="surrender()" [disabled]="!myTurn() || (seat.hand.bet || 0) <= 0">Surrender</button>
-      </div>
-
-      <button *ngIf="!seat.email && !mySeat()" (click)="sit(seat.index)">S’asseoir ici</button>
-    </article>
-  </section>
-
-  <!-- zone mise -->
-  <section class="betting" *ngIf="s.phase==='BETTING' && mySeat() as me">
-    <div style="display:flex;gap:8px;align-items:center;">
-      <input type="number"
-             [(ngModel)]="betAmount"
-             (ngModelChange)="onBetInputChange()"
-             [min]="s.minBet || 1"
-             [max]="(s.maxBet && s.maxBet>0) ? s.maxBet : null"
-             [placeholder]="s.minBet ? ('Mise (' + s.minBet + '–' + (s.maxBet && s.maxBet>0 ? s.maxBet : '∞') + ')') : 'Mise'">
-      <button (click)="bet()" [disabled]="!canPlaceBet(s)">Miser</button>
+    <div class="actions-area">
+      <button class="btn btn-close"
+              *ngIf="s.creatorEmail === meEmail"
+              (click)="closeTable()"
+              [disabled]="s.phase !== 'BETTING'"
+              [title]="s.phase !== 'BETTING' ? 'Attends la fin de la manche' : 'Fermer la table'">
+        Fermer
+      </button>
     </div>
-    <small *ngIf="s.minBet || s.maxBet" style="display:block;margin-top:6px;color:#555">
-      Limites : min = {{ s.minBet || 0 }}
-      <span *ngIf="s.maxBet && s.maxBet>0"> • max = {{ s.maxBet }}</span>
-    </small>
-    <small *ngIf="state?.deadline">Temps restant: {{ remainingSeconds }}s</small>
-  </section>
+  </header>
+
+  <!-- MAIN LAYOUT : left = game area, right = betting/controls -->
+  <main class="bj-main" *ngIf="state as s">
+    <!-- LEFT : dealer + seats -->
+    <section class="game-area">
+      <!-- RESULT TOAST -->
+      <div *ngIf="s.phase === 'PAYOUT' && resultMessage" class="result-toast">
+        {{ resultMessage }}
+      </div>
+
+      <!-- DEALER -->
+      <div class="dealer-panel card-surface">
+        <div class="dealer-head">
+          <h3>Croupier</h3>
+          <small class="dealer-total" *ngIf="s.phase !== 'PLAYING'">Total: {{ s.dealer.total }}</small>
+          <small class="dealer-total" *ngIf="s.phase === 'PLAYING'">Total: ?</small>
+        </div>
+
+        <div class="dealer-cards">
+          <ng-container *ngIf="s.phase === 'PLAYING'; else revealDealer">
+            <img class="card-img" *ngIf="s.dealer.cards.length"
+                 [src]="'assets/cards/' + cardFileName(s.dealer.cards[0])" alt="carte">
+            <img class="card-img back" src="assets/cards/back.svg" alt="dos">
+          </ng-container>
+
+          <ng-template #revealDealer>
+            <img class="card-img" *ngFor="let c of s.dealer.cards"
+                 [src]="'assets/cards/' + cardFileName(c)" alt="carte">
+          </ng-template>
+        </div>
+      </div>
+
+      <!-- SEATS GRID -->
+      <div class="seats-grid">
+        <article class="seat-card" *ngFor="let seat of s.seats">
+          <header class="seat-head">
+            <div class="seat-title">
+              <strong>Siège {{ seat.index }}</strong>
+              <span class="seat-name" *ngIf="seat.displayName || seat.email">
+                  {{ seat.displayName ?? seat.email }}
+              </span>
+              <span class="seat-empty" *ngIf="!seat.displayName && !seat.email">Libre</span>
+
+            </div>
+
+            <div class="seat-badge" [ngClass]="{
+              'badge-me': mySeat()?.index === seat.index,
+              'badge-active': s.currentSeatIndex === seat.index,
+              'badge-disconnected': seat.status === 'DISCONNECTED'
+            }">
+              <span *ngIf="seat.status">{{ seat.status }}</span>
+            </div>
+          </header>
+
+          <div class="seat-cards" *ngIf="seat.hand.cards.length; else emptySlot">
+            <img class="card-img" *ngFor="let c of seat.hand.cards"
+                 [src]="'assets/cards/' + cardFileName(c)" alt="carte">
+          </div>
+
+          <ng-template #emptySlot>
+            <div class="empty-slot">Aucune carte</div>
+          </ng-template>
+
+          <div class="seat-info">
+            <div>Total: <strong>{{ seat.hand.total }}</strong></div>
+            <div>Mise: <strong>{{ seat.hand.bet }}</strong></div>
+          </div>
+
+          <div class="seat-controls">
+            <div *ngIf="mySeat()?.index === seat.index" class="btn-row">
+              <!-- normalise bet checks avec nullish coalescing pour satisfaire strictTemplates -->
+              <button class="btn" (click)="hit()" [disabled]="!myTurn() || !(seat.hand.bet > 0)">Hit</button>
+              <button class="btn" (click)="stand()" [disabled]="!myTurn() || !(seat.hand.bet > 0)">Stand</button>
+              <button class="btn" (click)="double()" [disabled]="!myTurn() || !(seat.hand.bet > 0)">Double</button>
+              <button class="btn" (click)="surrender()" [disabled]="!myTurn() || !(seat.hand.bet > 0)">Surrender</button>
+            </div>
+
+            <div *ngIf="!seat.email && !mySeat()" class="sit-row">
+              <button class="btn btn-primary" (click)="sit(seat.index)">S’asseoir</button>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- RIGHT : betting + helper -->
+    <aside class="controls-panel card-surface">
+      <h4>Mise & contrôles</h4>
+
+      <div *ngIf="s.phase === 'BETTING' && mySeat() as me" class="bet-box">
+        <label class="label">Ta mise</label>
+        <input class="champ" type="number"
+               [(ngModel)]="betAmount"
+               (ngModelChange)="onBetInputChange()"
+               [min]="s.minBet || 1"
+               [max]="(s.maxBet && s.maxBet>0) ? s.maxBet : null"
+               [placeholder]="s.minBet ? ('Mise (' + s.minBet + '–' + (s.maxBet && s.maxBet>0 ? s.maxBet : '∞') + ')') : 'Mise'">
+
+        <div class="bet-actions">
+          <button class="btn btn-primary" (click)="bet()" [disabled]="!canPlaceBet(s)">Miser</button>
+          <!--          <button class="btn" (click)="leave()" [disabled]="!mySeat()">Quitter</button>-->
+        </div>
+
+        <small class="limits" *ngIf="s.minBet || s.maxBet">Limites : min={{ s.minBet || 0 }} <span *ngIf="s.maxBet && s.maxBet>0">• max={{ s.maxBet }}</span></small>
+      </div>
+
+      <div *ngIf="s.phase !== 'BETTING'">
+        <div class="info-block">
+          <small>Phase: <strong>{{ s.phase }}</strong></small>
+          <div *ngIf="s.deadline">Temps restant: <strong>{{ remainingSeconds }}s</strong></div>
+        </div>
+      </div>
+
+      <div class="table-stats">
+        <h5>Table</h5>
+        <div>Sièges: <strong>{{ s.maxSeats }}</strong></div>
+        <div>Min/Max: <strong>{{ s.minBet || 0 }} / {{ s.maxBet && s.maxBet>0 ? s.maxBet : '∞' }}</strong></div>
+        <div>Créateur: <strong>{{ s.creatorDisplayName ?? s.creatorEmail ?? '-' }}</strong></div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- LOADING / ERROR -->
+  <!--  <ng-template #loadingBlock>-->
+  <!--    <div class="loading-block">-->
+  <!--      <p *ngIf="!state && !error">Chargement…</p>-->
+  <!--      <p *ngIf="error" class="err">{{ error }}</p>-->
+  <!--    </div>-->
+  <!--  </ng-template>-->
 </div>
