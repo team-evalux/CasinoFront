@@ -39,7 +39,9 @@ import { AuthService } from '../services/auth.service';
   `
 })
 export class VerifyEmailComponent {
+
   email = '';
+  pseudo = '';
   loading = false;
   error: string | null = null;
   message: string | null = null;
@@ -95,10 +97,32 @@ export class VerifyEmailComponent {
 
   renvoyer() {
     if (!this.email) return;
-    this.loading = true; this.error = null; this.message = null;
-    this.auth.inscriptionSendCode(this.email).subscribe({
-      next: () => { this.loading = false; this.message = 'Code renvoyé.'; },
-      error: (err) => { this.loading = false; this.error = err?.error || 'Erreur lors de l’envoi.'; }
+
+    // 🔍 On relit aussi le pseudo stocké au moment de l'inscription
+    const pending = this.readPending();
+    const pseudo = pending?.pseudo || this.pseudo;
+
+    this.loading = true;
+    this.error = null;
+    this.message = null;
+
+    // ✅ Envoi sous forme d’objet { email, pseudo }
+    this.auth.inscriptionSendCode({ email: this.email, pseudo }).subscribe({
+      next: () => {
+        this.loading = false;
+        this.message = 'Code renvoyé.';
+      },
+      error: (err) => {
+        this.loading = false;
+        if (err?.error?.error) {
+          this.error = err.error.error;
+        } else if (typeof err?.error === 'string') {
+          this.error = err.error;
+        } else {
+          this.error = 'Erreur lors de l’envoi.';
+        }
+      }
     });
   }
+
 }

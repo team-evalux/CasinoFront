@@ -1,10 +1,8 @@
-import {Component, NgZone, OnInit} from '@angular/core';
+import { Component, NgZone, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
 
 @Component({
   selector: 'app-register',
@@ -18,15 +16,14 @@ export class RegisterComponent implements OnInit {
   messageSucces: string | null = null;
   messageErreur: string | null = null;
 
-  private PENDING_KEY = 'register.pending'; // sessionStorage
+  private PENDING_KEY = 'register.pending';
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
-  private zone: NgZone
-
-) {
+    private zone: NgZone
+  ) {
     this.formulaire = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       pseudo: ['', [Validators.required, Validators.minLength(3)]],
@@ -40,7 +37,6 @@ export class RegisterComponent implements OnInit {
     }
   }
 
-  // src/app/auth/register.component.ts
   envoyer() {
     if (this.formulaire.invalid) {
       this.formulaire.markAllAsTouched();
@@ -55,10 +51,11 @@ export class RegisterComponent implements OnInit {
     const pseudo = this.formulaire.get('pseudo')!.value as string;
     const motDePasse = this.formulaire.get('motDePasse')!.value as string;
 
-    this.authService.inscriptionSendCode(email).subscribe({
+    // ✅ Envoie maintenant email + pseudo (conforme à ton backend)
+    this.authService.inscriptionSendCode({ email, pseudo }).subscribe({
       next: (res) => {
         console.log('[register] code envoyé OK:', res);
-        sessionStorage.setItem('register.pending', JSON.stringify({ email, pseudo, motDePasse }));
+        sessionStorage.setItem(this.PENDING_KEY, JSON.stringify({ email, pseudo, motDePasse }));
         this.enCours = false;
 
         this.zone.run(() => {
@@ -70,10 +67,16 @@ export class RegisterComponent implements OnInit {
       error: (err) => {
         console.error('[register] erreur envoi code:', err);
         this.enCours = false;
-        this.messageErreur = err?.error || 'Erreur réseau ou serveur';
+
+        // ✅ Gestion claire des messages d'erreur
+        if (err?.error?.error) {
+          this.messageErreur = err.error.error; // ex: "Pseudo déjà utilisé"
+        } else if (typeof err?.error === 'string') {
+          this.messageErreur = err.error; // si backend renvoie un texte brut
+        } else {
+          this.messageErreur = 'Erreur réseau ou serveur';
+        }
       }
     });
-
   }
-
 }

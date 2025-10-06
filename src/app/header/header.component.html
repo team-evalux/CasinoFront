@@ -48,10 +48,10 @@
           <button type="button" (click)="router.navigate(['/register'])" class="bouton">
             S'inscrire
           </button>
-          <button   class="bouton" type="bouton" style="margin-top:10px; width: 100px;">
-            <a  (click)="router.navigate(['/forgot-password'])" >Mot de passe oublié ?</a>
-          </button>
         </form>
+        <button   class="bouton" type="bouton" style="margin-top:10px; width: 100px;">
+          <a  (click)="router.navigate(['/forgot-password'])" >Mot de passe oublié ?</a>
+        </button>
         <div *ngIf="error" style="color:#ffb3b3;margin-left:12px;">{{ error }}</div>
       </ng-template>
 

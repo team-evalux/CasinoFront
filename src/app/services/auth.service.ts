@@ -22,8 +22,8 @@ export class AuthService {
   /**
    * ÉTAPE 1 INSCRIPTION : envoi du code à l'email.
    */
-  inscriptionSendCode(email: string) {
-    return this.http.post(`${this.baseUrl}/register/send-code`, { email });
+  inscriptionSendCode(data: { email: string; pseudo: string }) {
+    return this.http.post(`${this.baseUrl}/register/send-code`, data);
   }
 
   /**
