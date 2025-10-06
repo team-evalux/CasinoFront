@@ -1,3 +1,4 @@
+<!-- src/app/auth/register.component.html -->
 <h2>Inscription</h2>
 
 <form [formGroup]="formulaire" (ngSubmit)="envoyer()">
@@ -26,7 +27,7 @@
   </div>
 
   <div style="margin-top:12px">
-    <button type="submit" [disabled]="enCours">S'inscrire</button>
+    <button type="submit" [disabled]="enCours">{{ enCours ? 'Envoi...' : "S'inscrire" }}</button>
   </div>
 </form>
 
@@ -34,11 +35,9 @@
   {{ messageErreur }}
 </div>
 
+
 <div *ngIf="messageSucces" style="color:green; margin-top:12px">
   {{ messageSucces }}
-  <div *ngIf="tokenRecus">
-    <small>Token : {{ tokenRecus }}</small>
-  </div>
 
   <div style="margin-top:20px; text-align:center;">
     <button routerLink="/login" style="padding:6px 12px; border:1px solid #1976d2; border-radius:4px; background:#1976d2; color:#fff; cursor:pointer;">

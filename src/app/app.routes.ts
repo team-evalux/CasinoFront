@@ -6,6 +6,8 @@ import { AuthGuard } from './guard/auth.guard';
 import { GuestGuard } from './guard/guest.guard';
 import { AdminGuard } from './guard/admin.guard';
 import { GameHistoryComponent } from './history/game-history.component';
+import {VerifyEmailComponent} from './email/verify-email.component';
+import {ForgotPasswordComponent} from './email/forgot-password.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'home', pathMatch: 'full' },
@@ -25,6 +27,8 @@ export const routes: Routes = [
   { path: 'play/blackjack', loadComponent: () => import('./game/blackjack/blackjack-lobby.component').then(m => m.BlackjackLobbyComponent) },
   { path: 'play/blackjack/table/:id', loadComponent: () => import('./game/blackjack/blackjack-table.component').then(m => m.BlackjackTableComponent) },
 
+  { path: 'verify-email', component: VerifyEmailComponent },
+  { path: 'forgot-password', component: ForgotPasswordComponent, canActivate: [GuestGuard] }, // ⬅️
 
 
   { path: 'admin/coinflip',  loadComponent: () => import('./admin/coinflip-admin.component').then(m => m.CoinflipAdminComponent),  canActivate: [AuthGuard, AdminGuard] },

@@ -24,13 +24,18 @@ export class AuthInterceptor implements HttpInterceptor {
     let cloned = req;
 
     // n'ajoute le header Authorization que pour les appels vers ton API backend
-    if (token && req.url.startsWith(this.apiBase)) {
+    if (
+      token &&
+      req.url.startsWith(this.apiBase) &&
+      !req.url.includes('/api/auth/')
+    ) {
       cloned = req.clone({
         setHeaders: {
           Authorization: `Bearer ${token}`
         }
       });
     }
+
 
     return next.handle(cloned).pipe(
       catchError((err: any) => {
