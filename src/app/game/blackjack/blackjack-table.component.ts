@@ -6,11 +6,12 @@ import { BlackjackService } from '../../services/game/blackjack.service';
 import { BJSeat, BJTableState } from '../../services/game/blackjack.models';
 import { Subscription, interval } from 'rxjs';
 import { WalletService } from '../../services/wallet.service';
+import {GameHistoryListComponent} from '../../history/game-history-list.component';
 
 @Component({
   selector: 'app-blackjack-table',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, GameHistoryListComponent],
   templateUrl: './blackjack-table.component.html',
   styleUrls: ['./blackjack-table.component.css']
 })

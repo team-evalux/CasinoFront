@@ -110,6 +110,16 @@ export class HistoryWidgetComponent implements OnInit, OnDestroy {
       return { type:'coinflip', choice, outcome, win, label };
     }
 
+    if (it.game === 'blackjack') {
+      const map = this.parseKeyVals(it.outcome);
+      const total = map['total'] || this.grab(it.outcome, /total\s*=\s*(\d+)/i);
+      const outcome = map['outcome'] || this.grab(it.outcome, /outcome\s*=\s*(\w+)/i);
+      const label = `Total: ${total || '?'} • ${outcome || ''}`;
+      const win = outcome === 'WIN' || outcome === 'BLACKJACK';
+      return { type: 'blackjack', total, outcome, win, label };
+    }
+
+
     return { type:'autre', number: null, color: null, label: o };
   }
 
