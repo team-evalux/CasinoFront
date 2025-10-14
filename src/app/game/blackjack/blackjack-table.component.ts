@@ -6,7 +6,7 @@ import { BlackjackService } from '../../services/game/blackjack.service';
 import { BJSeat, BJTableState } from '../../services/game/blackjack.models';
 import { Subscription, interval } from 'rxjs';
 import { WalletService } from '../../services/wallet.service';
-import {GameHistoryListComponent} from '../../history/game-history-list.component';
+import { GameHistoryListComponent } from '../../history/game-history-list.component';
 
 @Component({
   selector: 'app-blackjack-table',
@@ -25,20 +25,22 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
   betAmount = 0;
   userEditedBet = false;
 
+  solde: number = 0; // ✅ suivi du solde actuel
+
   private sub?: Subscription;
   private subErr?: Subscription;
+  private walletSub?: Subscription;
 
   remainingSeconds: number = 0;
   private tickSub?: Subscription;
 
-  // Résultat partie
   myPayoutObj: any | null = null;
   resultMessage: string | null = null;
   private readonly RESULT_DISPLAY_MS = 10000;
   private resultTimeoutId?: any = undefined;
 
   meEmail = (() => {
-    try { return JSON.parse(localStorage.getItem('user')||'{}')?.email || null; }
+    try { return JSON.parse(localStorage.getItem('user') || '{}')?.email || null; }
     catch { return null; }
   })();
 
@@ -52,6 +54,11 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
   ) {}
 
   async ngOnInit(): Promise<void> {
+    // ✅ récupération du solde en direct
+    this.walletSub = this.wallet.balance$.subscribe({
+      next: (v) => { this.solde = v || 0; this.cd.detectChanges(); }
+    });
+
     const raw = this.route.snapshot.paramMap.get('id');
     if (!raw) { this.error = 'Identifiant de table manquant'; this.loading = false; return; }
     this.tableId = /^\d+$/.test(raw) ? Number(raw) : raw;
@@ -91,8 +98,6 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
       return;
     }
 
-
-    // auto-sit
     const tryAutoSit = (state: any | null) => {
       if (!state) return;
       const meAlready = state.seats?.find((s: any) => s.email === this.meEmail);
@@ -111,7 +116,6 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
       try { onceSub.unsubscribe(); } catch {}
     });
 
-    // Fallback
     const FALLBACK_MS = 3000;
     let receivedState = false;
     const fallbackTimer = setTimeout(() => {
@@ -121,7 +125,6 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
       }
     }, FALLBACK_MS);
 
-    // flux état table
     this.sub = this.bj.table$.subscribe(s => {
       if (s) {
         receivedState = true;
@@ -161,7 +164,6 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
       this.setupCountdown();
     });
 
-    // erreurs WS perso
     this.subErr = this.bj.error$.subscribe(msg => {
       if (msg) {
         if (/code|privée|privé|accès/i.test(msg)) {
@@ -186,10 +188,11 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
     if (this.resultTimeoutId) clearTimeout(this.resultTimeoutId);
     try {
       const me = this.mySeat();
-      if (me) { this.bj.wsLeave(this.tableId, me.index); }
+      if (me) this.bj.wsLeave(this.tableId, me.index);
     } catch {}
     this.sub?.unsubscribe();
     this.subErr?.unsubscribe();
+    this.walletSub?.unsubscribe();
     this.stopCountdown();
     this.bj.disconnectTable();
   }
@@ -270,11 +273,14 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
     }
   }
 
+  // ✅ Nouvelle logique : on désactive si solde insuffisant
   canPlaceBet(s: BJTableState | null): boolean {
     if (!s) return false;
     const min = s.minBet ?? 0;
     const max = s.maxBet ?? 0;
     const amount = Number(this.betAmount) || 0;
+
+    if (this.solde <= 0 || this.solde < amount) return false; // ❌ pas assez de solde
     if (amount <= 0) return false;
     if (min > 0 && amount < min) return false;
     if (max > 0 && amount > max) return false;
@@ -285,6 +291,8 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
   async leave() { const me = this.mySeat(); if (me) await this.bj.wsLeave(this.tableId, me.index); }
   async bet() {
     if (!this.betAmount || this.betAmount <= 0) return;
+    if (this.solde < this.betAmount) { this.error = 'Solde insuffisant pour miser.'; setTimeout(() => this.error = null, 3500); return; }
+
     const me = this.mySeat();
     if (!me) { this.error = 'Tu dois être assis pour miser.'; return; }
     const s = this.state;
