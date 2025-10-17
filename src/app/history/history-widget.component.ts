@@ -1,4 +1,3 @@
-// src/app/history/history-widget.component.ts
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HistoryEntry, HistoryService } from '../services/history/history.service';
@@ -87,6 +86,9 @@ export class HistoryWidgetComponent implements OnInit, OnDestroy {
     if (!it || !it.outcome) return null;
     const o = it.outcome;
 
+    // -------------------------
+    // ROULETTE
+    // -------------------------
     if (it.game === 'roulette') {
       const map: Record<string,string> = {};
       o.split(',').forEach(p => {
@@ -98,6 +100,9 @@ export class HistoryWidgetComponent implements OnInit, OnDestroy {
       return { type:'roulette', number: num, color, label: num != null ? `${num} ${color ? '(' + capitalize(color) + ')' : ''}`.trim() : o };
     }
 
+    // -------------------------
+    // COINFLIP
+    // -------------------------
     if (it.game === 'coinflip') {
       const map = this.parseKeyVals(o);
       const choice = (map['choice'] || this.grab(o, /choice\s*=\s*(pile|face)/i))?.toLowerCase() || null;
@@ -110,10 +115,14 @@ export class HistoryWidgetComponent implements OnInit, OnDestroy {
       return { type:'coinflip', choice, outcome, win, label };
     }
 
+    // -------------------------
+    // BLACKJACK
+    // expects outcome like "total=20,outcome=WIN" or similar
+    // -------------------------
     if (it.game === 'blackjack') {
-      const map = this.parseKeyVals(it.outcome);
-      const total = map['total'] || this.grab(it.outcome, /total\s*=\s*(\d+)/i);
-      const outcome = map['outcome'] || this.grab(it.outcome, /outcome\s*=\s*(\w+)/i);
+      const map = this.parseKeyVals(o);
+      const total = map['total'] || this.grab(o, /total\s*=\s*(\d+)/i);
+      const outcome = (map['outcome'] || this.grab(o, /outcome\s*=\s*(\w+)/i))?.toUpperCase() || '';
       const label = `Total: ${total || '?'} • ${outcome || ''}`;
       const win = outcome === 'WIN' || outcome === 'BLACKJACK';
       return { type: 'blackjack', total, outcome, win, label };

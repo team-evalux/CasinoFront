@@ -1,4 +1,3 @@
-// src/app/history/game-history.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {HistoryEntry, HistoryService} from '../services/history/history.service';
@@ -151,6 +150,15 @@ export class GameHistoryComponent implements OnInit {
       const status = win==null ? '' : (win ? '• Gagné' : '• Perdu');
       const label = `${left} → ${right} ${status}`.trim();
       return { type:'coinflip', choice, outcome, win, label };
+    }
+
+    if (it.game === 'blackjack') {
+      const map = this.parseKeyVals(o);
+      const total = map['total'] || this.grab(o, /total\s*=\s*(\d+)/i);
+      const outcome = (map['outcome'] || this.grab(o, /outcome\s*=\s*(\w+)/i))?.toUpperCase() || '';
+      const label = `Total: ${total || '?'} • ${outcome || ''}`;
+      const win = outcome === 'WIN' || outcome === 'BLACKJACK';
+      return { type: 'blackjack', total, outcome, win, label };
     }
 
     return { type:'autre', number: null, color: null, label: o };

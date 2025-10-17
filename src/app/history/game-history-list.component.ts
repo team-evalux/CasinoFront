@@ -1,4 +1,3 @@
-// src/app/history/game-history-list.component.ts
 import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HistoryEntry, HistoryService } from '../services/history/history.service';
@@ -92,6 +91,7 @@ export class GameHistoryListComponent implements OnInit, OnDestroy {
     if (!it || !it.outcome) return null;
     const o = it.outcome;
 
+    // roulette
     if (it.game === 'roulette') {
       const map: Record<string,string> = {};
       o.split(',').forEach(p => {
@@ -103,6 +103,7 @@ export class GameHistoryListComponent implements OnInit, OnDestroy {
       return { type:'roulette', number: num, color, label: num != null ? `${num} ${color ? '(' + capitalize(color) + ')' : ''}`.trim() : o };
     }
 
+    // coinflip
     if (it.game === 'coinflip') {
       const map = this.parseKeyVals(o);
       const choice = (map['choice'] || this.grab(o, /choice\s*=\s*(pile|face)/i))?.toLowerCase() || null;
@@ -115,10 +116,11 @@ export class GameHistoryListComponent implements OnInit, OnDestroy {
       return { type:'coinflip', choice, outcome, win, label };
     }
 
+    // blackjack
     if (it.game === 'blackjack') {
       const map = this.parseKeyVals(o);
       const total = map['total'] || this.grab(o, /total\s*=\s*(\d+)/i);
-      const outcome = map['outcome'] || this.grab(o, /outcome\s*=\s*(\w+)/i);
+      const outcome = (map['outcome'] || this.grab(o, /outcome\s*=\s*(\w+)/i))?.toUpperCase() || '';
       const label = `Total: ${total || '?'} • ${outcome || ''}`;
       const win = outcome === 'WIN' || outcome === 'BLACKJACK';
       return { type: 'blackjack', total, outcome, win, label };

@@ -7,6 +7,7 @@ import { BJSeat, BJTableState } from '../../services/game/blackjack.models';
 import { Subscription, interval } from 'rxjs';
 import { WalletService } from '../../services/wallet.service';
 import { GameHistoryListComponent } from '../../history/game-history-list.component';
+import {HistoryService} from '../../services/history/history.service';
 
 @Component({
   selector: 'app-blackjack-table',
@@ -34,6 +35,8 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
   remainingSeconds: number = 0;
   private tickSub?: Subscription;
 
+  private lastPhase?: string;
+
   myPayoutObj: any | null = null;
   resultMessage: string | null = null;
   private readonly RESULT_DISPLAY_MS = 10000;
@@ -48,6 +51,7 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private bj: BlackjackService,
     private wallet: WalletService,
+    private history: HistoryService,
     private cd: ChangeDetectorRef,
     private ngZone: NgZone,
     private router: Router
@@ -130,6 +134,11 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
         receivedState = true;
         clearTimeout(fallbackTimer);
       }
+
+      // conserve la phase précédente pour la détection de transition
+      const prevPhase = this.lastPhase;
+      this.lastPhase = s?.phase;
+
       this.state = s;
       if (!this.error) this.loading = false;
 
@@ -151,6 +160,41 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
         if (!Number.isNaN(net) && net !== 0) {
           this.wallet.applyOptimisticDelta(net);
         }
+
+        // --- NOUVEAU : push local dans l'historique quand on *entre* en PAYOUT (fin du dealer turn)
+        if (prevPhase !== 'PAYOUT') {
+          const p = this.myPayoutObj;
+          if (p) {
+            const bet = Number(p.bet ?? 0);
+            const credit = Number(p.credit ?? 0);
+            // outcome si fourni, sinon déduit
+            let outcomeStr = (p.outcome ?? '').toString().trim();
+            if (!outcomeStr) {
+              outcomeStr = credit > bet ? 'WIN' : (credit === bet ? 'PUSH' : 'LOSE');
+            }
+            // si on a un total côté payload, on l'ajoute dans l'outcome pour affichage
+            const playerTotal = p.total ?? null;
+            const outcomePayload = (playerTotal != null)
+              ? `total=${playerTotal},outcome=${outcomeStr}`
+              : `outcome=${outcomeStr}`;
+
+            const multiplier = bet ? Math.round((credit / bet) * 100) / 100 : (credit > 0 ? 2 : 0);
+
+            try {
+              this.history.pushLocal({
+                game: 'blackjack',
+                outcome: outcomePayload,
+                montantJoue: bet,
+                montantGagne: credit,
+                multiplier: multiplier,
+                createdAt: new Date().toISOString()
+              });
+            } catch (e) {
+              console.warn('[History] pushLocal failed', e);
+            }
+          }
+        }
+        // --- FIN pushLocal ---
 
         if (this.resultTimeoutId) clearTimeout(this.resultTimeoutId);
         this.resultTimeoutId = setTimeout(() => {

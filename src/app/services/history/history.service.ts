@@ -59,9 +59,22 @@ export class HistoryService {
     this.getMyHistory(limit).subscribe({ next: () => {}, error: () => {} });
   }
 
+  // Ensure local pushed entry has an id + createdAt and normalized multiplier
   pushLocal(entry: HistoryEntry) {
+    const nowIso = new Date().toISOString();
+    const nowId = Date.now();
+    const e: HistoryEntry = {
+      id: entry.id ?? nowId,
+      game: entry.game,
+      outcome: entry.outcome ?? undefined,
+      montantJoue: entry.montantJoue ?? 0,
+      montantGagne: entry.montantGagne ?? 0,
+      multiplier: entry.multiplier ?? (entry.montantJoue ? Math.round(((entry.montantGagne ?? 0) / entry.montantJoue) * 100) / 100 : (entry.montantGagne && entry.montantGagne > 0 ? 2 : 0)),
+      createdAt: entry.createdAt ?? nowIso
+    };
+
     const current = this.entries$.getValue();
-    const copy = [entry, ...current];
+    const copy = [e, ...current];
     if (copy.length > this.cacheLimit) copy.splice(this.cacheLimit);
     this.entries$.next(copy);
   }
@@ -72,8 +85,9 @@ export class HistoryService {
       next: list => {
         const serverList = list ?? [];
         const current = this.entries$.getValue();
-        const ids = new Set(serverList.map(i => i.id));
-        const merged = [...serverList, ...current.filter(i => !ids.has(i.id))].slice(0, this.cacheLimit);
+        // normalize ids to numbers for reliable comparisons
+        const ids = new Set(serverList.map(i => Number(i.id)));
+        const merged = [...serverList, ...current.filter(i => !ids.has(Number(i.id)))].slice(0, this.cacheLimit);
         this.entries$.next(merged);
       },
       error: () => {}
