@@ -1,4 +1,3 @@
-// src/app/services/game/slot.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -20,7 +19,7 @@ export interface SlotConfigResponse {
   reelWeights: number[][];
   reelsCount: number;
   payouts: { [k: string]: number } | null;
-  symbolValues?: { [symbol: string]: number } | null; // NEW
+  symbolValues?: { [symbol: string]: number } | null;
 }
 
 export interface SlotConfigRequest {
@@ -28,27 +27,30 @@ export interface SlotConfigRequest {
   reelWeights: number[][];
   reelsCount: number;
   payouts?: { [k: string]: number };
-  symbolValues?: { [symbol: string]: number }; // NEW
+  symbolValues?: { [symbol: string]: number };
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class SlotService {
   private base = 'http://localhost:8080/api/game/slots';
 
   constructor(private http: HttpClient) {}
 
-  // Machine à sous
   playSlots(req: SlotPlayRequest): Observable<SlotPlayResponse> {
     return this.http.post<SlotPlayResponse>(`${this.base}/play`, req);
   }
 
-  getSlotsConfig(): Observable<SlotConfigResponse> {
-    return this.http.get<SlotConfigResponse>(`${this.base}/config`);
+  // ---------- SURCHARGES ICI ----------
+  getSlotsConfig(reelsCount: number): Observable<SlotConfigResponse>;
+  getSlotsConfig(): Observable<Record<number, SlotConfigResponse>>;
+  getSlotsConfig(reelsCount?: number): Observable<SlotConfigResponse | Record<number, SlotConfigResponse>> {
+    if (reelsCount != null) {
+      return this.http.get<SlotConfigResponse>(`${this.base}/config?reelsCount=${reelsCount}`);
+    }
+    return this.http.get<Record<number, SlotConfigResponse>>(`${this.base}/config`);
   }
+  // ------------------------------------
 
-  // admin : update config (requires ADMIN)
   setSlotsConfig(cfg: SlotConfigRequest): Observable<SlotConfigResponse> {
     return this.http.post<SlotConfigResponse>(`${this.base}/config`, cfg);
   }

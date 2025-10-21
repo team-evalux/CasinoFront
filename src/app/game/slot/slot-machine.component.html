@@ -2,7 +2,13 @@
 <div class="conteneur">
   <div class="slot-wrap">
     <h2 class="titre-page">Machine à sous</h2>
-    <p class="sous-texte">Solde : <strong>{{ currentBalance ?? '—' }}</strong> • Mise minimale : <strong>{{ minBet }}</strong></p>
+
+    <!-- ✅ préciser la machine actuellement chargée -->
+    <p class="sous-texte">
+      Solde : <strong>{{ currentBalance ?? '—' }}</strong> •
+      Mise minimale : <strong>{{ minBet }}</strong> •
+      Machine chargée : <strong>{{ reelsCount }} rouleaux</strong>
+    </p>
 
     <div class="d-flex aic gap-12 mb-12" style="flex-wrap:wrap;">
       <div style="min-width:180px;">
@@ -21,17 +27,21 @@
         <button (click)="stopAutoSpin()" [disabled]="!isLoggedIn || !autoSpinActive" class="bouton bouton--secondaire">Stop</button>
       </div>
 
+      <!-- ✅ choix machine par l’utilisateur ; on bloque pendant le spin/auto-spin -->
       <div style="min-width:180px;">
         <label class="libelle">Nombre rouleaux</label>
-        <select [(ngModel)]="desiredReelsCount" (change)="setDesiredReels(desiredReelsCount)" [disabled]="enCours">
+        <select [(ngModel)]="desiredReelsCount"
+                (change)="setDesiredReels(desiredReelsCount)"
+                [disabled]="enCours || autoSpinActive">
           <option *ngFor="let n of [3,4,5]" [ngValue]="n">{{n}} rouleaux</option>
         </select>
       </div>
 
-
       <a [routerLink]="['/home']" class="bouton">Retour</a>
 
-      <div *ngIf="autoSpinActive" class="solde-chip"> {{ remainingAutoSpins != null ? ('Restant: ' + remainingAutoSpins) : 'Auto : infini' }} </div>
+      <div *ngIf="autoSpinActive" class="solde-chip">
+        {{ remainingAutoSpins != null ? ('Restant: ' + remainingAutoSpins) : 'Auto : infini' }}
+      </div>
     </div>
 
     <!-- Reels -->
@@ -43,7 +53,6 @@
         <div class="mask"></div>
       </div>
 
-      <!-- 🔒 Overlay d’aperçu -->
       <div *ngIf="!isLoggedIn" class="lock-overlay">
         <div class="lock">🔒</div>
         <div>Connecte-toi pour lancer un spin</div>
@@ -51,7 +60,6 @@
       </div>
     </div>
 
-    <!-- Résultat (l’ancien reste visible pendant le spin ; mis à jour en fin de spin) -->
     <div *ngIf="lastResult" class="panneau mt-12">
       <div class="final-row d-flex gap-12" style="justify-content:center; margin-bottom:8px;">
         <div *ngFor="let s of lastResult.reels" class="final-cell" style="font-size:36px;min-width:64px;text-align:center;">{{ s }}</div>
@@ -65,7 +73,7 @@
     <p *ngIf="error" style="color:#ff9b9b" class="mt-12">{{ error }}</p>
 
     <div class="mt-16 sous-texte">
-      <small>Machine visuelle adaptative — le nombre de rouleaux s'ajuste à la configuration.</small>
+      <small>Machine visuelle adaptative — la config est rechargée selon le nombre de rouleaux choisi.</small>
     </div>
   </div>
 

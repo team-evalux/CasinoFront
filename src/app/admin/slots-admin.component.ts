@@ -12,18 +12,17 @@ import { RouterLink } from '@angular/router';
 })
 export class SlotsAdminComponent {
   readonly MAX_REELS = 5;
+
   symbols: string[] = [];
-  symbolValues: number[] = []; // alignée par index avec `symbols`
+  symbolValues: number[] = []; // aligné sur symbols
   reelWeights: number[][] = [];
-  reelsCount = 3;
+  reelsCount = 3;              // machine en cours d’édition (3/4/5)
   loading = false;
   message: string | null = null;
   error: string | null = null;
 
-  // payouts: clé = nombre d'identiques (k), valeur = multiplicateur
   payouts: Record<number, number> = {};
 
-  // Simulation UI
   simSpins = 1000;
   simRunning = false;
   simResult: {
@@ -35,51 +34,57 @@ export class SlotsAdminComponent {
   } | null = null;
 
   constructor(private slotService: SlotService) {
-    this.loadConfig();
+    this.loadConfigFor(this.reelsCount); // charge la machine par défaut (3)
   }
 
-  loadConfig() {
-    this.slotService.getSlotsConfig().subscribe({
-      next: (cfg: SlotConfigResponse) => {
+  /** Charge la configuration d'une machine N rouleaux depuis le back */
+  private loadConfigFor(n: number) {
+    this.loading = true;
+    this.error = null;
+    this.message = null;
+
+    this.slotService.getSlotsConfig(n).subscribe(
+      (cfg: SlotConfigResponse) => {
+        this.reelsCount = cfg.reelsCount || n;
         this.symbols = cfg.symbols || [];
         this.reelWeights = cfg.reelWeights || [];
-        this.reelsCount = cfg.reelsCount || 3;
         this.payouts = cfg.payouts ? this.mapFromObject(cfg.payouts) : {};
 
-        // map symbolValues object -> array alignée
+        // symbolValues -> array alignée
         this.symbolValues = [];
         if (cfg.symbolValues) {
-          for (const s of this.symbols) {
-            this.symbolValues.push(cfg.symbolValues[s] ?? 1.0);
-          }
+          for (const s of this.symbols) this.symbolValues.push(cfg.symbolValues[s] ?? 1.0);
         } else {
           for (let i = 0; i < this.symbols.length; i++) this.symbolValues.push(1.0);
         }
 
-        while (this.reelWeights.length < this.reelsCount) this.reelWeights.push(Array(this.symbols.length).fill(100));
+        // complète les lignes de poids si besoin
+        while (this.reelWeights.length < this.reelsCount) {
+          this.reelWeights.push(Array(this.symbols.length).fill(100));
+        }
+
         this.ensureGrid();
         this.ensurePayoutsUpToMax();
+        this.loading = false;
       },
-      error: () => { this.error = 'Impossible de charger la configuration.'; }
-    });
+      _err => {
+        this.error = 'Impossible de charger la configuration.';
+        this.loading = false;
+      }
+    );
   }
 
   // s'assure que payouts contient des clefs 2..MAX_REELS (valeurs par défaut si manquantes)
   ensurePayoutsUpToMax() {
     if (!this.payouts) this.payouts = {};
     for (let k = 2; k <= this.MAX_REELS; k++) {
-      if (!(k in this.payouts)) {
-        // même formule que initDefaultPayoutsForReels pour cohérence
-        this.payouts[k] = Math.max(1, Math.floor(Math.pow(3, k - 2)));
-      }
+      if (!(k in this.payouts)) this.payouts[k] = Math.max(1, Math.floor(Math.pow(3, k - 2)));
     }
-    // supprimer les clefs supérieures à MAX_REELS si présentes
     Object.keys(this.payouts).forEach(key => {
       const kk = Number(key);
       if (kk > this.MAX_REELS) delete this.payouts[kk];
     });
   }
-
 
   // convert JSON object keys (strings) to numbers
   private mapFromObject(obj: any): Record<number, number> {
@@ -94,9 +99,7 @@ export class SlotsAdminComponent {
 
   private mapToObject(rec: Record<number, number>): any {
     const o: any = {};
-    Object.keys(rec).forEach(k => {
-      o[k] = rec[Number(k)];
-    });
+    Object.keys(rec).forEach(k => { o[k] = rec[Number(k)]; });
     return o;
   }
 
@@ -105,17 +108,13 @@ export class SlotsAdminComponent {
   }
 
   initDefaultPayoutsForReels(n: number) {
-    const defaultP: Record<number, number> = {};
-    for (let k = 2; k <= n; k++) {
-      defaultP[k] = Math.max(1, Math.floor(Math.pow(3, k - 2)));
-    }
-    this.payouts = defaultP;
+    const def: Record<number, number> = {};
+    for (let k = 2; k <= n; k++) def[k] = Math.max(1, Math.floor(Math.pow(3, k - 2)));
+    this.payouts = def;
   }
 
   ensureGrid() {
-    if (!this.symbols || this.symbols.length === 0) {
-      this.symbols = ['SYM'];
-    }
+    if (!this.symbols || this.symbols.length === 0) this.symbols = ['SYM'];
 
     // sync symbolValues length with symbols
     while (this.symbolValues.length < this.symbols.length) this.symbolValues.push(1.0);
@@ -125,20 +124,18 @@ export class SlotsAdminComponent {
       if (!this.reelWeights[r]) this.reelWeights[r] = Array(this.symbols.length).fill(100);
       if (this.reelWeights[r].length !== this.symbols.length) {
         const arr = Array(this.symbols.length).fill(100);
-        for (let i = 0; i < Math.min(arr.length, this.reelWeights[r].length); i++) arr[i] = this.reelWeights[r][i] || 100;
+        for (let i = 0; i < Math.min(arr.length, this.reelWeights[r].length); i++) {
+          arr[i] = this.reelWeights[r][i] || 100;
+        }
         this.reelWeights[r] = arr;
       }
     }
+    if (this.reelWeights.length > this.reelsCount) this.reelWeights.splice(this.reelsCount);
 
-    if (this.reelWeights.length > this.reelsCount) {
-      this.reelWeights.splice(this.reelsCount);
-    }
+    // garde au moins 2..reelsCount visibles dans l’UI
+    for (let k = 2; k <= this.reelsCount; k++) if (!(k in this.payouts)) this.payouts[k] = this.payouts[k] || 0;
 
-    for (let k = 2; k <= this.reelsCount; k++) {
-      if (!(k in this.payouts)) {
-        this.payouts[k] = this.payouts[k] || 0;
-      }
-    }
+    // mais ne conserve jamais > MAX_REELS
     Object.keys(this.payouts).forEach(key => {
       const kk = Number(key);
       if (kk > this.MAX_REELS) delete this.payouts[kk];
@@ -170,24 +167,28 @@ export class SlotsAdminComponent {
     return o;
   }
 
-  // Avant save() : on s'assure d'avoir tous les payouts jusqu'à MAX_REELS
   save() {
     this.loading = true;
     this.error = null;
     this.message = null;
-    this.ensureGrid();          // construit grille / poids, mais ne supprime plus payouts > reelsCount
-    this.ensurePayoutsUpToMax(); // <-- important
-    const payload: any = {
+
+    this.ensureGrid();
+    this.ensurePayoutsUpToMax();
+
+    const payload = {
       symbols: this.symbols,
       reelWeights: this.reelWeights,
-      reelsCount: this.reelsCount,
+      reelsCount: this.reelsCount, // machine ciblée
       payouts: this.mapToObject(this.payouts),
       symbolValues: this.mapSymbolValuesToObject()
     };
+
     this.slotService.setSlotsConfig(payload).subscribe({
       next: () => {
         this.message = 'Configuration sauvegardée.';
         this.loading = false;
+        // recharger depuis le back pour afficher exactement ce qui est persisté
+        this.loadConfigFor(this.reelsCount);
       },
       error: (err) => {
         this.error = err?.error?.error || 'Erreur lors de la sauvegarde';
@@ -196,11 +197,11 @@ export class SlotsAdminComponent {
     });
   }
 
+  /** Quand l’admin change la machine (3/4/5), on recharge la config côté back */
   setReelsCount(n: number) {
-    this.reelsCount = Math.max(1, Math.floor(n));
-    while (this.reelWeights.length < this.reelsCount) this.reelWeights.push(Array(this.symbols.length).fill(100));
-    if (this.reelWeights.length > this.reelsCount) this.reelWeights.splice(this.reelsCount);
-    this.ensureGrid();
+    const clean = Math.max(1, Math.floor(n));
+    this.reelsCount = clean;
+    this.loadConfigFor(clean);
   }
 
   totalWeight(reelIndex: number): number {
@@ -216,31 +217,23 @@ export class SlotsAdminComponent {
     return `${p.toFixed(2)}%`;
   }
 
-  // adapte payoutKeysDesc pour exposer les keys jusqu'à MAX_REELS
   payoutKeysDesc(): number[] {
     const keys = Object.keys(this.payouts).map(k => Number(k)).filter(k => !isNaN(k));
-    // s'assurer que 2..MAX_REELS sont présents dans la liste (même si non définis)
-    for (let k = 2; k <= this.MAX_REELS; k++) {
-      if (!keys.includes(k)) keys.push(k);
-    }
-    return keys.sort((a,b) => b - a);
+    for (let k = 2; k <= this.MAX_REELS; k++) if (!keys.includes(k)) keys.push(k);
+    return keys.sort((a, b) => b - a);
   }
 
-  // helper: range 0..n-1
   range(n: number): number[] {
     if (!n || n <= 0) return [];
-    return Array.from({length: n}, (_, i) => i);
+    return Array.from({ length: n }, (_, i) => i);
   }
 
-  // helper: ks from 2..reelsCount
   ksFrom2(): number[] {
     if (this.reelsCount <= 1) return [];
-    return Array.from({length: this.reelsCount - 1}, (_, i) => i + 2);
+    return Array.from({ length: this.reelsCount - 1 }, (_, i) => i + 2);
   }
 
-  /* =========================
-     Probabilities preview
-     ========================= */
+  /* ========== Aperçu proba & simulation (inchangé) ========== */
 
   probExactKForSymbol(symbolIndex: number, k: number): number {
     const n = this.reelsCount;
@@ -256,11 +249,7 @@ export class SlotsAdminComponent {
       if (this.countBits(mask) !== k) continue;
       let prod = 1;
       for (let r = 0; r < n; r++) {
-        if ((mask & (1 << r)) !== 0) {
-          prod *= p[r];
-        } else {
-          prod *= (1 - p[r]);
-        }
+        prod *= ((mask & (1 << r)) !== 0) ? p[r] : (1 - p[r]);
       }
       prob += prod;
     }
@@ -269,10 +258,7 @@ export class SlotsAdminComponent {
 
   private countBits(mask: number): number {
     let c = 0;
-    while (mask) {
-      mask &= (mask - 1);
-      c++;
-    }
+    while (mask) { mask &= (mask - 1); c++; }
     return c;
   }
 
@@ -280,17 +266,11 @@ export class SlotsAdminComponent {
     const out: { symbol: string, probs: Record<number, number> }[] = [];
     for (let i = 0; i < this.symbols.length; i++) {
       const probs: Record<number, number> = {};
-      for (let k = 2; k <= this.reelsCount; k++) {
-        probs[k] = this.probExactKForSymbol(i, k);
-      }
+      for (let k = 2; k <= this.reelsCount; k++) probs[k] = this.probExactKForSymbol(i, k);
       out.push({ symbol: this.symbols[i], probs });
     }
     return out;
   }
-
-  /* =========================
-     Simulation (client-side)
-     ========================= */
 
   private weightedPick(weights: number[]): number {
     const total = weights.reduce((s, w) => s + (Number(w) || 0), 0);
@@ -330,27 +310,14 @@ export class SlotsAdminComponent {
       let multiplier = 0;
       const ks = Object.keys(payouts).map(k => Number(k)).filter(k => !isNaN(k)).sort((a,b) => b - a);
       for (const k of ks) {
-        if (maxCount >= k) {
-          multiplier = payouts[k] || 0;
-          break;
-        }
+        if (maxCount >= k) { multiplier = payouts[k] || 0; break; }
       }
-      if (multiplier > 0) {
-        totalReturn += bet * multiplier;
-      }
-      if (maxCount >= 2) {
-        countsByK[maxCount] = (countsByK[maxCount] || 0) + 1;
-      }
+      if (multiplier > 0) totalReturn += bet * multiplier;
+      if (maxCount >= 2) countsByK[maxCount] = (countsByK[maxCount] || 0) + 1;
     }
 
     const rtp = totalReturn / totalBet;
-    this.simResult = {
-      rtp,
-      totalReturn,
-      totalBet,
-      avgReturnPerSpin: totalReturn / n,
-      countsByK
-    };
+    this.simResult = { rtp, totalReturn, totalBet, avgReturnPerSpin: totalReturn / n, countsByK };
     this.simRunning = false;
   }
 }
