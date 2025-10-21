@@ -21,6 +21,14 @@
         <button (click)="stopAutoSpin()" [disabled]="!isLoggedIn || !autoSpinActive" class="bouton bouton--secondaire">Stop</button>
       </div>
 
+      <div style="min-width:180px;">
+        <label class="libelle">Nombre rouleaux</label>
+        <select [(ngModel)]="desiredReelsCount" (change)="setDesiredReels(desiredReelsCount)" [disabled]="enCours">
+          <option *ngFor="let n of [3,4,5]" [ngValue]="n">{{n}} rouleaux</option>
+        </select>
+      </div>
+
+
       <a [routerLink]="['/home']" class="bouton">Retour</a>
 
       <div *ngIf="autoSpinActive" class="solde-chip"> {{ remainingAutoSpins != null ? ('Restant: ' + remainingAutoSpins) : 'Auto : infini' }} </div>

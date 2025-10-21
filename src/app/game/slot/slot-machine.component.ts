@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { WalletService } from '../../services/wallet.service';
 import { Subscription } from 'rxjs';
-import { SlotPlayResponse, SlotService, SlotConfigResponse } from '../../services/game/slot.service';
+import {SlotPlayResponse, SlotService, SlotConfigResponse, SlotPlayRequest} from '../../services/game/slot.service';
 import { RouterLink } from '@angular/router';
 import { GameHistoryListComponent } from '../../history/game-history-list.component';
 import { HistoryService } from '../../services/history/history.service';
@@ -32,6 +32,8 @@ export class SlotMachineComponent implements OnDestroy, AfterViewInit {
   symbols: string[] = [];
   reelsCount = 3;
   reels: ReelModel[] = [];
+  // propriété
+  desiredReelsCount: number | null = null; // si null -> utilise la config serveur (this.reelsCount)
   private loops = 6;
   private minSpinMs = 600;
   private spinStartAt = 0;
@@ -66,12 +68,15 @@ export class SlotMachineComponent implements OnDestroy, AfterViewInit {
     this.configSub = this.game.getSlotsConfig().subscribe({
       next: (cfg: SlotConfigResponse) => {
         this.symbols = cfg.symbols || [];
-        this.reelsCount = cfg.reelsCount || 3;
+        this.reelsCount = cfg.reelsCount || 3; // config admin
+        // initialiser choix utilisateur par défaut sur la config (mais l'utilisateur peut changer)
+        if (this.desiredReelsCount == null) this.desiredReelsCount = this.reelsCount;
         this.buildReels();
         this.cdr.detectChanges();
       },
       error: () => {}
     });
+
 
     this.isLoggedIn = !!localStorage.getItem('jwt');
     try {
@@ -87,13 +92,15 @@ export class SlotMachineComponent implements OnDestroy, AfterViewInit {
     if (!this.symbols || this.symbols.length === 0) this.symbols = ['SYM'];
     this.reels = [];
     const pad = this.visibleCells();
-    for (let r = 0; r < this.reelsCount; r++) {
+    const count = (this.desiredReelsCount && this.desiredReelsCount > 0) ? this.desiredReelsCount : this.reelsCount;
+    for (let r = 0; r < count; r++) {
       const seq: string[] = [];
       for (let l = 0; l < this.loops; l++) for (const s of this.symbols) seq.push(s);
       for (let p = 0; p < pad; p++) seq.push(this.symbols[p % this.symbols.length]);
       this.reels.push({ sequence: seq });
     }
   }
+
 
   jouer() {
     this.error = null;
@@ -108,7 +115,8 @@ export class SlotMachineComponent implements OnDestroy, AfterViewInit {
     this.spinStartAt = Date.now();
     this.startVisualSpin();
 
-    this.game.playSlots({ montant: this.mise }).subscribe({
+    const req: SlotPlayRequest = { montant: this.mise, reelsCount: this.desiredReelsCount ?? undefined };
+    this.game.playSlots(req).subscribe({
       next: (res) => {
         // buffer : on affiche en fin d’anim
         this.pendingResult = res;
@@ -148,6 +156,14 @@ export class SlotMachineComponent implements OnDestroy, AfterViewInit {
     this.autoSpinActive = false;
     this.remainingAutoSpins = null;
     if (this.autoSpinTimeoutId != null) { clearTimeout(this.autoSpinTimeoutId); this.autoSpinTimeoutId = null; }
+  }
+
+  setDesiredReels(n: number | null) {
+    if (n != null) {
+      this.desiredReelsCount = Math.max(1, Math.floor(n));
+    }
+    this.buildReels();
+    this.cdr.detectChanges();
   }
 
   private onSpinComplete() {

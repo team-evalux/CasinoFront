@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 
 export interface SlotPlayRequest {
   montant: number;
+  reelsCount?: number;
 }
 export interface SlotPlayResponse {
   reels: string[];

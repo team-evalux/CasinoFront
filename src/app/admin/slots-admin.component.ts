@@ -11,6 +11,7 @@ import { RouterLink } from '@angular/router';
   templateUrl: './slots-admin.component.html'
 })
 export class SlotsAdminComponent {
+  readonly MAX_REELS = 5;
   symbols: string[] = [];
   reelWeights: number[][] = [];
   reelsCount = 3;
@@ -44,23 +45,44 @@ export class SlotsAdminComponent {
         this.reelsCount = cfg.reelsCount || 3;
         this.payouts = cfg.payouts ? this.mapFromObject(cfg.payouts) : {};
 
+        // assure la grille reels/poids
         while (this.reelWeights.length < this.reelsCount) this.reelWeights.push(Array(this.symbols.length).fill(100));
         this.ensureGrid();
 
+        // garantir des payouts 2..MAX_REELS par défaut
+        this.ensurePayoutsUpToMax();
+
         if (!this.hasPayouts()) {
+          // fallback (sera de toute façon peu probable car ensurePayoutsUpToMax a rempli)
           if (this.reelsCount >= 5) {
             this.initDefaultPayoutsForReels(this.reelsCount);
           } else {
             this.payouts = { 3: 10, 2: 2 };
           }
         }
-
       },
       error: (err) => {
         this.error = 'Impossible de charger la configuration.';
       }
     });
   }
+
+  // s'assure que payouts contient des clefs 2..MAX_REELS (valeurs par défaut si manquantes)
+  ensurePayoutsUpToMax() {
+    if (!this.payouts) this.payouts = {};
+    for (let k = 2; k <= this.MAX_REELS; k++) {
+      if (!(k in this.payouts)) {
+        // même formule que initDefaultPayoutsForReels pour cohérence
+        this.payouts[k] = Math.max(1, Math.floor(Math.pow(3, k - 2)));
+      }
+    }
+    // supprimer les clefs supérieures à MAX_REELS si présentes
+    Object.keys(this.payouts).forEach(key => {
+      const kk = Number(key);
+      if (kk > this.MAX_REELS) delete this.payouts[kk];
+    });
+  }
+
 
   // convert JSON object keys (strings) to numbers
   private mapFromObject(obj: any): Record<number, number> {
@@ -118,7 +140,7 @@ export class SlotsAdminComponent {
     }
     Object.keys(this.payouts).forEach(key => {
       const kk = Number(key);
-      if (kk > this.reelsCount) delete this.payouts[kk];
+      if (kk > this.MAX_REELS) delete this.payouts[kk];
     });
   }
 
@@ -137,11 +159,13 @@ export class SlotsAdminComponent {
     this.ensureGrid();
   }
 
+  // Avant save() : on s'assure d'avoir tous les payouts jusqu'à MAX_REELS
   save() {
     this.loading = true;
     this.error = null;
     this.message = null;
-    this.ensureGrid();
+    this.ensureGrid();          // construit grille / poids, mais ne supprime plus payouts > reelsCount
+    this.ensurePayoutsUpToMax(); // <-- important
     const payload: any = {
       symbols: this.symbols,
       reelWeights: this.reelWeights,
@@ -180,9 +204,11 @@ export class SlotsAdminComponent {
     return `${p.toFixed(2)}%`;
   }
 
+  // adapte payoutKeysDesc pour exposer les keys jusqu'à MAX_REELS
   payoutKeysDesc(): number[] {
     const keys = Object.keys(this.payouts).map(k => Number(k)).filter(k => !isNaN(k));
-    for (let k = 2; k <= this.reelsCount; k++) {
+    // s'assurer que 2..MAX_REELS sont présents dans la liste (même si non définis)
+    for (let k = 2; k <= this.MAX_REELS; k++) {
       if (!keys.includes(k)) keys.push(k);
     }
     return keys.sort((a,b) => b - a);
