@@ -15,21 +15,20 @@ export interface SlotPlayResponse {
   solde: number;
 }
 
-// Config côté backend : symbols, reelWeights, reelsCount, payouts (map)
 export interface SlotConfigResponse {
   symbols: string[];
   reelWeights: number[][];
   reelsCount: number;
-  // JSON keys viennent en string (ex: { "5": 100, "4": 25, "3": 5 })
   payouts: { [k: string]: number } | null;
+  symbolValues?: { [symbol: string]: number } | null; // NEW
 }
 
 export interface SlotConfigRequest {
   symbols: string[];
   reelWeights: number[][];
   reelsCount: number;
-  // facultatif : si présent, backend utilisera cette map
   payouts?: { [k: string]: number };
+  symbolValues?: { [symbol: string]: number }; // NEW
 }
 
 @Injectable({

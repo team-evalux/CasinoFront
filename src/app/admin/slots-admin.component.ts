@@ -13,6 +13,7 @@ import { RouterLink } from '@angular/router';
 export class SlotsAdminComponent {
   readonly MAX_REELS = 5;
   symbols: string[] = [];
+  symbolValues: number[] = []; // alignée par index avec `symbols`
   reelWeights: number[][] = [];
   reelsCount = 3;
   loading = false;
@@ -45,25 +46,21 @@ export class SlotsAdminComponent {
         this.reelsCount = cfg.reelsCount || 3;
         this.payouts = cfg.payouts ? this.mapFromObject(cfg.payouts) : {};
 
-        // assure la grille reels/poids
+        // map symbolValues object -> array alignée
+        this.symbolValues = [];
+        if (cfg.symbolValues) {
+          for (const s of this.symbols) {
+            this.symbolValues.push(cfg.symbolValues[s] ?? 1.0);
+          }
+        } else {
+          for (let i = 0; i < this.symbols.length; i++) this.symbolValues.push(1.0);
+        }
+
         while (this.reelWeights.length < this.reelsCount) this.reelWeights.push(Array(this.symbols.length).fill(100));
         this.ensureGrid();
-
-        // garantir des payouts 2..MAX_REELS par défaut
         this.ensurePayoutsUpToMax();
-
-        if (!this.hasPayouts()) {
-          // fallback (sera de toute façon peu probable car ensurePayoutsUpToMax a rempli)
-          if (this.reelsCount >= 5) {
-            this.initDefaultPayoutsForReels(this.reelsCount);
-          } else {
-            this.payouts = { 3: 10, 2: 2 };
-          }
-        }
       },
-      error: (err) => {
-        this.error = 'Impossible de charger la configuration.';
-      }
+      error: () => { this.error = 'Impossible de charger la configuration.'; }
     });
   }
 
@@ -120,6 +117,10 @@ export class SlotsAdminComponent {
       this.symbols = ['SYM'];
     }
 
+    // sync symbolValues length with symbols
+    while (this.symbolValues.length < this.symbols.length) this.symbolValues.push(1.0);
+    if (this.symbolValues.length > this.symbols.length) this.symbolValues.splice(this.symbols.length);
+
     for (let r = 0; r < this.reelsCount; r++) {
       if (!this.reelWeights[r]) this.reelWeights[r] = Array(this.symbols.length).fill(100);
       if (this.reelWeights[r].length !== this.symbols.length) {
@@ -147,16 +148,26 @@ export class SlotsAdminComponent {
   addSymbol() {
     this.symbols.push('SYM');
     for (let r = 0; r < this.reelWeights.length; r++) this.reelWeights[r].push(100);
+    this.symbolValues.push(1.0);
     this.ensureGrid();
   }
 
   removeSymbol(index: number) {
     if (index < 0 || index >= this.symbols.length) return;
     this.symbols.splice(index, 1);
+    this.symbolValues.splice(index, 1);
     for (let r = 0; r < this.reelWeights.length; r++) {
       if (this.reelWeights[r] && this.reelWeights[r].length > index) this.reelWeights[r].splice(index, 1);
     }
     this.ensureGrid();
+  }
+
+  private mapSymbolValuesToObject(): any {
+    const o: any = {};
+    for (let i = 0; i < this.symbols.length; i++) {
+      o[this.symbols[i]] = Number(this.symbolValues[i] || 1.0);
+    }
+    return o;
   }
 
   // Avant save() : on s'assure d'avoir tous les payouts jusqu'à MAX_REELS
@@ -170,7 +181,8 @@ export class SlotsAdminComponent {
       symbols: this.symbols,
       reelWeights: this.reelWeights,
       reelsCount: this.reelsCount,
-      payouts: this.mapToObject(this.payouts)
+      payouts: this.mapToObject(this.payouts),
+      symbolValues: this.mapSymbolValuesToObject()
     };
     this.slotService.setSlotsConfig(payload).subscribe({
       next: () => {

@@ -25,6 +25,7 @@
       <tr>
         <th style="text-align:left;padding:8px;border-bottom:1px solid #eee">#</th>
         <th style="text-align:left;padding:8px;border-bottom:1px solid #eee">Symbole</th>
+        <th>Valeur</th> <!-- NEW -->
         <th *ngFor="let ri of range(reelsCount)" style="padding:8px;border-bottom:1px solid #eee">
           Rouleau {{ ri+1 }}
           <div style="font-size:0.8rem;color:#666">Total: {{ totalWeight(ri) }}</div>
@@ -34,12 +35,13 @@
       </thead>
       <tbody>
       <tr *ngFor="let sym of symbols; let i=index">
-        <td style="padding:8px;border-bottom:1px solid #fafafa">{{ i+1 }}</td>
-        <td style="padding:8px;border-bottom:1px solid #fafafa">
-          <input [(ngModel)]="symbols[i]" style="width:100px" />
+        <td>{{ i+1 }}</td>
+        <td><input [(ngModel)]="symbols[i]" style="width:100px" /></td>
+        <td>
+          <input type="number" step="0.1" [(ngModel)]="symbolValues[i]" min="0" style="width:100px" />
+          <div style="font-size:0.8rem;color:#666">1.0 = valeur neutre</div>
         </td>
-
-        <td *ngFor="let ri of range(reelsCount)" style="padding:8px;border-bottom:1px solid #fafafa;vertical-align:top;">
+        <td *ngFor="let ri of range(reelsCount)">
           <input type="number" [(ngModel)]="reelWeights[ri][i]" min="0" style="width:80px" />
           <div style="font-size:0.8rem;color:#666;margin-top:4px;">
             {{ getPercent(ri, i) }}
