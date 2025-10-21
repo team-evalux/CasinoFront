@@ -283,6 +283,26 @@ export class SlotsAdminComponent {
     return weights.length - 1;
   }
 
+  /** valeur du symbole par index, retombe à 1.0 si absent */
+  private sv(i: number): number {
+    const v = Number(this.symbolValues?.[i]);
+    return isFinite(v) && v > 0 ? v : 1.0;
+  }
+
+  /** parmi les symboles ayant au moins k occurrences, retourne la meilleure symbolValue */
+  private bestSymbolValue(countsMap: Record<number, number>, k: number): number {
+    let best = 1.0;
+    for (const key of Object.keys(countsMap)) {
+      const idx = Number(key);
+      const c = countsMap[idx] || 0;
+      if (c >= k) {
+        const val = this.sv(idx);
+        if (val > best) best = val;
+      }
+    }
+    return best;
+  }
+
   simulate(spins?: number) {
     const n = spins ?? this.simSpins;
     this.simRunning = true;
@@ -298,26 +318,54 @@ export class SlotsAdminComponent {
 
     for (let s = 0; s < n; s++) {
       totalBet += bet;
+
+      // tirage indices de symboles
       const reelsResult: number[] = [];
       for (let r = 0; r < this.reelsCount; r++) {
         const idx = this.weightedPick(this.reelWeights[r]);
         reelsResult.push(idx);
       }
+
+      // comptage par index de symbole
       const countsMap: Record<number, number> = {};
       for (const idx of reelsResult) countsMap[idx] = (countsMap[idx] || 0) + 1;
+
+      // max identiques observés
       let maxCount = 0;
       Object.values(countsMap).forEach(c => maxCount = Math.max(maxCount, c));
+
+      // multiplicateur en prenant le plus grand k possible
       let multiplier = 0;
+      let kUsed = 0;
       const ks = Object.keys(payouts).map(k => Number(k)).filter(k => !isNaN(k)).sort((a,b) => b - a);
       for (const k of ks) {
-        if (maxCount >= k) { multiplier = payouts[k] || 0; break; }
+        if (maxCount >= k) {
+          multiplier = payouts[k] || 0;
+          kUsed = k;
+          break;
+        }
       }
-      if (multiplier > 0) totalReturn += bet * multiplier;
-      if (maxCount >= 2) countsByK[maxCount] = (countsByK[maxCount] || 0) + 1;
+
+      if (multiplier > 0 && kUsed > 0) {
+        // applique la meilleure symbolValue parmi ceux qui atteignent kUsed
+        const bestSV = this.bestSymbolValue(countsMap, kUsed);
+        totalReturn += bet * multiplier * bestSV;
+      }
+
+      if (maxCount >= 2) {
+        countsByK[maxCount] = (countsByK[maxCount] || 0) + 1;
+      }
     }
 
     const rtp = totalReturn / totalBet;
-    this.simResult = { rtp, totalReturn, totalBet, avgReturnPerSpin: totalReturn / n, countsByK };
+    this.simResult = {
+      rtp,
+      totalReturn,
+      totalBet,
+      avgReturnPerSpin: totalReturn / n,
+      countsByK
+    };
     this.simRunning = false;
   }
+
 }
