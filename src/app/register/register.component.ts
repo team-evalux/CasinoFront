@@ -8,13 +8,16 @@ import { AuthService } from '../services/auth.service';
   selector: 'app-register',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
-  templateUrl: './register.component.html'
+  templateUrl: './register.component.html',
+  styleUrls: ['./register.component.css']
 })
 export class RegisterComponent implements OnInit {
   formulaire: FormGroup;
   enCours = false;
   messageSucces: string | null = null;
   messageErreur: string | null = null;
+
+  showPassword = false; // 👈 toggle d’affichage
 
   private PENDING_KEY = 'register.pending';
 
@@ -37,6 +40,8 @@ export class RegisterComponent implements OnInit {
     }
   }
 
+  get f() { return this.formulaire.controls; }
+
   envoyer() {
     if (this.formulaire.invalid) {
       this.formulaire.markAllAsTouched();
@@ -47,35 +52,23 @@ export class RegisterComponent implements OnInit {
     this.messageErreur = null;
     this.messageSucces = null;
 
-    const email = this.formulaire.get('email')!.value as string;
-    const pseudo = this.formulaire.get('pseudo')!.value as string;
-    const motDePasse = this.formulaire.get('motDePasse')!.value as string;
+    const email = this.f['email'].value as string;
+    const pseudo = this.f['pseudo'].value as string;
+    const motDePasse = this.f['motDePasse'].value as string;
 
-    // ✅ Envoie maintenant email + pseudo (conforme à ton backend)
     this.authService.inscriptionSendCode({ email, pseudo }).subscribe({
       next: (res) => {
-        console.log('[register] code envoyé OK:', res);
         sessionStorage.setItem(this.PENDING_KEY, JSON.stringify({ email, pseudo, motDePasse }));
         this.enCours = false;
-
         this.zone.run(() => {
-          this.router.navigate(['/verify-email'], { queryParams: { email } })
-            .then(ok => console.log('[register] navigate /verify-email:', ok))
-            .catch(err => console.error('[register] navigate error:', err));
+          this.router.navigate(['/verify-email'], { queryParams: { email } });
         });
       },
       error: (err) => {
-        console.error('[register] erreur envoi code:', err);
         this.enCours = false;
-
-        // ✅ Gestion claire des messages d'erreur
-        if (err?.error?.error) {
-          this.messageErreur = err.error.error; // ex: "Pseudo déjà utilisé"
-        } else if (typeof err?.error === 'string') {
-          this.messageErreur = err.error; // si backend renvoie un texte brut
-        } else {
-          this.messageErreur = 'Erreur réseau ou serveur';
-        }
+        if (err?.error?.error) this.messageErreur = err.error.error;
+        else if (typeof err?.error === 'string') this.messageErreur = err.error;
+        else this.messageErreur = 'Erreur réseau ou serveur';
       }
     });
   }

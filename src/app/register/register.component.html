@@ -1,48 +1,66 @@
-<!-- src/app/auth/register.component.html -->
-<h2>Inscription</h2>
+<div class="conteneur">
+  <div class="panneau form-card">
+    <h2 class="titre-page">Créer un compte</h2>
+    <p class="texte-secondaire">Rejoins la table — inscription en 20 secondes.</p>
 
-<form [formGroup]="formulaire" (ngSubmit)="envoyer()">
-  <div>
-    <label>Email</label><br />
-    <input formControlName="email" type="email" maxlength="40"/>
-    <div *ngIf="formulaire.get('email')?.touched && formulaire.get('email')?.invalid" style="color:red">
-      Email invalide.
+    <form [formGroup]="formulaire" (ngSubmit)="envoyer()" class="form-grid" novalidate>
+      <!-- Email -->
+      <div class="row">
+        <label for="email" class="libelle">Email</label>
+        <div class="field-wrap">
+          <input id="email" class="champ"
+                 formControlName="email" type="email" maxlength="40"
+                 [class.invalide]="f['email'].touched && f['email'].invalid"
+                 placeholder="ton@email.com" />
+          <div class="erreur" *ngIf="f['email'].touched && f['email'].invalid">Email invalide.</div>
+        </div>
+      </div>
+
+      <!-- Pseudo -->
+      <div class="row">
+        <label for="pseudo" class="libelle">Pseudo</label>
+        <div class="field-wrap">
+          <input id="pseudo" class="champ"
+                 formControlName="pseudo" maxlength="16"
+                 [class.invalide]="f['pseudo'].touched && f['pseudo'].invalid"
+                 placeholder="Ex: LuckyPlayer" />
+          <div class="hint">3–16 caractères, visible par les autres.</div>
+          <div class="erreur" *ngIf="f['pseudo'].touched && f['pseudo'].invalid">Pseudo requis (min 3).</div>
+        </div>
+      </div>
+
+      <!-- Mot de passe -->
+      <div class="row">
+        <label for="mdp" class="libelle">Mot de passe</label>
+        <div class="field-wrap">
+          <div class="password">
+            <input id="mdp" class="champ"
+                   [type]="showPassword ? 'text' : 'password'"
+                   formControlName="motDePasse" maxlength="32"
+                   [class.invalide]="f['motDePasse'].touched && f['motDePasse'].invalid"
+                   placeholder="Au moins 6 caractères" />
+            <button type="button" class="toggle" (click)="showPassword = !showPassword" [attr.aria-pressed]="showPassword">
+              {{ showPassword ? 'Masquer' : 'Afficher' }}
+            </button>
+          </div>
+          <div class="erreur" *ngIf="f['motDePasse'].touched && f['motDePasse'].invalid">Mot de passe requis (min 6).</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="bouton bouton--or" [disabled]="enCours || formulaire.invalid">
+          {{ enCours ? 'Envoi…' : "S'inscrire" }}
+        </button>
+        <a routerLink="/login" class="bouton bouton--secondaire">J’ai déjà un compte</a>
+      </div>
+    </form>
+
+    <div *ngIf="messageErreur" class="alert alert--err">{{ messageErreur }}</div>
+    <div *ngIf="messageSucces" class="alert alert--ok">
+      {{ messageSucces }}
+      <div class="mt-12">
+        <a routerLink="/login" class="bouton bouton--primaire">Se connecter</a>
+      </div>
     </div>
   </div>
-
-  <div style="margin-top:8px">
-    <label>Pseudo</label><br />
-    <input formControlName="pseudo" maxlength="10"/>
-    <div *ngIf="formulaire.get('pseudo')?.touched && formulaire.get('pseudo')?.invalid" style="color:red">
-      Pseudo requis (min 3).
-    </div>
-  </div>
-
-  <div style="margin-top:8px">
-    <label>Mot de passe</label><br />
-    <input formControlName="motDePasse" type="password" maxlength="20"/>
-    <div *ngIf="formulaire.get('motDePasse')?.touched && formulaire.get('motDePasse')?.invalid" style="color:red">
-      Mot de passe requis (min 6).
-    </div>
-  </div>
-
-  <div style="margin-top:12px">
-    <button type="submit" [disabled]="enCours">{{ enCours ? 'Envoi...' : "S'inscrire" }}</button>
-  </div>
-</form>
-
-<div *ngIf="messageErreur" style="color:red; margin-top:12px">
-  {{ messageErreur }}
-</div>
-
-
-<div *ngIf="messageSucces" style="color:green; margin-top:12px">
-  {{ messageSucces }}
-
-  <div style="margin-top:20px; text-align:center;">
-    <button routerLink="/login" style="padding:6px 12px; border:1px solid #1976d2; border-radius:4px; background:#1976d2; color:#fff; cursor:pointer;">
-      Se connecter
-    </button>
-  </div>
-
 </div>
