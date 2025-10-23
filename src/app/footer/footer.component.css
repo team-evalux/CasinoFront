@@ -1,0 +1,30 @@
+/* src/app/shared/footer/footer.component.css */
+.footer {
+  background: #1a1a1a;
+  color: #f1f5f9;
+  padding: 20px 0;
+  font-size: 14px;
+}
+.footer a {
+  color: #f1f5f9;
+  text-decoration: none;
+  margin-right: 12px;
+}
+.footer a:hover {
+  text-decoration: underline;
+}
+.footer-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  max-width: 1200px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+}
+.footer-left, .footer-links, .footer-info {
+  margin-bottom: 12px;
+}
+.footer-links a {
+  display: inline-block;
+  margin-bottom: 6px;
+}
