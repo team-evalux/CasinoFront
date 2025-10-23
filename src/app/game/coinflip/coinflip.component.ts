@@ -109,4 +109,5 @@ export class CoinflipComponent {
   }
 
   refreshBalance() { this.wallet.refreshBalance(); }
+  protected readonly Math = Math;
 }

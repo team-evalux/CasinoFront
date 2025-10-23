@@ -13,8 +13,22 @@
     <div class="d-flex aic gap-12 mb-12" style="flex-wrap:wrap;">
       <div style="min-width:180px;">
         <label class="libelle">Mise (crédits)</label>
-        <input class="champ" type="number" [(ngModel)]="mise" [attr.min]="minBet" min="1" [disabled]="!isLoggedIn || enCours" />
+        <div style="display:flex; align-items:center; gap:6px;">
+          <input class="champ" type="number"
+                 [(ngModel)]="mise"
+                 [attr.min]="minBet"
+                 [attr.max]="currentBalance || 1000000"
+                 [disabled]="!isLoggedIn || enCours"/>
+          <button type="button"
+                  (click)="mise = Math.min((mise || 0) * 2, currentBalance || 1000000)"
+                  [disabled]="!isLoggedIn || enCours">×2</button>
+          <button type="button"
+                  (click)="mise = Math.max(Math.floor((mise || 0) / 2), minBet)"
+                  [disabled]="!isLoggedIn || enCours">/2</button>
+        </div>
+        <small class="sous-texte">Mise minimale : <strong>{{ minBet }}</strong> • Solde : <strong>{{ currentBalance ?? '—' }}</strong></small>
       </div>
+
 
       <button (click)="jouer()" [disabled]="!isLoggedIn || enCours" class="bouton bouton--primaire" style="width:120px;">
         {{ enCours ? 'Spinning…' : 'Spin' }}

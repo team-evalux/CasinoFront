@@ -1,4 +1,3 @@
-<!-- src/app/games/coinflip/coinflip.component.html -->
 <div class="conteneur section-jeu">
   <div class="panneau">
     <h2 class="titre-page">Pile ou Face</h2>
@@ -29,7 +28,11 @@
 
     <div class="mb-12">
       <label class="libelle">Mise (crédits)</label>
-      <input class="champ" type="number" [(ngModel)]="mise" [attr.min]="minBet" [max]="maxBet" [disabled]="enCours || !isLoggedIn">
+      <div style="display:flex; align-items:center; gap:6px;">
+        <input class="champ" type="number" [(ngModel)]="mise" [attr.min]="minBet" [max]="maxBet" [disabled]="enCours || !isLoggedIn">
+        <button type="button" (click)="mise = Math.min(mise * 2, maxBet)" [disabled]="enCours || !isLoggedIn">×2</button>
+        <button type="button" (click)="mise = Math.max(Math.floor(mise / 2), minBet)" [disabled]="enCours || !isLoggedIn">/2</button>
+      </div>
       <small class="sous-texte">Solde : <strong>{{ currentBalance ?? '—' }}</strong></small>
       <small *ngIf="mise && mise < minBet" style="display:block;color:#ff9b9b;">La mise doit être ≥ {{ minBet }}.</small>
     </div>

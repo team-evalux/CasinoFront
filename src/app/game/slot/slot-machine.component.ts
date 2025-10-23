@@ -339,4 +339,5 @@ export class SlotMachineComponent implements OnDestroy, AfterViewInit {
     this.clearAllTimers();
     this.stopAutoSpin();
   }
+  protected readonly Math = Math;
 }

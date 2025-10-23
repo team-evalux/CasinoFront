@@ -34,7 +34,23 @@
 
     <div class="mb-12">
       <label class="libelle">Mise</label>
-      <input class="champ" type="number" [(ngModel)]="montant" min="1" [disabled]="!isLoggedIn || enCours"/>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <input class="champ" type="number"
+               [(ngModel)]="montant"
+               [attr.min]="minBet"
+               [attr.max]="currentBalance || 1000000"
+               [disabled]="!isLoggedIn || enCours"/>
+        <button type="button"
+                (click)="montant = Math.min((montant || 0) * 2, currentBalance || 1000000)"
+                [disabled]="!isLoggedIn || enCours">
+          ×2
+        </button>
+        <button type="button"
+                (click)="montant = Math.max(Math.floor((montant || 0) / 2), minBet)"
+                [disabled]="!isLoggedIn || enCours">
+          /2
+        </button>
+      </div>
       <small class="sous-texte">Mise minimale : <strong>{{ minBet }}</strong> • Solde : <strong>{{ currentBalance ?? '—' }}</strong></small>
     </div>
 

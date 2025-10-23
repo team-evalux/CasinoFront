@@ -208,4 +208,5 @@ export class RouletteComponent implements OnDestroy {
     if (c === 'green') return '#2e7d32';
     return '#666';
   }
+  protected readonly Math = Math;
 }
