@@ -16,6 +16,8 @@
     </div>
 
     <div class="actions-area">
+      <button class="btn btn-close"><a [routerLink]="['/play/blackjack']" >Retour</a> </button>
+
       <button class="btn btn-close"
               *ngIf="s.creatorEmail === meEmail"
               (click)="closeTable()"
@@ -113,38 +115,20 @@
     <aside class="controls-panel card-surface">
       <h4>Mise & contrôles</h4>
 
-      <div *ngIf="s.phase === 'BETTING' && mySeat() as me" class="bet-box">
-        <label class="label">Ta mise</label>
-        <input class="champ" type="number"
-               [(ngModel)]="betAmount"
-               (ngModelChange)="onBetInputChange()"
-               [min]="s.minBet || 1"
-               [max]="(s.maxBet && s.maxBet>0) ? s.maxBet : null"
-               [placeholder]="s.minBet ? ('Mise (' + s.minBet + '–' + (s.maxBet && s.maxBet>0 ? s.maxBet : '∞') + ')') : 'Mise'">
-
-        <!-- ✅ Message solde insuffisant -->
-        <div *ngIf="solde <= 0" style="color:#b00020;font-size:0.9rem;margin-top:4px;">
-          ❌ Ton solde est vide. Recharge ton compte pour pouvoir miser.
-        </div>
-
-        <div *ngIf="solde > 0 && betAmount > solde" style="color:#b00020;font-size:0.9rem;margin-top:4px;">
-          ⚠️ Solde insuffisant pour cette mise ({{ solde }} disponibles)
-        </div>
+      <!-- ✅ Composant réutilisable pour la mise -->
+      <div *ngIf="s.phase === 'BETTING' && mySeat() as me">
+        <app-bet-input
+          [(value)]="betAmount"
+          [solde]="solde"
+          [min]="s.minBet || 1"
+          [max]="(s.maxBet && s.maxBet>0) ? s.maxBet : null"
+          label="Ta mise">
+        </app-bet-input>
 
         <div class="bet-actions" style="margin-top:8px;">
           <button class="btn btn-primary" (click)="bet()" [disabled]="!canPlaceBet(s)">
             Miser
           </button>
-        </div>
-
-        <small class="limits" *ngIf="s.minBet || s.maxBet">
-          Limites : min={{ s.minBet || 0 }}
-          <span *ngIf="s.maxBet && s.maxBet>0">• max={{ s.maxBet }}</span>
-        </small>
-
-        <!-- ✅ affichage du solde -->
-        <div style="margin-top:6px;color:#555;font-size:0.9rem;">
-          💰 Solde actuel : <strong>{{ solde }}</strong>
         </div>
       </div>
 

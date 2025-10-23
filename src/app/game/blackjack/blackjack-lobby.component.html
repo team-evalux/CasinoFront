@@ -1,7 +1,17 @@
-<div class="lobby-wrap">
-  <header class="lobby-head">
-    <h1>Tables Blackjack</h1>
+<div class="conteneur section-jeu">
+  <div class="panneau">
+    <h2 class="titre-page">Tables Blackjack</h2>
 
+    <div class="coin-stage" style="position:relative;">
+      <!-- 🔒 Overlay du cadenas (même style que coinflip) -->
+      <div *ngIf="!isLoggedIn" class="lock-overlay">
+      <div class="lock">🔒</div>
+      <div>Connecte-toi pour accéder aux tables</div>
+        <a routerLink="/login" class="cta">Se connecter</a>
+
+  </div>
+
+  <header class="lobby-head">
     <div class="create-form">
       <input [(ngModel)]="create.name" maxlength="10" placeholder="Nom de la table (optionnel)">
       <label>Sièges
@@ -34,9 +44,13 @@
       <input *ngIf="create.visibility==='PRIVATE'"
              [(ngModel)]="create.code"
              placeholder="Code d’accès (optionnel)" maxlength="10">
-      <button (click)="onCreate()" [disabled]="loading">Créer</button>
+      <button (click)="onCreate()" [disabled]="loading || !isLoggedIn">Créer</button>
     </div>
   </header>
+
+  </div>
+
+  <a [routerLink]="['/home']" class="bouton">Retour</a>
 
   <div *ngIf="loading">Chargement…</div>
   <div *ngIf="error" class="err">{{ error }}</div>
@@ -53,8 +67,7 @@
         </small>
       </p>
       <div style="display:flex; gap:8px;">
-        <button (click)="goTable(t)">Rejoindre</button>
-        <!-- Bouton visible seulement pour le créateur -->
+        <button (click)="goTable(t)" [disabled]="!isLoggedIn">Rejoindre</button>
         <button *ngIf="t.creatorEmail === (JSON.parse(localStorage.getItem('user')||'{}')?.email || null)"
                 (click)="closeTableFromLobby(t.id)"
                 [disabled]="t.phase !== 'BETTING'"
@@ -66,4 +79,5 @@
       </div>
     </article>
   </section>
+</div>
 </div>

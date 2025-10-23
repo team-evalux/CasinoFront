@@ -1,0 +1,33 @@
+<div class="bet-box">
+  <label class="label">{{ label }}</label>
+
+  <div class="bet-input-row">
+    <input class="champ"
+           type="number"
+           [(ngModel)]="value"
+           (ngModelChange)="onChange()"
+           [min]="min"
+           [max]="max || null"
+           [placeholder]="min ? ('Mise (' + min + '–' + (max && max>0 ? max : '∞') + ')') : 'Mise'">
+
+    <div class="quick-bet-buttons">
+      <button class="btn small" type="button" (click)="multiplier(0.5)">÷2</button>
+      <button class="btn small" type="button" (click)="multiplier(2)">×2</button>
+      <button class="btn small" type="button" (click)="miseMax()">Max</button>
+    </div>
+  </div>
+
+  <div *ngIf="solde <= 0" class="msg erreur">
+    ❌ Ton solde est vide. Recharge ton compte.
+  </div>
+
+  <div *ngIf="solde > 0 && value > solde" class="msg erreur">
+    ⚠️ Solde insuffisant pour cette mise ({{ solde }} disponibles)
+  </div>
+
+  <small class="limits" *ngIf="min || max">
+    Limites : min={{ min }} <span *ngIf="max && max>0">• max={{ max }}</span>
+  </small>
+
+  <div class="msg solde">💰 Solde actuel : <strong>{{ solde }}</strong></div>
+</div>

@@ -1,0 +1,44 @@
+.bet-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bet-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.champ {
+  flex: 1;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}
+
+.quick-bet-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.btn.small {
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.msg {
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+.msg.erreur {
+  color: #b00020;
+}
+
+.msg.solde {
+  color: #555;
+}

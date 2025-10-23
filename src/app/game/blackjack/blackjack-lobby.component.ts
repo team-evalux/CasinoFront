@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { BlackjackService, BJTableSummary } from '../../services/game/blackjack.service';
 import { Subscription, combineLatest, timer } from 'rxjs';
@@ -20,7 +20,7 @@ interface CreateForm {
 @Component({
   selector: 'app-blackjack-lobby',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './blackjack-lobby.component.html',
   styleUrls: ['./blackjack-lobby.component.css']
 })
@@ -83,12 +83,25 @@ export class BlackjackLobbyComponent implements OnInit, OnDestroy {
     });
   }
 
-  goTable(t: BJTableSummary) {
+  private async askCode(maxLength: number = 10): Promise<string | null> {
+    let code = window.prompt(`Table privée — entrez le code d’accès (max ${maxLength} caractères) :`);
+    if (code === null) return null;
+    code = code.trim();
+    if (code.length > maxLength) {
+      alert(`❌ Le code ne doit pas dépasser ${maxLength} caractères.`);
+      return null;
+    }
+    if (code.length === 0) {
+      alert('❌ Le code ne peut pas être vide.');
+      return null;
+    }
+    return code;
+  }
+
+  async goTable(t: BJTableSummary) {
     if (t.isPrivate) {
-      const provided = window.prompt('Table privée — entrez le code d’accès :');
-      if (!provided) {
-        return;
-      }
+      const provided = await this.askCode(10);
+      if (!provided) return;
       this.router.navigate(['/play/blackjack/table', t.id], { state: { code: provided } });
     } else {
       this.router.navigate(['/play/blackjack/table', t.id]);
@@ -98,28 +111,11 @@ export class BlackjackLobbyComponent implements OnInit, OnDestroy {
   validateBets() {
     const min = Number(this.create.minBet);
     const max = Number(this.create.maxBet);
-
-    // ✅ impose un minimum de 100
-    if (min < 100) {
-      this.create.minBet = 100;
-    }
-
-    // ✅ impose un minimum de 4 chiffres pour max (>= 1000)
-    if (max < 1000) {
-      this.create.maxBet = 1000;
-    }
-
-    // ✅ plafonne à 1 million
-    if (max > 1000000) {
-      this.create.maxBet = 1000000;
-    }
-
-    // ✅ s’assure que max >= min
-    if (this.create.maxBet < this.create.minBet) {
-      this.create.maxBet = this.create.minBet;
-    }
+    if (min < 100) this.create.minBet = 100;
+    if (max < 1000) this.create.maxBet = 1000;
+    if (max > 1000000) this.create.maxBet = 1000000;
+    if (this.create.maxBet < this.create.minBet) this.create.maxBet = this.create.minBet;
   }
-
 
   async onCreate() {
     if (!this.isLoggedIn) { this.error = 'Connecte-toi pour créer une table.'; return; }
