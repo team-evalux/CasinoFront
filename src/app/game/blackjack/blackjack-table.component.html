@@ -4,7 +4,6 @@
     <div class="title-area">
       <h2 class="table-title">
         <span class="table-name">{{ s.name ? (s.name ) : '' }}</span>
-
       </h2>
 
       <div class="meta">
@@ -16,7 +15,7 @@
     </div>
 
     <div class="actions-area">
-      <button class="btn btn-close"><a [routerLink]="['/play/blackjack']" >Retour</a> </button>
+      <button class="btn btn-close"><a [routerLink]="['/play/blackjack']">Retour</a></button>
 
       <button class="btn btn-close"
               *ngIf="s.creatorEmail === meEmail"
@@ -28,7 +27,30 @@
     </div>
   </header>
 
-  <!-- MAIN LAYOUT : left = game area, right = betting/controls -->
+  <!-- Modal code privé -->
+  <div class="modal-backdrop" *ngIf="showCodeModal">
+    <div class="modal">
+      <h3>Table privée</h3>
+      <p>Entre le code d’accès pour rejoindre la table.</p>
+
+      <input
+        [(ngModel)]="codeInput"
+        (ngModelChange)="onCodeInputChange()"
+        placeholder="Code d’accès"
+        maxlength="20"
+      />
+
+      <div class="err" *ngIf="codeError">{{ codeError }}</div>
+
+      <div class="row">
+        <button class="btn btn-primary" (click)="submitCode()">Rejoindre</button>
+        <a class="btn" [routerLink]="['/play/blackjack']">Annuler</a>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- MAIN LAYOUT -->
   <main class="bj-main" *ngIf="state as s">
     <!-- LEFT : dealer + seats -->
     <section class="game-area">
@@ -66,10 +88,9 @@
             <div class="seat-title">
               <strong>Siège {{ seat.index }}</strong>
               <span class="seat-name" *ngIf="seat.displayName || seat.email">
-                  {{ seat.displayName ?? seat.email }}
+                {{ seat.displayName ?? seat.email }}
               </span>
               <span class="seat-empty" *ngIf="!seat.displayName && !seat.email">Libre</span>
-
             </div>
 
             <div class="seat-badge" [ngClass]="{
@@ -100,12 +121,9 @@
               <button class="btn" (click)="hit()" [disabled]="!myTurn() || !(seat.hand.bet > 0)">Hit</button>
               <button class="btn" (click)="stand()" [disabled]="!myTurn() || !(seat.hand.bet > 0)">Stand</button>
               <button class="btn" (click)="double()" [disabled]="!myTurn() || !(seat.hand.bet > 0)">Double</button>
-              <button class="btn" (click)="surrender()" [disabled]="!myTurn() || !(seat.hand.bet > 0)">Surrender</button>
             </div>
 
-            <div *ngIf="!seat.email && !mySeat()" class="sit-row">
-              <button class="btn btn-primary" (click)="sit(seat.index)">S’asseoir</button>
-            </div>
+            <!-- ⛔️ bouton “S’asseoir” supprimé -->
           </div>
         </article>
       </div>
@@ -115,7 +133,6 @@
     <aside class="controls-panel card-surface">
       <h4>Mise & contrôles</h4>
 
-      <!-- ✅ Composant réutilisable pour la mise -->
       <div *ngIf="s.phase === 'BETTING' && mySeat() as me">
         <app-bet-input
           [(value)]="betAmount"

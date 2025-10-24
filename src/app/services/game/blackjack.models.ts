@@ -1,8 +1,5 @@
-// src/app/services/game/blackjack.models.ts
-export type BJSeatStatus = 'EMPTY' | 'OCCUPIED' | 'DISCONNECTED';
-// AJOUTS: inclure toutes les phases que le backend envoie
+export type BJSeatStatus = 'EMPTY' | 'SEATED' | 'DISCONNECTED';
 export type BJPhase =  'BETTING' | 'PLAYING' | 'DEALER_TURN' | 'PAYOUT';
-
 
 export interface BJCard {
   rank: string;               // "A","2",...,"K"
@@ -24,7 +21,7 @@ export interface BJSeat {
   index: number;
   userId?: number;
   email?: string;
-  displayName?: string;   // <-- ajouté
+  displayName?: string;
   status: BJSeatStatus;
   hand: BJPlayerState;
 }
@@ -50,7 +47,7 @@ export interface BJTableState {
 
   // infos créateur
   creatorEmail?: string;
-  creatorDisplayName?: string; // <-- ajouté
+  creatorDisplayName?: string;
 
   // dernier payout
   lastPayouts?: BJPayout[];
@@ -85,12 +82,12 @@ export interface BJCreateTableRes {
 // --- Formulaire UI (pour le lobby) ---
 export type BJVisibility = 'PUBLIC' | 'PRIVATE';
 export interface BJCreateTableForm {
-  name: string;      // UI only
+  name: string;
   maxSeats: number;
-  minBet: number;    // UI only
-  maxBet: number;    // UI only
+  minBet: number;
+  maxBet: number;
   visibility: BJVisibility;
-  code?: string;     // si PRIVATE
+  code?: string;
 }
 
 export interface BJPayout {
@@ -105,8 +102,5 @@ export interface BJPayout {
 export interface JoinOrCreateMsg { tableId?: string; code?: string; }
 export interface SitMsg { tableId: string; seatIndex: number; code?: string; }
 export interface BetMsg { tableId: number | string; amount: number; seatIndex?: number; }
-export type ActionType = 'HIT'|'STAND'|'DOUBLE'|'SPLIT'|'SURRENDER';
+export type ActionType = 'HIT'|'STAND'|'DOUBLE';
 export interface ActionMsg { tableId: number | string; seatIndex: number; type: ActionType; }
-
-
-

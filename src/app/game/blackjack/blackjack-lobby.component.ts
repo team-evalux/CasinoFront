@@ -70,43 +70,21 @@ export class BlackjackLobbyComponent implements OnInit, OnDestroy {
   }
 
   closeTableFromLobby(tableId: number | string) {
-    console.log("Tentative fermeture table:", tableId);
     this.bj.closeTable(tableId).subscribe({
       next: () => {
-        console.log("Table fermée avec succès:", tableId);
         this.tables = this.tables.filter(t => t.id !== tableId);
       },
       error: (e: any) => {
-        console.error("Erreur fermeture table:", e);
         this.error = e?.error || e?.message || 'Impossible de fermer la table';
       }
     });
   }
 
-  private async askCode(maxLength: number = 10): Promise<string | null> {
-    let code = window.prompt(`Table privée — entrez le code d’accès (max ${maxLength} caractères) :`);
-    if (code === null) return null;
-    code = code.trim();
-    if (code.length > maxLength) {
-      alert(`❌ Le code ne doit pas dépasser ${maxLength} caractères.`);
-      return null;
-    }
-    if (code.length === 0) {
-      alert('❌ Le code ne peut pas être vide.');
-      return null;
-    }
-    return code;
+  async goTable(t: BJTableSummary) {
+    // Plus de prompt ici : on enverra le code sur la page de la table via un modal
+    this.router.navigate(['/play/blackjack/table', t.id]);
   }
 
-  async goTable(t: BJTableSummary) {
-    if (t.isPrivate) {
-      const provided = await this.askCode(10);
-      if (!provided) return;
-      this.router.navigate(['/play/blackjack/table', t.id], { state: { code: provided } });
-    } else {
-      this.router.navigate(['/play/blackjack/table', t.id]);
-    }
-  }
 
   validateBets() {
     const min = Number(this.create.minBet);
@@ -120,6 +98,7 @@ export class BlackjackLobbyComponent implements OnInit, OnDestroy {
   async onCreate() {
     if (!this.isLoggedIn) { this.error = 'Connecte-toi pour créer une table.'; return; }
     this.loading = true; this.error = null;
+
     const req = {
       privateTable: this.create.visibility === 'PRIVATE',
       maxSeats: Number(this.create.maxSeats) || 5,
@@ -134,21 +113,34 @@ export class BlackjackLobbyComponent implements OnInit, OnDestroy {
         this.loading = false;
         const id = res.id;
         const navExtras = res.code ? { state: { code: res.code } } : undefined;
+
+        // 👉 on ne fait plus watchTable/wsJoin/wsSit ici.
+        // Le composant de la table s’en charge (auto-join + auto-seat).
         if (navExtras) {
           await this.router.navigate(['/play/blackjack/table', id], navExtras);
         } else {
           await this.router.navigate(['/play/blackjack/table', id]);
         }
-        await this.bj.watchTable(id);
-        await this.bj.wsJoin(id, res.code);
-        await this.bj.wsSit(id, 0, res.code);
       },
       error: (err) => {
         this.loading = false;
-        this.error = err?.error || 'Vous possédez déjà une table. Fermez-la avant d\'en créer une nouvelle.';
+
+        // extrait le vrai message backend si présent
+        const serverMsg =
+          err?.error?.error ?? // { error: "..."} (notre back)
+          err?.error?.message ??
+          err?.message ??
+          null;
+
+        // si pas de message lisible, fallback générique
+        this.error = serverMsg || 'Erreur lors de la création de la table.';
+
+        // optionnel : log pour debug
+        console.warn('[Lobby] createTable error:', err);
       }
     });
   }
+
   protected readonly localStorage = localStorage;
   protected readonly JSON = JSON;
 }

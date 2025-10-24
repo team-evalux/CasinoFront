@@ -1,13 +1,13 @@
 import { Component, HostListener, OnDestroy, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {ActivatedRoute, Router, RouterLink} from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { BlackjackService } from '../../services/game/blackjack.service';
 import { BJSeat, BJTableState } from '../../services/game/blackjack.models';
 import { Subscription, interval } from 'rxjs';
 import { WalletService } from '../../services/wallet.service';
 import { GameHistoryListComponent } from '../../history/game-history-list.component';
-import {HistoryService} from '../../services/history/history.service';
+import { HistoryService } from '../../services/history/history.service';
 import { BetInputComponent } from '../../bet-input/bet-input.component';
 
 @Component({
@@ -27,11 +27,14 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
   betAmount = 0;
   userEditedBet = false;
 
-  solde: number = 0; // ✅ suivi du solde actuel
+  solde: number = 0;
 
   private sub?: Subscription;
   private subErr?: Subscription;
   private walletSub?: Subscription;
+
+  private lastDeadline?: number;
+  private isPrivateTable = false;
 
   remainingSeconds: number = 0;
   private tickSub?: Subscription;
@@ -48,6 +51,13 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
     catch { return null; }
   })();
 
+  // MODAL privé
+  showCodeModal = false;
+  codeInput = '';
+  codeError: string | null = null;
+  private waitingAuth = false;
+  private joinAttempted = false;
+
   constructor(
     private route: ActivatedRoute,
     private bj: BlackjackService,
@@ -59,7 +69,6 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
   ) {}
 
   async ngOnInit(): Promise<void> {
-    // ✅ récupération du solde en direct
     this.walletSub = this.wallet.balance$.subscribe({
       next: (v) => { this.solde = v || 0; this.cd.detectChanges(); }
     });
@@ -68,64 +77,50 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
     if (!raw) { this.error = 'Identifiant de table manquant'; this.loading = false; return; }
     this.tableId = /^\d+$/.test(raw) ? Number(raw) : raw;
 
-    const codeFromState = (history && (history.state as any)?.code) ? (history.state as any).code : undefined;
-    let codeToUse: string | null | undefined = codeFromState;
+    // reset flags modale + purge erreur ws
+    this.showCodeModal = false;
+    this.waitingAuth = false;
+    this.joinAttempted = false;
+    this.codeInput = '';
+    this.codeError = null;
+    this.bj.clearError();
 
     await this.bj.watchTable(this.tableId);
 
+    // meta -> privé ?
     try {
       const meta = await this.bj.getTableMeta(this.tableId).toPromise().catch(() => null);
-      const isPrivate = !!meta?.isPrivate;
+      this.isPrivateTable = !!meta?.isPrivate;
+    } catch { this.isPrivateTable = false; }
 
-      if (isPrivate && !codeToUse) {
-        const provided = window.prompt('Table privée — entrez le code d’accès :');
-        if (!provided) {
-          this.error = 'Code requis pour rejoindre la table privée';
-          this.loading = false;
-          return;
-        }
-        codeToUse = provided;
-      }
-    } catch (e) {
-      console.warn('[Table] getTableMeta failed', e);
-    }
-
+    // Tenter JOIN sans code d'abord
     try {
-      await this.bj.wsJoin(this.tableId, codeToUse);
-    } catch (err: any) {
-      const msg = (err?.message || '').toString();
-      if (/code/i.test(msg)) {
-        this.error = 'Code faux'; // pas de redirect ici
+      await this.bj.wsJoin(this.tableId, null);
+      this.showCodeModal = false;
+      this.waitingAuth = false;
+      this.joinAttempted = false;
+      this.codeError = null;
+    } catch {
+      if (this.isPrivateTable) {
+        // Ouvrir la modale SANS message d'erreur : l’utilisateur n’a encore rien saisi
+        this.showCodeModal = true;
+        this.waitingAuth = false; // on n’attend pas d’auth tant qu’aucun code n’a été soumis
+        this.joinAttempted = false;
+        this.codeError = null;    // << important : pas de "Code incorrect" par défaut
+        this.loading = false;
       } else {
-        this.error = msg || 'Impossible de rejoindre la table';
+        this.error = 'Impossible de rejoindre la table';
+        this.loading = false;
+        return;
       }
-      this.loading = false;
-      return;
     }
 
-    const tryAutoSit = (state: any | null) => {
-      if (!state) return;
-      const meAlready = state.seats?.find((s: any) => s.email === this.meEmail);
-      if (meAlready) return;
-      const empty = state.seats?.find((s: any) =>
-        !s || !s.email || s.status === 'EMPTY' || s.status === undefined
-      );
-      if (empty) {
-        const index = empty.index;
-        this.bj.wsSit(this.tableId, index, codeToUse).catch(() => {});
-      }
-    };
-
-    const onceSub = this.bj.table$.subscribe(s => {
-      tryAutoSit(s);
-      try { onceSub.unsubscribe(); } catch {}
-    });
-
+    // Sécurité : fallback si aucun état
     const FALLBACK_MS = 3000;
     let receivedState = false;
     const fallbackTimer = setTimeout(() => {
-      if (!receivedState && !this.error) {
-        this.error = 'Impossible de recevoir l’état de la table. Vérifie le code ou attends.';
+      if (!receivedState && !this.error && !this.showCodeModal) {
+        this.error = 'Impossible de recevoir l’état de la table.';
         this.loading = false;
       }
     }, FALLBACK_MS);
@@ -134,12 +129,18 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
       if (s) {
         receivedState = true;
         clearTimeout(fallbackTimer);
+
+        // On ferme la modale UNIQUEMENT si on a tenté un join avec code
+        if (this.waitingAuth && this.joinAttempted) {
+          this.waitingAuth = false;
+          this.joinAttempted = false;
+          this.showCodeModal = false;
+          this.codeError = null;
+        }
       }
 
-      // conserve la phase précédente pour la détection de transition
       const prevPhase = this.lastPhase;
       this.lastPhase = s?.phase;
-
       this.state = s;
       if (!this.error) this.loading = false;
 
@@ -162,40 +163,29 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
           this.wallet.applyOptimisticDelta(net);
         }
 
-        // --- NOUVEAU : push local dans l'historique quand on *entre* en PAYOUT (fin du dealer turn)
         if (prevPhase !== 'PAYOUT') {
           const p = this.myPayoutObj;
           if (p) {
             const bet = Number(p.bet ?? 0);
             const credit = Number(p.credit ?? 0);
-            // outcome si fourni, sinon déduit
             let outcomeStr = (p.outcome ?? '').toString().trim();
-            if (!outcomeStr) {
-              outcomeStr = credit > bet ? 'WIN' : (credit === bet ? 'PUSH' : 'LOSE');
-            }
-            // si on a un total côté payload, on l'ajoute dans l'outcome pour affichage
+            if (!outcomeStr) outcomeStr = credit > bet ? 'WIN' : (credit === bet ? 'PUSH' : 'LOSE');
             const playerTotal = p.total ?? null;
             const outcomePayload = (playerTotal != null)
-              ? `total=${playerTotal},outcome=${outcomeStr}`
-              : `outcome=${outcomeStr}`;
-
+              ? `total=${playerTotal},outcome=${outcomeStr}` : `outcome=${outcomeStr}`;
             const multiplier = bet ? Math.round((credit / bet) * 100) / 100 : (credit > 0 ? 2 : 0);
-
             try {
               this.history.pushLocal({
                 game: 'blackjack',
                 outcome: outcomePayload,
                 montantJoue: bet,
                 montantGagne: credit,
-                multiplier: multiplier,
+                multiplier,
                 createdAt: new Date().toISOString()
               });
-            } catch (e) {
-              console.warn('[History] pushLocal failed', e);
-            }
+            } catch {}
           }
         }
-        // --- FIN pushLocal ---
 
         if (this.resultTimeoutId) clearTimeout(this.resultTimeoutId);
         this.resultTimeoutId = setTimeout(() => {
@@ -206,20 +196,61 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
         }, this.RESULT_DISPLAY_MS);
         try { this.cd.detectChanges(); } catch {}
       }
-      this.setupCountdown();
+
+      this.setupCountdownIfDeadlineChanged(s?.deadline);
     });
 
+    // Erreurs WS : n’affiche "Code incorrect" que si l’utilisateur a soumis un code
     this.subErr = this.bj.error$.subscribe(msg => {
-      if (msg) {
-        if (/code|privée|privé|accès/i.test(msg)) {
-          this.showErrorAndRedirect('Code faux');
-        } else {
-          this.error = msg;
-          this.loading = false;
-        }
+      if (!msg) return;
+      if (this.isPrivateTable && /code|privée|privé|accès/i.test(msg)) {
+        this.showCodeModal = true;
+        // si aucun join avec code n’a été tenté, on ne pose pas "Code incorrect"
+        this.codeError = this.joinAttempted ? 'Code incorrect' : null;
+        this.waitingAuth = false;
+      } else {
+        this.error = msg;
+        this.loading = false;
       }
     });
   }
+
+  // Efface l’erreur pendant la saisie
+  onCodeInputChange() {
+    if (this.codeError) this.codeError = null;
+  }
+
+  // Submit code
+  async submitCode() {
+    this.codeError = null;
+    const code = (this.codeInput || '').trim();
+    if (!code) { this.codeError = 'Entre un code'; return; }
+    try {
+      this.joinAttempted = true;
+      await this.bj.wsJoin(this.tableId, code);
+      this.waitingAuth = true; // on attend un TABLE_STATE
+    } catch (e: any) {
+      this.joinAttempted = false;
+      this.codeError = e?.message || 'Code incorrect';
+    }
+  }
+
+  private setupCountdownIfDeadlineChanged(deadline?: number) {
+    if (!deadline) {
+      this.lastDeadline = undefined;
+      this.stopCountdown();
+      this.remainingSeconds = 0;
+      try { this.cd.detectChanges(); } catch {}
+      return;
+    }
+    if (this.lastDeadline !== deadline) {
+      this.lastDeadline = deadline;
+      this.stopCountdown();
+      this.setupCountdown();
+    }
+  }
+
+  private stopCountdown() { this.tickSub?.unsubscribe(); this.tickSub = undefined; }
 
   private showErrorAndRedirect(message: string) {
     this.error = message;
@@ -258,7 +289,7 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
       });
     }
   }
-  private stopCountdown() { this.tickSub?.unsubscribe(); this.tickSub = undefined; }
+
   private updateRemaining() {
     if (!this.state || !this.state.deadline) {
       this.remainingSeconds = 0;
@@ -272,6 +303,7 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
     if (!this.state || !this.state.seats || !this.meEmail) return null;
     return this.state.seats.find(s => s.email === this.meEmail) || null;
   }
+
   myTurn(): boolean {
     const me = this.mySeat();
     if (!me || !this.state) return false;
@@ -318,28 +350,29 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ✅ Nouvelle logique : on désactive si solde insuffisant
   canPlaceBet(s: BJTableState | null): boolean {
     if (!s) return false;
     const min = s.minBet ?? 0;
     const max = s.maxBet ?? 0;
     const amount = Number(this.betAmount) || 0;
-
-    if (this.solde <= 0 || this.solde < amount) return false; // ❌ pas assez de solde
+    if (this.solde <= 0 || this.solde < amount) return false;
     if (amount <= 0) return false;
     if (min > 0 && amount < min) return false;
     if (max > 0 && amount > max) return false;
     return true;
   }
 
-  async sit(index: number) { await this.bj.wsSit(this.tableId, index); }
-  async leave() { const me = this.mySeat(); if (me) await this.bj.wsLeave(this.tableId, me.index); }
+  async leave() {
+    const me = this.mySeat();
+    if (me) await this.bj.wsLeave(this.tableId, me.index);
+  }
+
   async bet() {
     if (!this.betAmount || this.betAmount <= 0) return;
     if (this.solde < this.betAmount) { this.error = 'Solde insuffisant pour miser.'; setTimeout(() => this.error = null, 3500); return; }
 
     const me = this.mySeat();
-    if (!me) { this.error = 'Tu dois être assis pour miser.'; return; }
+    if (!me) { this.error = 'Tu dois être à la table pour miser.'; return; }
     const s = this.state;
     if (s) {
       const min = s.minBet ?? 0;
@@ -359,7 +392,6 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
   async hit() { const me = this.mySeat(); if (me) { await this.bj.wsAction(this.tableId, 'HIT', me.index); } }
   async stand() { const me = this.mySeat(); if (me) await this.bj.wsAction(this.tableId, 'STAND', me.index); }
   async double() { const me = this.mySeat(); if (me) await this.bj.wsAction(this.tableId, 'DOUBLE', me.index); }
-  async surrender() { const me = this.mySeat(); if (me) await this.bj.wsAction(this.tableId, 'SURRENDER', me.index); }
 
   closeTable() {
     this.bj.closeTable(this.tableId).subscribe({

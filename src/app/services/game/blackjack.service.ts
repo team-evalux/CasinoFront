@@ -1,4 +1,3 @@
-// src/app/services/game/blackjack.service.ts
 import { Injectable, NgZone } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import {BehaviorSubject, Observable, throwError} from 'rxjs';
@@ -37,7 +36,7 @@ export interface JoinOrCreateMsg {
 
 export interface SitMsg { tableId: number | string; seatIndex: number; code?: string | null; }
 export interface BetMsg { tableId: number | string; amount: number; seatIndex?: number; }
-export type ActionType = 'HIT'|'STAND'|'DOUBLE'|'SPLIT'|'SURRENDER';
+export type ActionType = 'HIT'|'STAND'|'DOUBLE';
 export interface ActionMsg { tableId: number | string; seatIndex: number; type: ActionType; }
 
 @Injectable({ providedIn: 'root' })
@@ -59,12 +58,10 @@ export class BlackjackService {
   private currentTableId?: number | string;
   private onConnectedResolvers: Array<() => void> = [];
 
-  // <-- nouvelles références aux subscriptions STOMP
   private lobbySubscription?: any;
   private errorsSubscription?: any;
   private tableSubscription?: any;
   private currentTableIsPrivate: boolean = false;
-
 
   constructor(private http: HttpClient, private zone: NgZone,private router: Router) {}
 
@@ -89,14 +86,12 @@ export class BlackjackService {
     );
   }
 
-
   // --- WS connection promise ---
   private waitConnected(): Promise<void> {
     if (this.stomp && this.stomp.connected) return Promise.resolve();
     return new Promise<void>((resolve) => this.onConnectedResolvers.push(resolve));
   }
 
-  // src/app/services/game/blackjack.service.ts (méthode connectIfNeeded)
   connectIfNeeded() {
     if (this.stomp && this.stomp.active) return;
 
@@ -114,22 +109,18 @@ export class BlackjackService {
       heartbeatOutgoing: 10000,
       onConnect: () => {
         console.log('[WS] connected, subscribing lobby + errors etc.');
-        // résout les promises waitConnected()
         const toResolve = [...this.onConnectedResolvers];
         this.onConnectedResolvers.length = 0;
         toResolve.forEach(r => r());
 
-        // Si on avait des subscriptions de l'ancienne instance, unsubscribe-les d'abord
         try { this.lobbySubscription?.unsubscribe(); } catch {}
         try { this.errorsSubscription?.unsubscribe(); } catch {}
         try { this.tableSubscription?.unsubscribe(); } catch {}
 
-        // (re)subscribe lobby (unique)
         this.lobbySubscription = this.stomp!.subscribe('/topic/bj/lobby', (msg) =>
           this.zone.run(() => this.onLobby(msg))
         );
 
-        // errors queue (unique)
         this.errorsSubscription = this.stomp!.subscribe('/user/queue/bj/errors', (msg) =>
           this.zone.run(() => {
             try {
@@ -137,7 +128,6 @@ export class BlackjackService {
               const p = JSON.parse(msg.body);
               console.log('[WS] parsed user error:', p);
               this.errorSubject.next(p?.error || p?.msg || 'Erreur serveur');
-              // conserve le clearError existant
               setTimeout(() => this.clearError(), 5000);
             } catch (e) {
               console.warn('[WS] error parsing /user/queue/bj/errors', e);
@@ -145,12 +135,10 @@ export class BlackjackService {
           })
         );
 
-        // ré-subscribe au topic de la table courante si demandé
         if (this.currentTableId != null) {
           console.log('[WS] re-subscribing to current table', this.currentTableId, 'isPrivate=', this.currentTableIsPrivate);
           this.subscribeTableTopic(this.currentTableId, this.currentTableIsPrivate);
         }
-
       },
       onStompError: () => {}
     });
@@ -170,14 +158,11 @@ export class BlackjackService {
   }
 
   private subscribeTableTopic(tableId: number | string, isPrivate = false) {
-    // si c'est déjà la même table et qu'on a une subscription, rien à faire
     if (String(this.currentTableId) === String(tableId) && this.tableSubscription) return;
 
-    // unsubscribe si actif
     try { this.tableSubscription?.unsubscribe(); } catch {}
     this.tableSubscription = undefined;
 
-    // met à jour l'id courant (utile pour reconnexion) et si privé/public
     this.currentTableId = tableId;
     this.currentTableIsPrivate = !!isPrivate;
 
@@ -191,14 +176,12 @@ export class BlackjackService {
     );
   }
 
-
   private unsubscribeTableTopic() {
     try { this.tableSubscription?.unsubscribe(); } catch {}
     this.tableSubscription = undefined;
     this.currentTableId = undefined;
   }
 
-  // src/app/services/game/blackjack.service.ts (ajoute)
   closeTable(tableId: number | string) {
     return this.http.delete(`${this.apiBase}/table/${tableId}`);
   }
@@ -218,7 +201,6 @@ export class BlackjackService {
     if (r === '4' || r === 'FOUR') return { value: 4, isAce: false };
     if (r === '3' || r === 'THREE') return { value: 3, isAce: false };
     if (r === '2' || r === 'TWO') return { value: 2, isAce: false };
-    // fallback
     const n = parseInt(r, 10);
     if (!Number.isNaN(n)) return { value: Math.max(0, n), isAce: false };
     return { value: 0, isAce: false };
@@ -229,7 +211,7 @@ export class BlackjackService {
     let sum = 0;
     let aces = 0;
     for (const c of cards) {
-      const rank = c?.rank ?? c; // parfois payloade contient juste la string
+      const rank = c?.rank ?? c;
       const { value, isAce } = this.rankToValue(rank);
       sum += value;
       if (isAce) aces++;
@@ -243,9 +225,7 @@ export class BlackjackService {
 
   private onTableEvent(msg: IMessage) {
     try {
-      console.log('[WS] onTableEvent raw:', msg);
       const evt = JSON.parse(msg.body);
-      console.log('[WS] onTableEvent parsed type=', evt?.type, 'payload=', evt?.payload);
       if (!evt || !evt.type) return;
       const curr = this.tableSubject.value ? { ...this.tableSubject.value } : null;
 
@@ -256,10 +236,8 @@ export class BlackjackService {
           break;
         }
         case 'HAND_START': {
-          // on part d'un état courant (ou d'un squelette)
           const base = curr ?? this.normalizeState({});
           base.seats = this.normalizeSeatsMap(evt.payload.players);
-          // dealerUp peut être une carte unique ; on veut un tableau de cartes
           const dealerUp = evt.payload?.dealerUp ? [evt.payload.dealerUp] : (base.dealer?.cards ?? []);
           base.dealer = { cards: dealerUp, total: this.computeBestTotal(dealerUp) };
           base.phase = 'PLAYING';
@@ -288,7 +266,6 @@ export class BlackjackService {
           const i = evt.payload.seat;
           if (s.seats?.[i]) {
             if (evt.payload.hand) {
-              // Met à jour la main côté client et recalcule total
               const newHand = { ...s.seats[i].hand, ...evt.payload.hand };
               newHand.total = this.computeBestTotal(newHand.cards);
               s.seats[i] = { ...s.seats[i], hand: newHand };
@@ -319,32 +296,22 @@ export class BlackjackService {
           break;
         }
         case 'PAYOUTS': {
-          console.debug('WS EVENT PAYOUTS payload:', evt.payload);
-          if (!curr) break;
           const s = { ...curr, phase: 'PAYOUT', lastPayouts: evt.payload?.payouts ?? [] };
           this.tableSubject.next(s);
           break;
         }
-
         case 'TABLE_CLOSED': {
-          console.log('[WS] Table fermée par le créateur.');
           this.tableSubject.next(null);
-          // redirige vers le lobby
-          this.zone.run(() => {
-            this.router.navigate(['/play/blackjack']);
-          });
+          this.zone.run(() => { this.router.navigate(['/play/blackjack']); });
           break;
         }
-
         default:
           break;
       }
-    } catch (e) {
-      // ignore parse errors
-    }
+    } catch {}
   }
 
-  // ---- NOUVEAU: normalisations ----
+  // ---- normalisations ----
   private normalizeState(payload: any): {
     phase: any;
     maxBet: any;
@@ -361,7 +328,6 @@ export class BlackjackService {
     deadline: any;
     creatorDisplayName: any
   } {
-    // Normalise le dealer et les seats ; calcule les totals
     const seats = this.normalizeSeatsMap(payload.seats);
     const dealerObj = payload.dealer ?? { cards: [], total: 0 };
     const dealerCards = dealerObj.cards ?? [];
@@ -385,8 +351,6 @@ export class BlackjackService {
     };
   }
 
-
-
   private normalizeSeatsMap(seatsMap: any): BJSeat[] {
     if (!seatsMap) return [];
     return Object.keys(seatsMap)
@@ -395,10 +359,7 @@ export class BlackjackService {
       .map(i => {
         const s = seatsMap[i] ?? {};
         const hand = s.hand ?? { cards: [], standing: false, busted: false, bet: 0 };
-        // calc total localement
         const total = this.computeBestTotal(hand.cards);
-
-        // Try to use server-provided displayName, otherwise try username/pseudo/email-local-part
         const displayName = s.displayName ?? s.username ?? s.pseudo ??
           (typeof s.email === 'string' ? s.email.split('@')[0] : undefined);
 
@@ -408,22 +369,16 @@ export class BlackjackService {
           email: s.email,
           displayName: displayName,
           status: s.status,
-          hand: {
-            ...hand,
-            total: total
-          }
+          hand: { ...hand, total }
         } as BJSeat;
       });
   }
-
 
   private normPhase(p: any): any {
     if (!p) return 'BETTING';
     if (typeof p === 'string') return p;
     return p.name ?? 'BETTING';
   }
-
-
 
   private onTableState(msg: IMessage) {
     try {
@@ -437,15 +392,10 @@ export class BlackjackService {
     if (String(this.currentTableId) === String(tableId) && this.tableSubscription) {
       return;
     }
-
-    // stocke l'intention
     this.currentTableId = tableId;
-
-    // assure connexion WS
     this.connectIfNeeded();
     await this.waitConnected();
 
-    // fetch meta to know if private (and subscribe accordingly)
     try {
       const meta = await this.getTableMeta(tableId).toPromise();
       const isPrivate = !!meta?.isPrivate;
@@ -457,17 +407,13 @@ export class BlackjackService {
     }
   }
 
-
   disconnectTable() {
-    // annule subscription table (ne touche pas au socket global)
     this.unsubscribeTableTopic();
-    // ne remplace pas la tableSubject si on veut forcer null côté UI
     this.tableSubject.next(null);
     this.currentTableId = undefined;
   }
 
   disconnectAll() {
-    // cleanup toutes les subscriptions et stop le stomp client
     try { this.lobbySubscription?.unsubscribe(); } catch {}
     try { this.errorsSubscription?.unsubscribe(); } catch {}
     try { this.tableSubscription?.unsubscribe(); } catch {}
@@ -489,11 +435,14 @@ export class BlackjackService {
     this.publish('/app/bj/join', <JoinOrCreateMsg>{ tableId, code }, code ? { code } : undefined);
   }
 
+  /**
+   * Conservée pour compat mais **inutile** en mode auto-seat (le serveur affecte le slot automatiquement).
+   * Évite de l’appeler depuis les composants.
+   */
   async wsSit(tableId: number | string, seatIndex: number, code?: string | null) {
     await this.waitConnected();
     this.publish('/app/bj/sit', <SitMsg>{ tableId, seatIndex, code }, code ? { code } : undefined);
   }
-
 
   async wsBet(tableId: number | string, amount: number, seatIndex?: number) {
     await this.waitConnected();
@@ -515,19 +464,14 @@ export class BlackjackService {
       console.warn('[WS] publish blocked, stomp not connected:', dest, body);
       return;
     }
-
-    // assure que le header 'code' est présent si on l'a dans le body
     const headers: Record<string,string> = {
       ...(extraHeaders ?? {}),
       ...(body && body.code ? { code: String(body.code) } : {})
     };
-
-    console.log('[WS] publish ->', dest, body, 'headers=', headers);
     this.stomp.publish({
       destination: dest,
       body: JSON.stringify(body ?? {}),
       headers
     });
   }
-
 }
