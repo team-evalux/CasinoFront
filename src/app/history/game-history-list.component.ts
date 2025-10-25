@@ -40,11 +40,14 @@ import { RouterLink } from '@angular/router';
           </div>
 
           <div style="text-align:right;min-width:120px">
-            <div [style.color]="it.montantGagne>0 ? 'green' : '#b00020'">
-              {{ it.montantGagne>0 ? '+' + it.montantGagne : '-' + it.montantJoue }}
+            <div [style.color]="netColorOf(it)">
+              {{ netLabelOf(it) }}
             </div>
-            <div style="font-size:0.85rem;color:#666">x{{ it.multiplier ? (it.multiplier | number:'1.2-2') : '—' }}</div>
+            <div style="font-size:0.85rem;color:#666">
+              x{{ it.multiplier ? (it.multiplier | number:'1.2-2') : '—' }}
+            </div>
           </div>
+
         </li>
       </ul>
 
@@ -86,6 +89,24 @@ export class GameHistoryListComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void { this.sub?.unsubscribe(); }
+
+  netGainOf(it: HistoryEntry | null | undefined): number {
+    if (!it) return 0;
+    return Number(it.montantGagne ?? 0) - Number(it.montantJoue ?? 0);
+  }
+  netLabelOf(it: HistoryEntry | null | undefined): string {
+    const n = this.netGainOf(it);
+    if (n > 0) return `+${n}`;
+    if (n < 0) return `-${Math.abs(n)}`;
+    return '0';
+  }
+  netColorOf(it: HistoryEntry | null | undefined): string {
+    const n = this.netGainOf(it);
+    if (n > 0) return 'green';
+    if (n < 0) return '#b00020';
+    return '#eab308';
+  }
+
 
   formatOutcome(it: HistoryEntry) {
     if (!it || !it.outcome) return null;

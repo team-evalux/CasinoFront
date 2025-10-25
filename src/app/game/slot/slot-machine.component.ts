@@ -306,6 +306,24 @@ export class SlotMachineComponent implements OnDestroy, AfterViewInit {
     this.pendingHistoryEntry = null;
   }
 
+  // 👉 calcule le net à partir du dernier résultat
+  get netGain(): number {
+    const r = this.lastResult;
+    if (!r) return 0;
+    const mise = r.montantJoue ?? this.mise ?? 0;
+    const gagne = r.montantGagne ?? 0;
+    return gagne - mise;
+  }
+
+// 👉 format + signe
+  get netLabel(): string {
+    const n = this.netGain;
+    if (n > 0) return `+${n}`;
+    if (n < 0) return `-${Math.abs(n)}`;
+    return '0';
+  }
+
+
   private forceCleanup() {
     this.reelStrips.forEach(elref => {
       const el = elref.nativeElement;

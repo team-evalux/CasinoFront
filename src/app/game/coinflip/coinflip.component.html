@@ -57,10 +57,23 @@
     <div *ngIf="message || error" class="panneau mt-12">
       <div *ngIf="lastResult">
         <p><strong>Résultat :</strong> {{ lastResult?.outcome | uppercase }}</p>
-        <p *ngIf="lastResult?.win" style="color:#34d399">Tu as gagné ! +{{ lastResult?.montantGagne }} crédits.</p>
-        <p *ngIf="lastResult && !lastResult.win" style="color:#f87171">Tu as perdu. -{{ lastResult?.montantJoue }} crédits.</p>
+
+        <!-- Affiche le net -->
+        <ng-container [ngSwitch]="true">
+          <p *ngSwitchCase="netGain > 0" style="color:#34d399">
+            Tu as gagné ! {{ netLabel }} crédits.
+          </p>
+          <p *ngSwitchCase="netGain === 0" style="color:#eab308">
+            Tu récupères ta mise. 0 crédit net.
+          </p>
+          <p *ngSwitchDefault style="color:#f87171">
+            Tu as perdu. {{ netLabel }} crédits.
+          </p>
+        </ng-container>
+
         <p>Solde : <strong>{{ lastResult?.solde }}</strong></p>
       </div>
+
       <p *ngIf="error" style="color:#ff9b9b">{{ error }}</p>
     </div>
 

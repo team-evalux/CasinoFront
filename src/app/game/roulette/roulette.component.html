@@ -67,14 +67,34 @@
     <div class="panneau mt-12">
       <p>Solde : <strong>{{ currentBalance ?? '—' }}</strong></p>
       <div *ngIf="lastResult" class="d-flex aic gap-12 mt-8">
-        <div [style.background]="colorFor(lastResult.color)" class="pastille" style="width:56px;height:56px;font-size:20px;">{{ lastResult.number }}</div>
+        <div [style.background]="colorFor(lastResult.color)" class="pastille" style="width:56px;height:56px;font-size:20px;">
+          {{ lastResult.number }}
+        </div>
         <div>
-          <div style="font-weight:700">{{ lastResult.number }} <small style="text-transform:capitalize;margin-left:8px;">{{ lastResult.color }}</small></div>
-          <div *ngIf="lastResult.win" style="color:#34d399;margin-top:6px;">Gagné +{{ lastResult.montantGagne }}</div>
-          <div *ngIf="!lastResult.win" style="color:#f87171;margin-top:6px;">Perdu -{{ lastResult.montantJoue }}</div>
-          <div class="sous-texte mt-8">Multiplicateur : <strong>{{ resultMultiplier(lastResult) ?? '—' }}</strong></div>
+          <div style="font-weight:700">
+            {{ lastResult.number }}
+            <small style="text-transform:capitalize;margin-left:8px;">{{ lastResult.color }}</small>
+          </div>
+
+          <!-- ✅ affiche en net -->
+          <ng-container [ngSwitch]="true">
+            <div *ngSwitchCase="netGainOf(lastResult) > 0" style="color:#34d399;margin-top:6px;">
+              Gagné <strong>{{ netLabelOf(lastResult) }}</strong>
+            </div>
+            <div *ngSwitchCase="netGainOf(lastResult) === 0" style="color:#eab308;margin-top:6px;">
+              Mise rendue • <strong>0</strong>
+            </div>
+            <div *ngSwitchDefault style="color:#f87171;margin-top:6px;">
+              Perdu <strong>{{ netLabelOf(lastResult) }}</strong>
+            </div>
+          </ng-container>
+
+          <div class="sous-texte mt-8">
+            Multiplicateur : <strong>{{ resultMultiplier(lastResult) ?? '—' }}</strong>
+          </div>
         </div>
       </div>
+
       <div *ngIf="!lastResult" class="sous-texte">Aucun spin récent</div>
       <p *ngIf="error" class="mt-8" style="color:#ff9b9b">{{ error }}</p>
     </div>

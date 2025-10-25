@@ -27,7 +27,7 @@ import {FormsModule} from '@angular/forms';
           <th style="padding:8px">Jeu</th>
           <th style="padding:8px">Issue / détails</th>
           <th style="padding:8px">Mise</th>
-          <th style="padding:8px">Gain</th>
+          <th style="padding:8px">Net</th>
           <th style="padding:8px">Multiplicateur</th>
           <th style="padding:8px">Date</th>
         </tr>
@@ -59,8 +59,8 @@ import {FormsModule} from '@angular/forms';
             </ng-container>
           </td>
           <td style="padding:8px">{{ it.montantJoue }}</td>
-          <td style="padding:8px" [style.color]="it.montantGagne>0 ? 'green' : '#b00020'">
-            {{ it.montantGagne }}
+          <td style="padding:8px" [style.color]="netColorOf(it)">
+            {{ netLabelOf(it) }}
           </td>
           <td style="padding:8px">{{ it.multiplier ? (it.multiplier | number:'1.2-2') : '—' }}</td>
           <td style="padding:8px">{{ it.createdAt | date:'short' }}</td>
@@ -109,6 +109,24 @@ export class GameHistoryComponent implements OnInit {
       error: () => { this.items = []; this.loading = false; }
     });
   }
+
+  netGainOf(it: HistoryEntry | null | undefined): number {
+    if (!it) return 0;
+    return Number(it.montantGagne ?? 0) - Number(it.montantJoue ?? 0);
+  }
+  netLabelOf(it: HistoryEntry | null | undefined): string {
+    const n = this.netGainOf(it);
+    if (n > 0) return `+${n}`;
+    if (n < 0) return `-${Math.abs(n)}`;
+    return '0';
+  }
+  netColorOf(it: HistoryEntry | null | undefined): string {
+    const n = this.netGainOf(it);
+    if (n > 0) return 'green';
+    if (n < 0) return '#b00020';
+    return '#eab308';
+  }
+
 
   loadForGame() {
     const g = this.gameInput && this.gameInput.trim() !== '' ? this.gameInput.trim() : null;

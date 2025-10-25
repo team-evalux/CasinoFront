@@ -78,6 +78,22 @@ export class RouletteComponent implements OnDestroy {
     return RouletteComponent.RED_SET.has(Number(n));
   }
 
+  // 👉 gain net pour un résultat (positif, négatif ou 0)
+  netGainOf(res: RouletteBetResponse | null): number {
+    if (!res) return 0;
+    const mise = Number(res.montantJoue ?? 0);
+    const gagne = Number(res.montantGagne ?? 0);
+    return gagne - mise;
+  }
+
+// 👉 libellé signé (+X / -X / 0)
+  netLabelOf(res: RouletteBetResponse | null): string {
+    const n = this.netGainOf(res);
+    if (n > 0) return `+${n}`;
+    if (n < 0) return `-${Math.abs(n)}`;
+    return '0';
+  }
+
   choisirNumero(n: number) {
     if (!this.isLoggedIn || this.enCours) return;
     this.betType = 'straight';

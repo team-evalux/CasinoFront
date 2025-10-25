@@ -55,6 +55,23 @@ export class CoinflipComponent {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
+  // coinflip.component.ts
+  get netGain(): number {
+    const r = this.lastResult;
+    if (!r) return 0;
+    const mise = r.montantJoue ?? this.mise ?? 0;
+    const gagne = r.montantGagne ?? 0;
+    return gagne - mise;
+  }
+
+  get netLabel(): string {
+    const n = this.netGain;
+    if (n > 0) return `+${n}`;
+    if (n < 0) return `-${Math.abs(n)}`;
+    return '0';
+  }
+
+
   jouer() {
     this.error = null;
     this.message = null;

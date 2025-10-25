@@ -79,19 +79,24 @@
         <div *ngFor="let s of lastResult.reels" class="final-cell" style="font-size:36px;min-width:64px;text-align:center;">{{ s }}</div>
       </div>
 
-      <p *ngIf="lastResult.win" style="color:#34d399;margin:0;">Tu as gagné ! +<strong>{{ lastResult.montantGagne }}</strong> crédits.</p>
-      <p *ngIf="!lastResult.win" style="color:#f87171;margin:0;">Tu as perdu. -<strong>{{ lastResult.montantJoue }}</strong> crédits.</p>
+      <!-- ✅ utilise le net -->
+      <ng-container [ngSwitch]="true">
+        <p *ngSwitchCase="netGain > 0" style="color:#34d399;margin:0;">
+          Tu as gagné ! <strong>{{ netLabel }}</strong> crédits.
+        </p>
+        <p *ngSwitchCase="netGain === 0" style="color:#eab308;margin:0;">
+          Tu récupères ta mise. <strong>0</strong> crédit net.
+        </p>
+        <p *ngSwitchDefault style="color:#f87171;margin:0;">
+          Tu as perdu. <strong>{{ netLabel }}</strong> crédits.
+        </p>
+      </ng-container>
+
       <p class="mt-8">Solde : <strong>{{ lastResult.solde }}</strong></p>
     </div>
 
-    <p *ngIf="error" style="color:#ff9b9b" class="mt-12">{{ error }}</p>
 
-    <div class="mt-16 sous-texte">
-      <small>Machine visuelle adaptative — la config est rechargée selon le nombre de rouleaux choisi.</small>
-    </div>
-  </div>
-
-  <div class="panneau mt-12">
+    <div class="panneau mt-12">
     <app-game-history-list [game]="'slots'" [limit]="5"></app-game-history-list>
   </div>
 </div>
