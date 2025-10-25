@@ -19,7 +19,7 @@ export interface HistoryEntry {
 })
 export class HistoryService {
   private base = 'http://localhost:8080/api/history';
-  private cacheLimit = 15;
+  private cacheLimit = 10;
   private entries$ = new BehaviorSubject<HistoryEntry[]>([]);
   public entriesObservable$ = this.entries$.asObservable();
 

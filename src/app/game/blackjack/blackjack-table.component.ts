@@ -184,6 +184,12 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
                 createdAt: new Date().toISOString()
               });
             } catch {}
+            // ⚡ juste après le pushLocal (toujours dans le bloc prevPhase !== 'PAYOUT')
+            try {
+              // on récupère depuis le serveur et on fusionne (l’ID epoch du back remplace l’optimiste si présent)
+              this.history.prependFromServerForGame('blackjack', 10);
+            } catch {}
+
           }
         }
 
