@@ -1,0 +1,22 @@
+/* src/app/app.component.css */
+:host {
+  display: block;          /* s'assure que le host occupe l'espace */
+}
+
+/* Le shell couvre tout l'écran et organise header/main/footer en colonne */
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Le main prend tout l'espace restant entre header et footer */
+.app-main {
+  flex: 1 0 auto;
+  padding: 16px;
+}
+
+/* (optionnel) On s’assure que le footer ne “flotte” pas si jamais le main n’a pas de flex */
+app-footer, .footer {
+  /* margin-top: auto;  <-- pas nécessaire si .app-main a flex:1, mais inoffensif */
+}
