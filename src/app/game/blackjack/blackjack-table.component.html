@@ -51,7 +51,7 @@
 
 
   <!-- MAIN LAYOUT -->
-  <main class="bj-main" *ngIf="state as s">
+  <main class="bj-main" *ngIf="state as s" [attr.aria-hidden]="showCodeModal ? true : null">
     <!-- LEFT : dealer + seats -->
     <section class="game-area">
       <!-- RESULT TOAST -->
@@ -165,7 +165,9 @@
     </aside>
   </main>
 
-  <div class="panneau mt-12">
+  <!-- cache l'historique quand la modale code est ouverte -->
+  <div class="panneau mt-12" *ngIf="!showCodeModal">
     <app-game-history-list [game]="'blackjack'" [limit]="5"></app-game-history-list>
   </div>
+
 </div>
