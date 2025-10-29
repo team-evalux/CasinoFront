@@ -1,11 +1,11 @@
 import { Injectable, NgZone } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import {BehaviorSubject, Observable, throwError} from 'rxjs';
+import { BehaviorSubject, Observable, throwError, of } from 'rxjs';
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import {BJSeat, BJTableState} from './blackjack.models';
-import {catchError} from 'rxjs/operators';
-import {Router} from '@angular/router';
+import { BJSeat, BJTableState } from './blackjack.models';
+import { catchError } from 'rxjs/operators';
+import { Router } from '@angular/router';
 
 // --- DTOs alignés avec ton back ---
 export interface BJCreateTableReq {
@@ -31,12 +31,11 @@ export interface BJTableSummary {
 export interface JoinOrCreateMsg {
   tableId?: number | string;
   code?: string;
-  // (les autres champs optionnels de création si nécessaire)
 }
 
 export interface SitMsg { tableId: number | string; seatIndex: number; code?: string | null; }
 export interface BetMsg { tableId: number | string; amount: number; seatIndex?: number; }
-export type ActionType = 'HIT'|'STAND'|'DOUBLE';
+export type ActionType = 'HIT' | 'STAND' | 'DOUBLE';
 export interface ActionMsg { tableId: number | string; seatIndex: number; type: ActionType; }
 
 @Injectable({ providedIn: 'root' })
@@ -50,7 +49,7 @@ export class BlackjackService {
   private tableSubject = new BehaviorSubject<any | null>(null);
   table$ = this.tableSubject.asObservable();
 
-  // nouvel observable d'erreurs personnelles (messages server -> user)
+  // erreurs “utilisateur”
   private errorSubject = new BehaviorSubject<string | null>(null);
   error$ = this.errorSubject.asObservable();
 
@@ -61,45 +60,65 @@ export class BlackjackService {
   private lobbySubscription?: any;
   private errorsSubscription?: any;
   private tableSubscription?: any;
-  private currentTableIsPrivate: boolean = false;
+  private currentTableIsPrivate = false;
 
-  constructor(private http: HttpClient, private zone: NgZone,private router: Router) {}
+  // --- helpers auth ---
+  private get token(): string | null {
+    try { return localStorage.getItem('jwt'); } catch { return null; }
+  }
+  private isLoggedIn(): boolean { return !!this.token; }
 
-  // --- REST ---
+  constructor(private http: HttpClient, private zone: NgZone, private router: Router) {}
+
+  // --- REST (protégées : no-op si non connecté) ---
   listTables(): Observable<BJTableSummary[]> {
+    if (!this.isLoggedIn()) return of([] as BJTableSummary[]);
     return this.http.get<BJTableSummary[]>(`${this.apiBase}/tables`);
   }
 
-  getTableMeta(tableId: number | string) {
+  getTableMeta(tableId: number | string): Observable<any> {
+    if (!this.isLoggedIn()) return of(null);
     return this.http.get<any>(`${this.apiBase}/table/${tableId}`);
   }
 
   createTable(req: BJCreateTableReq) {
+    if (!this.isLoggedIn()) {
+      const msg = 'Non authentifié';
+      this.errorSubject.next(msg);
+      return throwError(() => new Error(msg));
+    }
     return this.http.post<{ id: number | string; code?: string; private: boolean }>(
       `${this.apiBase}/table`, req
     ).pipe(
       catchError(err => {
-        const msg = err.error?.error || "Erreur inconnue";
+        const msg = err?.error?.error || 'Erreur inconnue';
         this.errorSubject.next(msg);
         return throwError(() => new Error(msg));
       })
     );
   }
 
-  // --- WS connection promise ---
+  closeTable(tableId: number | string): Observable<void> {
+    return this.http.delete<void>(`${this.apiBase}/table/${tableId}`);
+  }
+
+  // --- Connexion STOMP/WS (jamais sans token) ---
   private waitConnected(): Promise<void> {
     if (this.stomp && this.stomp.connected) return Promise.resolve();
     return new Promise<void>((resolve) => this.onConnectedResolvers.push(resolve));
   }
 
   connectIfNeeded() {
+    // ⛔️ ne rien faire sans JWT
+    if (!this.isLoggedIn()) return;
     if (this.stomp && this.stomp.active) return;
 
-    const token = localStorage.getItem('jwt') || '';
+    const token = this.token!;
     const urlWithToken = `${this.wsUrl}?token=${encodeURIComponent(token)}`;
 
     this.stomp = new Client({
-      webSocketFactory: () => new SockJS(urlWithToken),
+      // ✅ SockJS en “websocket only” (pas d’iframe/eventsource/jsonp)
+      webSocketFactory: () => new SockJS(urlWithToken, undefined, { transports: ['websocket'] }),
       connectHeaders: {
         Authorization: `Bearer ${token}`,
         token
@@ -108,7 +127,6 @@ export class BlackjackService {
       heartbeatIncoming: 10000,
       heartbeatOutgoing: 10000,
       onConnect: () => {
-        console.log('[WS] connected, subscribing lobby + errors etc.');
         const toResolve = [...this.onConnectedResolvers];
         this.onConnectedResolvers.length = 0;
         toResolve.forEach(r => r());
@@ -117,6 +135,7 @@ export class BlackjackService {
         try { this.errorsSubscription?.unsubscribe(); } catch {}
         try { this.tableSubscription?.unsubscribe(); } catch {}
 
+        // topics communs
         this.lobbySubscription = this.stomp!.subscribe('/topic/bj/lobby', (msg) =>
           this.zone.run(() => this.onLobby(msg))
         );
@@ -124,19 +143,15 @@ export class BlackjackService {
         this.errorsSubscription = this.stomp!.subscribe('/user/queue/bj/errors', (msg) =>
           this.zone.run(() => {
             try {
-              console.log('[WS] received /user/queue/bj/errors raw:', msg);
               const p = JSON.parse(msg.body);
-              console.log('[WS] parsed user error:', p);
               this.errorSubject.next(p?.error || p?.msg || 'Erreur serveur');
               setTimeout(() => this.clearError(), 5000);
-            } catch (e) {
-              console.warn('[WS] error parsing /user/queue/bj/errors', e);
-            }
+            } catch {}
           })
         );
 
+        // si on suivait déjà une table, on se réabonne
         if (this.currentTableId != null) {
-          console.log('[WS] re-subscribing to current table', this.currentTableId, 'isPrivate=', this.currentTableIsPrivate);
           this.subscribeTableTopic(this.currentTableId, this.currentTableIsPrivate);
         }
       },
@@ -169,8 +184,6 @@ export class BlackjackService {
     if (!this.stomp) return;
 
     const dest = isPrivate ? `/user/queue/bj/table/${tableId}` : `/topic/bj/table/${tableId}`;
-    console.log('[WS] subscribe to table destination ->', dest);
-
     this.tableSubscription = this.stomp!.subscribe(dest, (msg) =>
       this.zone.run(() => this.onTableEvent(msg))
     );
@@ -180,10 +193,6 @@ export class BlackjackService {
     try { this.tableSubscription?.unsubscribe(); } catch {}
     this.tableSubscription = undefined;
     this.currentTableId = undefined;
-  }
-
-  closeTable(tableId: number | string) {
-    return this.http.delete(`${this.apiBase}/table/${tableId}`);
   }
 
   private rankToValue(rank: string): { value: number; isAce: boolean } {
@@ -326,7 +335,7 @@ export class BlackjackService {
     dealer: { total: number; cards: any };
     id: string;
     deadline: any;
-    creatorDisplayName: any
+    creatorDisplayName: any;
   } {
     const seats = this.normalizeSeatsMap(payload.seats);
     const dealerObj = payload.dealer ?? { cards: [], total: 0 };
@@ -389,9 +398,13 @@ export class BlackjackService {
 
   /** Commence à recevoir l’état de la table (abonnement garanti après connexion). */
   async watchTable(tableId: number | string) {
-    if (String(this.currentTableId) === String(tableId) && this.tableSubscription) {
+    if (!this.isLoggedIn()) {
+      this.tableSubject.next(null as any);
       return;
     }
+
+    if (String(this.currentTableId) === String(tableId) && this.tableSubscription) return;
+
     this.currentTableId = tableId;
     this.connectIfNeeded();
     await this.waitConnected();
@@ -399,10 +412,9 @@ export class BlackjackService {
     try {
       const meta = await this.getTableMeta(tableId).toPromise();
       const isPrivate = !!meta?.isPrivate;
-      console.log('[WS] watchTable meta isPrivate=', isPrivate, 'meta=', meta);
       this.subscribeTableTopic(tableId, isPrivate);
-    } catch (err) {
-      console.warn('[WS] watchTable getTableMeta failed, subscribing to public topic by default', err);
+    } catch {
+      // si meta échoue, on tente en public
       this.subscribeTableTopic(tableId, false);
     }
   }
@@ -429,42 +441,44 @@ export class BlackjackService {
     this.stomp = undefined;
   }
 
-  // --- Envois d’actions via WS ---
+  // --- Envois d’actions via WS (protégés) ---
   async wsJoin(tableId: number | string, code?: string | null) {
+    if (!this.isLoggedIn()) throw new Error('Non authentifié');
     await this.waitConnected();
     this.publish('/app/bj/join', <JoinOrCreateMsg>{ tableId, code }, code ? { code } : undefined);
   }
 
-  /**
-   * Conservée pour compat mais **inutile** en mode auto-seat (le serveur affecte le slot automatiquement).
-   * Évite de l’appeler depuis les composants.
-   */
+  /** Conservée pour compat mais évite de l’appeler (auto-seat côté serveur). */
   async wsSit(tableId: number | string, seatIndex: number, code?: string | null) {
+    if (!this.isLoggedIn()) throw new Error('Non authentifié');
     await this.waitConnected();
     this.publish('/app/bj/sit', <SitMsg>{ tableId, seatIndex, code }, code ? { code } : undefined);
   }
 
   async wsBet(tableId: number | string, amount: number, seatIndex?: number) {
+    if (!this.isLoggedIn()) throw new Error('Non authentifié');
     await this.waitConnected();
     this.publish('/app/bj/bet', <BetMsg>{ tableId, amount, seatIndex });
   }
 
   async wsAction(tableId: number | string, type: ActionType, seatIndex: number) {
+    if (!this.isLoggedIn()) throw new Error('Non authentifié');
     await this.waitConnected();
     this.publish('/app/bj/action', <ActionMsg>{ tableId, seatIndex, type });
   }
 
   async wsLeave(tableId: number | string, seatIndex: number) {
+    if (!this.isLoggedIn()) throw new Error('Non authentifié');
     await this.waitConnected();
     this.publish('/app/bj/leave', <SitMsg>{ tableId, seatIndex });
   }
 
-  private publish(dest: string, body: any, extraHeaders?: Record<string,string>) {
+  private publish(dest: string, body: any, extraHeaders?: Record<string, string>) {
     if (!this.stomp || !this.stomp.connected) {
       console.warn('[WS] publish blocked, stomp not connected:', dest, body);
       return;
     }
-    const headers: Record<string,string> = {
+    const headers: Record<string, string> = {
       ...(extraHeaders ?? {}),
       ...(body && body.code ? { code: String(body.code) } : {})
     };

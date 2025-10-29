@@ -15,7 +15,13 @@
     </div>
 
     <div class="actions-area">
-      <button class="btn btn-close"><a [routerLink]="['/play/blackjack']">Retour</a></button>
+      <!-- RETOUR : même style que Fermer, sans <a> -->
+      <button type="button"
+              class="btn btn-close"
+              (click)="goBack()"
+              title="Retour au lobby">
+        Retour
+      </button>
 
       <button class="btn btn-close"
               *ngIf="s.creatorEmail === meEmail"

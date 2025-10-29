@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { BlackjackService, BJTableSummary } from '../../services/game/blackjack.service';
-import { Subscription, combineLatest, timer } from 'rxjs';
+import {Subscription, combineLatest, timer, of, firstValueFrom} from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 
 type Visibility = 'PUBLIC' | 'PRIVATE';
@@ -40,18 +40,51 @@ export class BlackjackLobbyComponent implements OnInit, OnDestroy {
   };
 
   private sub?: Subscription;
+  private authSub?: Subscription;
 
   constructor(
     private bj: BlackjackService,
     private router: Router,
     private auth: AuthService
   ) {
-    this.isLoggedIn = this.auth.isLoggedIn();
+    // état initial
+    this.isLoggedIn = this.safeIsLoggedIn();
   }
 
   ngOnInit(): void {
-    this.bj.connectIfNeeded();
+    // réagit aux changements d’auth si dispo
+    try {
+      const s = (this.auth as any).authState$;
+      if (s?.subscribe) {
+        this.authSub = s.subscribe((v: any) => {
+          const was = this.isLoggedIn;
+          this.isLoggedIn = !!v;
+          if (was !== this.isLoggedIn) this.reloadLobby();
+        });
+      }
+    } catch {}
+
+    this.reloadLobby();
+  }
+
+  private reloadLobby() {
+    // purge / reset
+    this.sub?.unsubscribe();
+    this.tables = [];
+    this.error = null;
+    this.loading = false;
+
+    if (!this.safeIsLoggedIn()) {
+      // non connecté : pas d’appels réseau, pas de WS
+      this.isLoggedIn = false;
+      return;
+    }
+
+    this.isLoggedIn = true;
+    this.bj.connectIfNeeded(); // interne : ne fait rien sans JWT
+
     this.loading = true;
+    // On écoute le flux lobby WS s’il arrive, sinon on fait un GET de secours.
     this.sub = combineLatest([this.bj.lobby$, timer(0)]).subscribe(([ws]) => {
       if (ws) {
         this.tables = ws;
@@ -67,24 +100,26 @@ export class BlackjackLobbyComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.sub?.unsubscribe();
+    this.authSub?.unsubscribe();
   }
 
-  closeTableFromLobby(tableId: number | string) {
-    this.bj.closeTable(tableId).subscribe({
-      next: () => {
-        this.tables = this.tables.filter(t => t.id !== tableId);
-      },
-      error: (e: any) => {
-        this.error = e?.error || e?.message || 'Impossible de fermer la table';
-      }
-    });
+  async closeTableFromLobby(tableId: number | string) {
+    if (!this.safeIsLoggedIn()) {
+      this.error = 'Connecte-toi pour gérer les tables.';
+      return;
+    }
+    try {
+      await firstValueFrom(this.bj.closeTable(tableId));
+      this.tables = this.tables.filter(t => t.id !== tableId);
+    } catch (e: any) {
+      this.error = e?.error || e?.message || 'Impossible de fermer la table';
+    }
   }
 
   async goTable(t: BJTableSummary) {
-    // Plus de prompt ici : on enverra le code sur la page de la table via un modal
+    // Navigation simple : la page “table” gère l’auto-join (et le cas privé)
     this.router.navigate(['/play/blackjack/table', t.id]);
   }
-
 
   validateBets() {
     const min = Number(this.create.minBet);
@@ -96,7 +131,7 @@ export class BlackjackLobbyComponent implements OnInit, OnDestroy {
   }
 
   async onCreate() {
-    if (!this.isLoggedIn) { this.error = 'Connecte-toi pour créer une table.'; return; }
+    if (!this.safeIsLoggedIn()) { this.error = 'Connecte-toi pour créer une table.'; return; }
     this.loading = true; this.error = null;
 
     const req = {
@@ -113,32 +148,23 @@ export class BlackjackLobbyComponent implements OnInit, OnDestroy {
         this.loading = false;
         const id = res.id;
         const navExtras = res.code ? { state: { code: res.code } } : undefined;
-
-        // 👉 on ne fait plus watchTable/wsJoin/wsSit ici.
-        // Le composant de la table s’en charge (auto-join + auto-seat).
-        if (navExtras) {
-          await this.router.navigate(['/play/blackjack/table', id], navExtras);
-        } else {
-          await this.router.navigate(['/play/blackjack/table', id]);
-        }
+        if (navExtras) await this.router.navigate(['/play/blackjack/table', id], navExtras);
+        else await this.router.navigate(['/play/blackjack/table', id]);
       },
       error: (err) => {
         this.loading = false;
-
-        // extrait le vrai message backend si présent
-        const serverMsg =
-          err?.error?.error ?? // { error: "..."} (notre back)
-          err?.error?.message ??
-          err?.message ??
-          null;
-
-        // si pas de message lisible, fallback générique
+        const serverMsg = err?.error?.error ?? err?.error?.message ?? err?.message ?? null;
         this.error = serverMsg || 'Erreur lors de la création de la table.';
-
-        // optionnel : log pour debug
         console.warn('[Lobby] createTable error:', err);
       }
     });
+  }
+
+  private safeIsLoggedIn(): boolean {
+    try {
+      if (typeof this.auth.isLoggedIn === 'function') return !!this.auth.isLoggedIn();
+      return !!localStorage.getItem('jwt');
+    } catch { return false; }
   }
 
   protected readonly localStorage = localStorage;

@@ -4,7 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { BlackjackService } from '../../services/game/blackjack.service';
 import { BJSeat, BJTableState } from '../../services/game/blackjack.models';
-import { Subscription, interval } from 'rxjs';
+import {Subscription, interval, firstValueFrom} from 'rxjs';
 import { WalletService } from '../../services/wallet.service';
 import { GameHistoryListComponent } from '../../history/game-history-list.component';
 import { HistoryService } from '../../services/history/history.service';
@@ -58,6 +58,9 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
   private waitingAuth = false;
   private joinAttempted = false;
 
+  // aperçu non connecté
+  private isLoggedIn = !!localStorage.getItem('jwt');
+
   constructor(
     private route: ActivatedRoute,
     private bj: BlackjackService,
@@ -69,6 +72,7 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
   ) {}
 
   async ngOnInit(): Promise<void> {
+    // maj solde
     this.walletSub = this.wallet.balance$.subscribe({
       next: (v) => { this.solde = v || 0; this.cd.detectChanges(); }
     });
@@ -85,15 +89,25 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
     this.codeError = null;
     this.bj.clearError();
 
+    // ⛔️ Non connecté : ne rien tenter (pas de watchTable / wsJoin / meta)
+    if (!this.isLoggedIn) {
+      this.loading = false;
+      this.error = 'Connecte-toi pour accéder à la table de Blackjack.';
+      // Optionnel : rediriger vers le lobby ou le login
+      // this.router.navigate(['/play/blackjack']);
+      return;
+    }
+
+    // ✅ Connecté : on peut suivre la table
     await this.bj.watchTable(this.tableId);
 
-    // meta -> privé ?
+    // meta -> table privée ?
     try {
       const meta = await this.bj.getTableMeta(this.tableId).toPromise().catch(() => null);
       this.isPrivateTable = !!meta?.isPrivate;
     } catch { this.isPrivateTable = false; }
 
-    // Tenter JOIN sans code d'abord
+    // Tenter JOIN sans code d'abord (si la table n'est pas privée, ça passe ; sinon on ouvrira la modale)
     try {
       await this.bj.wsJoin(this.tableId, null);
       this.showCodeModal = false;
@@ -102,11 +116,10 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
       this.codeError = null;
     } catch {
       if (this.isPrivateTable) {
-        // Ouvrir la modale SANS message d'erreur : l’utilisateur n’a encore rien saisi
         this.showCodeModal = true;
-        this.waitingAuth = false; // on n’attend pas d’auth tant qu’aucun code n’a été soumis
+        this.waitingAuth = false;
         this.joinAttempted = false;
-        this.codeError = null;    // << important : pas de "Code incorrect" par défaut
+        this.codeError = null;
         this.loading = false;
       } else {
         this.error = 'Impossible de rejoindre la table';
@@ -115,7 +128,7 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Sécurité : fallback si aucun état
+    // Sécurité : fallback si aucun état reçu
     const FALLBACK_MS = 3000;
     let receivedState = false;
     const fallbackTimer = setTimeout(() => {
@@ -130,7 +143,7 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
         receivedState = true;
         clearTimeout(fallbackTimer);
 
-        // On ferme la modale UNIQUEMENT si on a tenté un join avec code
+        // On ferme la modale uniquement si un join avec code a été tenté
         if (this.waitingAuth && this.joinAttempted) {
           this.waitingAuth = false;
           this.joinAttempted = false;
@@ -184,12 +197,9 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
                 createdAt: new Date().toISOString()
               });
             } catch {}
-            // ⚡ juste après le pushLocal (toujours dans le bloc prevPhase !== 'PAYOUT')
             try {
-              // on récupère depuis le serveur et on fusionne (l’ID epoch du back remplace l’optimiste si présent)
               this.history.prependFromServerForGame('blackjack', 10);
             } catch {}
-
           }
         }
 
@@ -211,7 +221,6 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
       if (!msg) return;
       if (this.isPrivateTable && /code|privée|privé|accès/i.test(msg)) {
         this.showCodeModal = true;
-        // si aucun join avec code n’a été tenté, on ne pose pas "Code incorrect"
         this.codeError = this.joinAttempted ? 'Code incorrect' : null;
         this.waitingAuth = false;
       } else {
@@ -226,7 +235,7 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
     if (this.codeError) this.codeError = null;
   }
 
-  // Submit code
+  // Submit code (protégé par le garde-fou service)
   async submitCode() {
     this.codeError = null;
     const code = (this.codeInput || '').trim();
@@ -345,7 +354,7 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
     }
     if (finalOutcome === 'WON') finalOutcome = 'WIN';
     if (finalOutcome === 'LOSS') finalOutcome = 'LOSE';
-    if (['TIE','DRAW'].includes(finalOutcome)) finalOutcome = 'PUSH';
+    if (['TIE', 'DRAW'].includes(finalOutcome)) finalOutcome = 'PUSH';
     if (finalOutcome === 'BJ') finalOutcome = 'BLACKJACK';
 
     switch (finalOutcome) {
@@ -399,12 +408,25 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
   async stand() { const me = this.mySeat(); if (me) await this.bj.wsAction(this.tableId, 'STAND', me.index); }
   async double() { const me = this.mySeat(); if (me) await this.bj.wsAction(this.tableId, 'DOUBLE', me.index); }
 
-  closeTable() {
-    this.bj.closeTable(this.tableId).subscribe({
-      next: () => this.router.navigate(['/play/blackjack']),
-      error: (e: any) => { this.error = e?.error || e?.message || 'Impossible de fermer la table'; }
-    });
+  async closeTable() {
+    try {
+      await firstValueFrom(this.bj.closeTable(this.tableId));
+      this.router.navigate(['/play/blackjack']);
+    } catch (e: any) {
+      this.error = e?.error || e?.message || 'Impossible de fermer la table';
+    }
   }
+
+  async goBack() {
+    try {
+      const me = this.mySeat();
+      if (me) { await this.bj.wsLeave(this.tableId, me.index); }
+    } catch {}
+    // on coupe les flux pour éviter du bruit réseau
+    this.bj.disconnectTable();
+    this.router.navigate(['/play/blackjack']);
+  }
+
 
   cardFileName(c: any): string {
     if (!c) return 'back.svg';
