@@ -12,7 +12,8 @@ import { interval, Subscription } from 'rxjs';
   selector: 'app-header',
   standalone: true,
   imports: [CommonModule, FormsModule, BalanceHeaderComponent, RouterLink],
-  templateUrl: './header.component.html'
+  templateUrl: './header.component.html',
+  styleUrls: ['./header.component.css']
 })
 export class HeaderComponent implements OnInit, OnDestroy {
   email = '';
@@ -124,6 +125,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.http.post<{ amount:number, solde:number }>('http://localhost:8080/api/bonus/claim', {})
       .subscribe({
         next: res => {
+          // 💾 enregistre immédiatement la date du dernier claim
+          const nowParis = this.parisNowMs();
+          this.setLastClaimParisMs(nowParis);
+
           this.wallet.refreshBalance();
           this.toast(`+${res.amount} crédits ajoutés !`);
           this.bonusLoading = false;
@@ -134,6 +139,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
         }
       });
   }
+
 
   // ---------- Helpers Paris time ----------
   private parisParts(d = new Date()) {

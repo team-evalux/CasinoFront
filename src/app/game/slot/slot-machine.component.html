@@ -1,9 +1,7 @@
-<!-- src/app/games/slot-machine/slot-machine.component.html -->
 <div class="conteneur">
   <div class="slot-wrap">
     <h2 class="titre-page">Machine à sous</h2>
 
-    <!-- ✅ préciser la machine actuellement chargée -->
     <p class="sous-texte">
       Solde : <strong>{{ currentBalance ?? '—' }}</strong> •
       Mise minimale : <strong>{{ minBet }}</strong> •
@@ -26,9 +24,13 @@
                   (click)="mise = Math.max(Math.floor((mise || 0) / 2), minBet)"
                   [disabled]="!isLoggedIn || enCours">/2</button>
         </div>
-        <small class="sous-texte">Mise minimale : <strong>{{ minBet }}</strong> • Solde : <strong>{{ currentBalance ?? '—' }}</strong></small>
+        <small class="sous-texte">
+          Mise minimale : <strong>{{ minBet }}</strong> • Solde : <strong>{{ currentBalance ?? '—' }}</strong>
+        </small>
+        <small *ngIf="currentBalance !== null && mise > currentBalance" style="display:block;color:#ff9b9b;">
+          La mise ne peut pas dépasser votre solde ({{ currentBalance }} crédits).
+        </small>
       </div>
-
 
       <button (click)="jouer()" [disabled]="!isLoggedIn || enCours" class="bouton bouton--primaire" style="width:120px;">
         {{ enCours ? 'Spinning…' : 'Spin' }}
@@ -41,7 +43,6 @@
         <button (click)="stopAutoSpin()" [disabled]="!isLoggedIn || !autoSpinActive" class="bouton bouton--secondaire">Stop</button>
       </div>
 
-      <!-- ✅ choix machine par l’utilisateur ; on bloque pendant le spin/auto-spin -->
       <div style="min-width:180px;">
         <label class="libelle">Nombre rouleaux</label>
         <select [(ngModel)]="desiredReelsCount"
@@ -79,24 +80,17 @@
         <div *ngFor="let s of lastResult.reels" class="final-cell" style="font-size:36px;min-width:64px;text-align:center;">{{ s }}</div>
       </div>
 
-      <!-- ✅ utilise le net -->
       <ng-container [ngSwitch]="true">
-        <p *ngSwitchCase="netGain > 0" style="color:#34d399;margin:0;">
-          Tu as gagné ! <strong>{{ netLabel }}</strong> crédits.
-        </p>
-        <p *ngSwitchCase="netGain === 0" style="color:#eab308;margin:0;">
-          Tu récupères ta mise. <strong>0</strong> crédit net.
-        </p>
-        <p *ngSwitchDefault style="color:#f87171;margin:0;">
-          Tu as perdu. <strong>{{ netLabel }}</strong> crédits.
-        </p>
+        <p *ngSwitchCase="netGain > 0" style="color:#34d399;margin:0;">Tu as gagné ! <strong>{{ netLabel }}</strong> crédits.</p>
+        <p *ngSwitchCase="netGain === 0" style="color:#eab308;margin:0;">Tu récupères ta mise. <strong>0</strong> crédit net.</p>
+        <p *ngSwitchDefault style="color:#f87171;margin:0;">Tu as perdu. <strong>{{ netLabel }}</strong> crédits.</p>
       </ng-container>
 
       <p class="mt-8">Solde : <strong>{{ lastResult.solde }}</strong></p>
     </div>
 
-
     <div class="panneau mt-12">
-    <app-game-history-list [game]="'slots'" [limit]="5"></app-game-history-list>
+      <app-game-history-list [game]="'slots'" [limit]="5"></app-game-history-list>
+    </div>
   </div>
 </div>

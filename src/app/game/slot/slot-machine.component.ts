@@ -123,6 +123,10 @@ export class SlotMachineComponent implements OnDestroy, AfterViewInit {
     if (!this.mise || this.mise <= 0) { this.error = 'Mise invalide.'; return; }
     if (this.mise < this.minBet) { this.error = `Mise invalide : la mise minimale est de ${this.minBet} crédits.`; return; }
     if (this.currentBalance != null && this.mise > this.currentBalance) { this.error = 'Solde insuffisant.'; return; }
+    if (this.currentBalance != null && this.mise > this.currentBalance) {
+      this.error = 'Mise supérieure à votre solde.';
+      return;
+    }
     if (this.enCours) return;
 
     this.enCours = true;
@@ -163,6 +167,11 @@ export class SlotMachineComponent implements OnDestroy, AfterViewInit {
     if (!this.isLoggedIn) { this.error = 'Veuillez vous connecter pour jouer.'; return; }
     if (this.autoSpinActive) return;
     if (!this.mise || this.mise <= 0) { this.error = 'Mise invalide.'; return; }
+    // 🔒 solde vérifié avant auto-spin
+    if (this.currentBalance != null && this.mise > this.currentBalance) {
+      this.error = 'Solde insuffisant pour auto-spin.';
+      return;
+    }
     if (this.currentBalance != null && this.mise > this.currentBalance) { this.error = 'Solde insuffisant pour auto-spin.'; return; }
     this.remainingAutoSpins = (this.autoSpinCount && this.autoSpinCount > 0) ? Math.floor(this.autoSpinCount) : null;
     this.autoSpinActive = true;

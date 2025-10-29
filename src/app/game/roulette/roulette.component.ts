@@ -1,4 +1,3 @@
-// src/app/games/roulette/roulette.component.ts
 import { Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -86,7 +85,7 @@ export class RouletteComponent implements OnDestroy {
     return gagne - mise;
   }
 
-// 👉 libellé signé (+X / -X / 0)
+  // 👉 libellé signé (+X / -X / 0)
   netLabelOf(res: RouletteBetResponse | null): string {
     const n = this.netGainOf(res);
     if (n > 0) return `+${n}`;
@@ -119,6 +118,13 @@ export class RouletteComponent implements OnDestroy {
     if (this.betType !== 'straight') this.selectedNumber = null;
     if (!this.montant || this.montant <= 0) { this.error = 'Mise invalide'; return; }
     if (this.montant < this.minBet) { this.error = `Mise invalide : la mise minimale est de ${this.minBet} crédits.`; return; }
+
+    // 🔒 nouvelle vérification : solde insuffisant
+    if (this.currentBalance !== null && this.montant > this.currentBalance) {
+      this.error = 'Mise supérieure à votre solde.';
+      return;
+    }
+
     if (!this.betType || this.betValue == null) { this.error = 'Pari invalide'; return; }
     if (this.enCours) return;
 
@@ -182,7 +188,7 @@ export class RouletteComponent implements OnDestroy {
       },
       error: err => {
         if (this.destroyed) return;
-        this.error = err?.error?.error || 'Erreur serveur ou solde insuffisant';
+        this.error = err?.error?.message || 'Erreur serveur ou solde insuffisant';
         this.enCours = false;
         this.wheelSpinning = false;
         this.lastSpinFinished = true;
@@ -224,5 +230,48 @@ export class RouletteComponent implements OnDestroy {
     if (c === 'green') return '#2e7d32';
     return '#666';
   }
+  onBetValueChange(value: any) {
+    if (this.betType !== 'straight') return;
+
+    let num = parseInt(value, 10);
+
+    if (isNaN(num)) {
+      this.betValue = '0';
+      return;
+    }
+
+    // Limite stricte 0–36
+    if (num < 0) num = 0;
+    if (num > 36) num = 36;
+
+    // Supprime les zéros inutiles
+    this.betValue = String(num);
+  }
+
+  isInvalidStraightBet(): boolean {
+    if (this.betType !== 'straight') return false;
+    const num = Number(this.betValue);
+    return isNaN(num) || num < 0 || num > 36;
+  }
+
+  /** 🔒 bloque les touches non numériques et limite à deux chiffres */
+  blockInvalidKeys(event: KeyboardEvent) {
+    const allowedKeys = ['Backspace', 'ArrowLeft', 'ArrowRight', 'Tab', 'Delete'];
+
+    if (allowedKeys.includes(event.key)) return;
+
+    // autorise uniquement les chiffres
+    if (!/^\d$/.test(event.key)) {
+      event.preventDefault();
+      return;
+    }
+
+    // empêche plus de 2 chiffres
+    const input = event.target as HTMLInputElement;
+    if (input.value.length >= 2) {
+      event.preventDefault();
+    }
+  }
+
   protected readonly Math = Math;
 }

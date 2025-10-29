@@ -81,6 +81,10 @@ export class CoinflipComponent {
       this.error = `Mise invalide : la mise minimale est de ${this.minBet} crédits.`;
       return;
     }
+    if (this.currentBalance !== null && this.mise > this.currentBalance) {
+      this.error = 'Mise supérieure à votre solde.';
+      return;
+    }
     if (!this.choix) { this.error = 'Choix requis.'; return; }
 
     this.enCours = true;

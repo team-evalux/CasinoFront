@@ -84,7 +84,14 @@ export class ForgotPasswordComponent {
     this.loading = true; this.error = null; this.message = null;
     this.auth.forgotSendCode(this.emailForm.value.email!).subscribe({
       next: () => { this.loading = false; this.step = 'CODE'; this.message = 'Code envoyé.'; },
-      error: (err) => { this.loading = false; this.error = err?.error || 'Erreur lors de l’envoi du code.'; }
+      error: (err) => {
+        this.loading = false;
+        console.error('Erreur forgotSendCode:', err);
+        this.error =
+          err?.error?.message ||
+          err?.message ||
+          'Erreur lors de l’envoi du code.';
+      }
     });
   }
 
@@ -102,7 +109,14 @@ export class ForgotPasswordComponent {
       this.codeForm.value.nouveauMotDePasse!
     ).subscribe({
       next: () => { this.loading = false; this.step = 'DONE'; this.message = 'Mot de passe réinitialisé.'; },
-      error: (err) => { this.loading = false; this.error = err?.error || 'Code invalide ou expiré.'; }
+      error: (err) => {
+        this.loading = false;
+        console.error('Erreur reset:', err);
+        this.error =
+          err?.error?.message ||
+          err?.message ||
+          'Code invalide ou expiré.';
+      }
     });
   }
 }

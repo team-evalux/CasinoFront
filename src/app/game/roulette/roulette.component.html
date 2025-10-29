@@ -16,18 +16,41 @@
     <div class="mb-12">
       <label class="libelle">Valeur</label>
       <ng-container [ngSwitch]="betType">
-        <input *ngSwitchCase="'straight'" class="champ" type="number" min="0" max="36" [(ngModel)]="betValue" [disabled]="!isLoggedIn || enCours"/>
+        <input *ngSwitchCase="'straight'"
+               class="champ"
+               type="number"
+               min="0"
+               max="36"
+               maxlength="2"
+               [ngModel]="betValue"
+               (ngModelChange)="onBetValueChange($event)"
+               (keydown)="blockInvalidKeys($event)"
+               [disabled]="!isLoggedIn || enCours" />
+        <small *ngIf="isInvalidStraightBet()" style="color:#ff9b9b;">
+          ⚠️ Le numéro doit être entre 0 et 36.
+        </small>
+
+
+        <!-- Autres types de paris -->
         <select *ngSwitchCase="'color'" class="champ" [(ngModel)]="betValue" [disabled]="!isLoggedIn || enCours">
-          <option value="red">Rouge</option><option value="black">Noir</option>
+          <option value="red">Rouge</option>
+          <option value="black">Noir</option>
         </select>
+
         <select *ngSwitchCase="'parity'" class="champ" [(ngModel)]="betValue" [disabled]="!isLoggedIn || enCours">
-          <option value="even">Pair</option><option value="odd">Impair</option>
+          <option value="even">Pair</option>
+          <option value="odd">Impair</option>
         </select>
+
         <select *ngSwitchCase="'range'" class="champ" [(ngModel)]="betValue" [disabled]="!isLoggedIn || enCours">
-          <option value="low">1-18</option><option value="high">19-36</option>
+          <option value="low">1-18</option>
+          <option value="high">19-36</option>
         </select>
+
         <select *ngSwitchCase="'dozen'" class="champ" [(ngModel)]="betValue" [disabled]="!isLoggedIn || enCours">
-          <option value="1">1 (1-12)</option><option value="2">2 (13-24)</option><option value="3">3 (25-36)</option>
+          <option value="1">1 (1-12)</option>
+          <option value="2">2 (13-24)</option>
+          <option value="3">3 (25-36)</option>
         </select>
       </ng-container>
     </div>
@@ -38,10 +61,10 @@
         <input class="champ" type="number"
                [(ngModel)]="montant"
                [attr.min]="minBet"
-               [attr.max]="currentBalance || 1000000"
-               [disabled]="!isLoggedIn || enCours"/>
+               [attr.max]="currentBalance ?? 1000000"
+               [disabled]="!isLoggedIn || enCours" />
         <button type="button"
-                (click)="montant = Math.min((montant || 0) * 2, currentBalance || 1000000)"
+                (click)="montant = Math.min((montant || 0) * 2, currentBalance ?? 1000000)"
                 [disabled]="!isLoggedIn || enCours">
           ×2
         </button>
@@ -52,6 +75,9 @@
         </button>
       </div>
       <small class="sous-texte">Mise minimale : <strong>{{ minBet }}</strong> • Solde : <strong>{{ currentBalance ?? '—' }}</strong></small>
+      <small *ngIf="currentBalance !== null && montant > currentBalance" style="display:block;color:#ff9b9b;">
+        La mise ne peut pas dépasser votre solde ({{ currentBalance }} crédits).
+      </small>
     </div>
 
     <div class="boutons">

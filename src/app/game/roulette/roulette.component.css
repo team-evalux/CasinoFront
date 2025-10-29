@@ -22,7 +22,7 @@
   min-width: 0;
 }
 
-/* ===== Wheel area (polished appearance) ===== */
+/* ===== Wheel area ===== */
 .wheel-stage {
   display: flex;
   justify-content: center;
@@ -37,7 +37,6 @@
   overflow: visible;
   background: linear-gradient(180deg,#071617,#071c21);
   box-shadow: 0 8px 30px rgba(0,0,0,0.45), inset 0 -10px 40px rgba(255,255,255,0.02);
-  /* width/height bound inline via template [style.width.px] */
 }
 
 .wheel-numbers-container {
@@ -93,12 +92,18 @@
 .num-label.black {
   background: linear-gradient(#263238, #1b262b);
   color: #fff;
-  border: 0.5px solid #fff;   /* cercle blanc autour */
-  border-radius: 50%;       /* forme ronde */
+  border: 0.5px solid #fff;
+  border-radius: 50%;
 }
 
-.num-label.red { background: linear-gradient(#ff5b63,#d32f2f);border: 0.5px solid #fff;  }
-.num-label.green { background: linear-gradient(#34c759,#0f7e3b);border: 0.5px solid #fff;  }
+.num-label.red {
+  background: linear-gradient(#ff5b63,#d32f2f);
+  border: 0.5px solid #fff;
+}
+.num-label.green {
+  background: linear-gradient(#34c759,#0f7e3b);
+  border: 0.5px solid #fff;
+}
 
 .pointer {
   position: absolute;
@@ -114,13 +119,15 @@
 
 /* ===== Controls small polish ===== */
 .controls label { display:block; font-weight:700; margin-bottom:6px; color:var(--text); }
-.controls select, .controls input { padding:6px; border-radius:6px; border: 1px solid #000; background: rgba(255,255,255,0.02); color:var(--text); }
+.controls select, .controls input {
+  padding:6px;
+  border-radius:6px;
+  border: 1px solid #000;
+  background: rgba(255,255,255,0.02);
+  color:var(--text);
+}
 
-/* ===== Status / Grid area (right column) ===== */
-.status { margin-top: 12px; color: var(--text); }
-.status p { margin: 6px 0; }
-
-/* ===== BET TABLE (landscape - full) ===== */
+/* ===== BET TABLE ===== */
 .bet-table {
   width: 100%;
   max-width: var(--table-max-width);
@@ -137,7 +144,7 @@
   justify-content: center;
 }
 
-/* ZERO short vertical on left */
+/* ZERO */
 .zero-col {
   height: 150px;
   display:flex;
@@ -146,7 +153,6 @@
   gap: var(--cell-gap);
 }
 
-/* zero visual (height matches 3 rows) */
 .cell.zero {
   background: linear-gradient(180deg,#1b6f2f,#0f4f1f);
   color: #fff;
@@ -160,14 +166,13 @@
   min-width: var(--zero-width);
 }
 
-/* Rows container (3 horizontal rows) */
+/* Rows container */
 .rows {
   display: flex;
   flex-direction: column;
   gap: var(--cell-gap);
 }
 
-/* each horizontal row */
 .row {
   display: flex;
   gap: var(--cell-gap);
@@ -192,12 +197,10 @@
   text-align:center;
 }
 
-/* number buttons */
 .cell.num-btn {
   width: 50px;
   height: 50px;
   border-radius:6px;
-
 }
 
 /* color styles */
@@ -211,57 +214,82 @@
   box-shadow: 0 10px 30px rgba(0,0,0,0.45);
 }
 
-/* dozens row */
+/* 🎨 Refonte de la partie PARIS (dozens + bottom-row) */
 .dozens {
-  margin-top: 14px;
-  display:flex;
-  gap:12px;
+  margin-top: 16px;
+  display: flex;
   justify-content: center;
+  gap: 10px;
 }
+
 .cell.dozen {
-  flex: 1 1 0;
-  padding: 12px 8px;
-  border-radius: 8px;
-  border: 1px solid #000;
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-  min-width: 130px;
-  text-align:center;
+  flex: 1;
+  padding: 14px 0;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: #f8fafc;
+  font-weight: 600;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
-/* bottom row (centered) */
+.cell.dozen:hover {
+  background: linear-gradient(180deg, #22c55e33, #22c55e11);
+  color: #22c55e;
+  border-color: #22c55e;
+  transform: translateY(-2px);
+}
+
+/* Ligne du bas (1-18, even, red, black, odd, 19-36) */
 .bottom-row {
-  margin-top: 12px;
-  display:flex;
-  gap:12px;
+  margin-top: 14px;
+  display: flex;
   justify-content: center;
-  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
+
 .cell.bottom {
-  flex: 1 1 0;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: rgba(255,255,255,0.02);
-  min-width: 110px;
+  flex: 1;
+  min-width: 100px;
+  padding: 14px 0;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: #f8fafc;
+  font-weight: 600;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
-/* red button in middle */
-.cell.red-toggle {
-  background: linear-gradient(#ff5b63,#d32f2f);
-  color: white;
-}
-.cell.black-toggle {
-  background: black;
-  color: white;
+.cell.bottom:hover {
+  background: linear-gradient(180deg, #22c55e33, #22c55e11);
+  color: #22c55e;
+  border-color: #22c55e;
+  transform: translateY(-2px);
 }
 
-/* hover */
-.cell:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 28px rgba(0,0,0,0.55);
-  transition: transform .12s ease, box-shadow .12s ease;
+/* Couleurs spécifiques */
+.cell.bottom.red-toggle {
+  background: linear-gradient(180deg, #dc2626, #991b1b);
+  color: #fff;
+}
+.cell.bottom.red-toggle:hover {
+  background: linear-gradient(180deg, #ef4444, #b91c1c);
+  transform: translateY(-2px);
 }
 
-/* small screens: stack rows vertically and reduce size */
+.cell.bottom.black-toggle {
+  background: linear-gradient(180deg, #111827, #0f172a);
+  color: #fff;
+}
+.cell.bottom.black-toggle:hover {
+  background: linear-gradient(180deg, #1e293b, #0f172a);
+  transform: translateY(-2px);
+}
+
+/* small screens */
 @media (max-width: 900px) {
   .roulette-container { flex-direction: column; }
   .bet-table { padding:6px; max-width: 100%; }
@@ -272,56 +300,12 @@
   .dozens, .bottom-row { flex-direction: column; gap: 8px; }
 }
 
-/* utility */
-.hidden { display: none !important; }
-
-/* status small colors */
-.status .win { color: #42b883; }
-.status .lose { color: #ff5252; }
-.error { color: #ff6b6b; }
-
-
-.roulette-layout {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 40px;
-  width: 100%;
-  margin-top: 20px;
+/* Historique noir */
+app-game-history-list,
+app-game-history-list * {
+  color: #000 !important;
 }
-
-/* Colonne gauche */
-.bet-controls {
-  flex: 0 0 160px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  background: linear-gradient(180deg,#071617,#071c21);
-
-  padding: 16px;
-  border-radius: 12px;
-  color: white;
-  margin-right: 100px;
-  margin-top: 120px;
+app-game-history-list .history-item:hover {
+  background: rgba(0,0,0,0.05);
+  color: #000 !important;
 }
-
-
-/* Zone principale */
-.roulette-main {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* Roue centrée */
-.wheel-stage {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 20px;
-}
-
-/* Tableau centré sous la roue */
-.bet-table {
-  margin-top: 10px;
-}
-
