@@ -16,21 +16,27 @@ import { interval, Subscription } from 'rxjs';
   styleUrls: ['./header.component.css']
 })
 export class HeaderComponent implements OnInit, OnDestroy {
+  // ---------- Types ----------
+  // Réponse attendue par /api/bonus/status
+  // (adapter si ton contrôleur renvoie autre chose)
+  private static readonly BONUS_STATUS_PATH = 'http://localhost:8080/api/bonus/status';
+  private static readonly BONUS_CLAIM_PATH  = 'http://localhost:8080/api/bonus/claim';
+
+  // ---------- State UI / Auth ----------
   email = '';
   motDePasse = '';
   loading = false;
   error: string | null = null;
   userObj: { email?: string; pseudo?: string } | null = null;
 
-  // Bonus simple (reset chaque jour à 21h30 Paris)
-  readonly RESET_HOUR = 21;
-  readonly RESET_MIN = 37;
-  readonly PARIS_TZ = 'Europe/Paris';
-  readonly STORAGE_KEY = 'bonus.simple.lastClaim.parisMs';
-  readonly CREDIT_AMOUNT = 1000;
-
+  // ---------- Bonus ----------
   bonusLoading = false;
   bonusMsg: string | null = null;
+  bonusStatus: BonusStatus | null = null;
+  /** Date.now() au moment où on a reçu serverNowEpochMs (sert à “faire avancer” l’horloge serveur côté client) */
+  private statusFetchedAt = 0;
+
+  // ---------- Ticks ----------
   private tickSub?: Subscription;
 
   constructor(
@@ -43,8 +49,18 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // met à jour l’état du bouton toutes les secondes
-    this.tickSub = interval(1000).subscribe(() => {});
+    // tick visuel pour le tooltip / compte à rebours
+    this.tickSub = interval(1000).subscribe(() => {
+      // Quand on atteint/surpasse l’heure de reset, on rafraîchit l’état côté serveur.
+      if (this.isLoggedIn() && this.bonusStatus) {
+        const remain = this.msUntilNextReset();
+        if (remain <= 0) this.fetchBonusStatus();
+      }
+    });
+
+    if (this.isLoggedIn()) {
+      this.fetchBonusStatus();
+    }
   }
 
   ngOnDestroy(): void {
@@ -58,15 +74,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   loadUser() {
     const u = localStorage.getItem('user');
-    if (u) {
-      try {
-        this.userObj = JSON.parse(u);
-      } catch {
-        this.userObj = null;
-      }
-    } else {
-      this.userObj = null;
-    }
+    if (!u) { this.userObj = null; return; }
+    try { this.userObj = JSON.parse(u); } catch { this.userObj = null; }
   }
 
   submitLogin() {
@@ -81,6 +90,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
         this.loading = false;
         this.error = null;
         this.loadUser();
+        this.fetchBonusStatus(); // ← récupère l’état du bonus après login
       },
       error: (err) => {
         this.loading = false;
@@ -93,111 +103,84 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.authService.logout();
     this.wallet.clear?.();
     this.loadUser();
+    this.bonusStatus = null;      // ← reset visuel bonus
+    this.statusFetchedAt = 0;
     this.router.navigate(['/home']);
   }
 
-  // ---------- Bonus bouton ----------
-  get canClaim(): boolean {
-    if (!this.isLoggedIn()) return false;
-    const nowParis = this.parisNowMs();
-    const windowStart = this.lastResetMs(nowParis);
-    const lastClaim = this.getLastClaimParisMs();
-    return lastClaim == null || lastClaim < windowStart;
+  // ---------- Bonus côté serveur ----------
+  /** Interroge le serveur pour connaître l’état (peut-claim, prochaine fenêtre, etc.) */
+  private fetchBonusStatus() {
+    if (!this.isLoggedIn()) { this.bonusStatus = null; return; }
+    this.http.get<BonusStatus>(HeaderComponent.BONUS_STATUS_PATH).subscribe({
+      next: (res) => {
+        this.bonusStatus = res;
+        this.statusFetchedAt = Date.now();
+      },
+      error: () => {
+        // En cas d’erreur, on garde un état neutre
+        this.bonusStatus = null;
+        this.statusFetchedAt = 0;
+      }
+    });
   }
 
+  /** Bouton disponible ? */
+  get canClaim(): boolean {
+    return !!(this.isLoggedIn() && this.bonusStatus?.canClaim);
+  }
+
+  /** Tooltip dynamique basé sur l’horloge serveur renvoyée par /status */
   get giftTooltip(): string {
     if (!this.isLoggedIn()) return 'Connecte-toi pour le bonus';
-    if (this.canClaim) return 'Bonus disponible (21:30 Paris). Clique pour +1000';
-    const next = this.nextResetFromNow();
-    const remain = this.countdownStr(next - this.parisNowMs());
-    return `Prochain à 21:30 (Paris) — dans ${remain}`;
+    if (this.canClaim) return 'Bonus disponible. Clique pour +1000';
+
+    if (!this.bonusStatus) return 'Chargement du statut du bonus…';
+
+    const remainMs = this.msUntilNextReset();
+    const remain = this.countdownStr(remainMs);
+    return `Prochain bonus dans ${remain}`;
   }
 
+  /** Clique sur le cadeau */
   onClickGift() {
-    if (!this.canClaim || this.bonusLoading) return;
     if (!this.isLoggedIn()) {
       this.toast('Connecte-toi pour réclamer le bonus.');
       return;
     }
+    if (!this.canClaim || this.bonusLoading) return;
 
     this.bonusLoading = true;
 
-    this.http.post<{ amount:number, solde:number }>('http://localhost:8080/api/bonus/claim', {})
+    this.http.post<{ amount: number; solde: number }>(HeaderComponent.BONUS_CLAIM_PATH, {})
       .subscribe({
         next: res => {
-          // 💾 enregistre immédiatement la date du dernier claim
-          const nowParis = this.parisNowMs();
-          this.setLastClaimParisMs(nowParis);
-
           this.wallet.refreshBalance();
           this.toast(`+${res.amount} crédits ajoutés !`);
           this.bonusLoading = false;
+
+          // Après un claim, on recharge le statut pour refléter la nouvelle fenêtre
+          this.fetchBonusStatus();
         },
         error: err => {
-          this.toast(err?.error?.error || "Bonus déjà réclamé.");
+          this.toast(err?.error?.error || 'Bonus déjà réclamé.');
           this.bonusLoading = false;
+
+          // En cas d’erreur côté serveur, on remet aussi en phase avec /status
+          this.fetchBonusStatus();
         }
       });
   }
 
-
-  // ---------- Helpers Paris time ----------
-  private parisParts(d = new Date()) {
-    const parts = new Intl.DateTimeFormat('en-CA', {
-      timeZone: this.PARIS_TZ,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    })
-      .formatToParts(d)
-      .reduce((acc: any, p) => ((acc[p.type] = p.value), acc), {});
-    return {
-      y: +parts.year,
-      m: +parts.month,
-      d: +parts.day,
-      hh: +parts.hour,
-      mm: +parts.minute,
-      ss: +parts.second
-    };
-  }
-
-  private parisNowMs(): number {
-    const p = this.parisParts();
-    return Date.UTC(p.y, p.m - 1, p.d, p.hh, p.mm, p.ss);
-  }
-
-  private lastResetMs(nowParisMs?: number): number {
-    const d = new Date(nowParisMs ?? this.parisNowMs());
-    const y = d.getUTCFullYear(),
-      m = d.getUTCMonth() + 1,
-      day = d.getUTCDate();
-    const todayReset = Date.UTC(y, m - 1, day, this.RESET_HOUR, this.RESET_MIN, 0);
-
-    if ((nowParisMs ?? this.parisNowMs()) >= todayReset) return todayReset;
-
-    // hier
-    const yesterday = new Date(
-      Date.UTC(y, m - 1, day, 12, 0, 0) - 24 * 3600 * 1000
-    );
-    return Date.UTC(
-      yesterday.getUTCFullYear(),
-      yesterday.getUTCMonth(),
-      yesterday.getUTCDate(),
-      this.RESET_HOUR,
-      this.RESET_MIN,
-      0
-    );
-  }
-
-  private nextResetFromNow(): number {
-    const nowMs = this.parisNowMs();
-    const last = this.lastResetMs(nowMs);
-    const next = nowMs >= last ? last + 24 * 3600 * 1000 : last;
-    return next < nowMs ? nowMs : next;
+  // ---------- Helpers temps/affichage ----------
+  /** Millisecondes restantes jusqu’au prochain reset (basées sur l’heure serveur + drift client). */
+  private msUntilNextReset(): number {
+    if (!this.bonusStatus) return 0;
+    const { nextResetEpochMs, serverNowEpochMs } = this.bonusStatus;
+    const nowClient = Date.now();
+    const serverNowEstimated = serverNowEpochMs + (nowClient - this.statusFetchedAt);
+    return Math.max(0, nextResetEpochMs - serverNowEstimated);
+    // (option : Math.ceil pour arrondir)
   }
 
   private countdownStr(diffMs: number): string {
@@ -210,21 +193,19 @@ export class HeaderComponent implements OnInit, OnDestroy {
     return `${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`;
   }
 
-  // ---------- LocalStorage ----------
-  private getLastClaimParisMs(): number | null {
-    const v = localStorage.getItem(this.STORAGE_KEY);
-    if (!v) return null;
-    const n = Number(v);
-    return Number.isFinite(n) ? n : null;
-  }
-
-  private setLastClaimParisMs(ms: number) {
-    localStorage.setItem(this.STORAGE_KEY, String(ms));
-  }
-
   // ---------- UI toast ----------
   private toast(msg: string) {
     this.bonusMsg = msg;
     setTimeout(() => (this.bonusMsg = null), 3000);
   }
 }
+
+/** Garde ce type côté front en miroir de la réponse /api/bonus/status */
+type BonusStatus = {
+  canClaim: boolean;
+  lastClaimEpochMs?: number | null;
+  nextResetEpochMs: number;
+  serverNowEpochMs: number;
+  amount: number;   // montant du bonus (info)
+  solde?: number;   // optionnel si tu veux renvoyer le solde avec /status
+};
