@@ -97,6 +97,34 @@
     </div>
   </div>
 
+  <!-- ====== Règles du jeu : Pile ou Face ====== -->
+  <div class="panneau mt-12 regles-jeu">
+    <h3 class="titre-regles">🎯 Règles du jeu — Pile ou Face</h3>
+    <ul class="liste-regles">
+      <li>
+        Tu mises un certain nombre de <strong>crédits</strong> (minimum {{ minBet }}).
+      </li>
+      <li>
+        Choisis entre <strong>Pile</strong> ou <strong>Face</strong>.
+      </li>
+      <li>
+        Si le résultat correspond à ton choix, tu gagnes <strong>2× ta mise</strong>.
+      </li>
+      <li>
+        Sinon, tu perds ta mise.
+      </li>
+      <li>
+        Le résultat est entièrement <strong>aléatoire et équitable</strong> (50 % de chances de gagner).
+      </li>
+    </ul>
+
+    <div class="note-regle">
+      💡 Exemple : tu mises <strong>200 crédits</strong> sur <strong>Pile</strong>.
+      Si tu gagnes, tu remportes <strong>400 crédits</strong> (soit un gain net de +200 crédits).
+    </div>
+  </div>
+
+
   <div class="panneau mt-12">
     <app-game-history-list [game]="'coinflip'" [limit]="5"></app-game-history-list>
   </div>

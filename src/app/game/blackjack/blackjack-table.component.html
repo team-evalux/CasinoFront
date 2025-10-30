@@ -171,6 +171,49 @@
     </aside>
   </main>
 
+  <!-- ====== Règles du jeu : Blackjack ====== -->
+  <div class="panneau mt-12 regles-jeu">
+    <h3 class="titre-regles">🃏 Règles du jeu — Blackjack</h3>
+
+    <ul class="liste-regles">
+      <li>Le but du jeu est d’obtenir une main plus proche de <strong>21</strong> que celle du croupier, sans le dépasser.</li>
+      <li><strong>Valeurs des cartes :</strong>
+        <ul>
+          <li>2 à 10 → leur valeur nominale</li>
+          <li>Valet, Dame, Roi → 10</li>
+          <li>As → 1 ou 11 (selon la meilleure main possible)</li>
+        </ul>
+      </li>
+      <li><strong>Déroulement :</strong>
+        <ul>
+          <li>Chaque joueur place sa mise pendant la phase <em>BETTING</em>.</li>
+          <li>Le croupier distribue 2 cartes à chaque joueur et 2 à lui-même (une cachée).</li>
+          <li>À ton tour :
+            <ul>
+              <li><strong>Hit</strong> → tirer une carte</li>
+              <li><strong>Stand</strong> → rester sur ton total</li>
+              <li><strong>Double</strong> → doubler la mise, tirer une carte, puis passer</li>
+            </ul>
+          </li>
+          <li>Si tu dépasses 21 → <strong>Bust</strong> (tu perds ta mise)</li>
+          <li>Le croupier tire jusqu’à au moins 17 points.</li>
+        </ul>
+      </li>
+      <li><strong>Gains :</strong>
+        <ul>
+          <li>Blackjack (As + 10/Valet/Dame/Roi) → <strong>×1.5</strong> la mise</li>
+          <li>Victoire normale → <strong>×2</strong></li>
+          <li>Égalité → mise rendue</li>
+          <li>Perte → mise perdue</li>
+        </ul>
+      </li>
+    </ul>
+
+    <div class="note-regle">
+      💡 Exemple : tu mises <strong>200 crédits</strong>. Tu fais un Blackjack → tu gagnes <strong>300 crédits</strong> (gain net +100).
+    </div>
+  </div>
+
   <!-- cache l'historique quand la modale code est ouverte -->
   <div class="panneau mt-12" *ngIf="!showCodeModal">
     <app-game-history-list [game]="'blackjack'" [limit]="5"></app-game-history-list>

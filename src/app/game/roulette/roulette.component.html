@@ -186,5 +186,45 @@
         <button class="cell bottom" (click)="betType='range'; betValue='high'" [disabled]="!isLoggedIn || enCours">19 to 36</button>
       </div>
     </div>
+    <!-- ====== Règles du jeu : Roulette ====== -->
+    <div class="panneau mt-12 regles-jeu">
+      <h3 class="titre-regles">🎯 Règles du jeu — Roulette</h3>
+
+      <ul class="liste-regles">
+        <li>La <strong>mise minimale</strong> est de <strong>{{ minBet }}</strong> crédits.</li>
+        <li>Choisis ton <strong>type de pari</strong> parmi plusieurs options :
+          <ul>
+            <li><strong>Numéro</strong> → pari direct sur un numéro de 0 à 36.</li>
+            <li><strong>Couleur</strong> → rouge 🔴 ou noir ⚫.</li>
+            <li><strong>Pair / Impair</strong> → parie sur la parité du numéro.</li>
+            <li><strong>1-18 / 19-36</strong> → bas ou haut.</li>
+            <li><strong>Douzaine</strong> → 1–12, 13–24 ou 25–36.</li>
+          </ul>
+        </li>
+        <li>
+          Le multiplicateur dépend du type de pari :
+          <ul>
+            <li>Numéro exact → <strong>×36</strong></li>
+            <li>Couleur / Pair / Impair / 1-18 / 19-36 → <strong>×2</strong></li>
+            <li>Douzaine → <strong>×3</strong></li>
+          </ul>
+        </li>
+        <li>
+          Si le résultat correspond à ton pari, tu gagnes selon le multiplicateur. Sinon, ta mise est perdue.
+        </li>
+        <li>
+          Le <strong>0</strong> est vert et ne compte ni comme pair, ni impair, ni dans une douzaine.
+        </li>
+      </ul>
+
+      <div class="note-regle">
+        💡 Exemple : tu mises <strong>200 crédits</strong> sur <strong>rouge</strong>.
+        Si la bille tombe sur un numéro rouge, tu gagnes <strong>400 crédits</strong> (gain net +200).
+      </div>
+    </div>
+
   </div>
+
 </div>
+
+

@@ -89,6 +89,41 @@
       <p class="mt-8">Solde : <strong>{{ lastResult.solde }}</strong></p>
     </div>
 
+    <!-- ====== Règles du jeu : Machine à sous ====== -->
+    <div class="panneau mt-12 regles-jeu">
+      <h3 class="titre-regles">🎰 Règles du jeu — Machine à sous</h3>
+
+      <ul class="liste-regles">
+        <li>La <strong>mise minimale</strong> est de <strong>{{ minBet }}</strong> crédits.</li>
+        <li>Choisis le <strong>nombre de rouleaux</strong> (3, 4 ou 5) avant de lancer la machine.</li>
+
+        <li><strong>Symbole & valeur de base :</strong>
+          <ul>
+            <li>🍒 Cerise → 1.0</li>
+            <li>🍋 Citron → 1.3 (3R) / 1.4 (4R) / 1.3 (5R)</li>
+            <li>🍊 Orange → 1.0 (3R) / 2.2 (4R) / 1.7 (5R)</li>
+            <li>⭐ Étoile → 1.1 (3R) / 3.1 (4R) / 2.4 (5R)</li>
+            <li>7️⃣ Sept → 1.3 (3R) / 4.0 (4R) / 3.0 (5R)</li>
+          </ul>
+        </li>
+
+        <li><strong>Multiplicateurs selon combinaisons :</strong>
+          <ul>
+            <li><strong>3 rouleaux :</strong> 3 identiques = ×6 • 2 identiques = ×1</li>
+            <li><strong>4 rouleaux :</strong> 4 identiques = ×6 • 3 identiques = ×3</li>
+            <li><strong>5 rouleaux :</strong> 5 identiques = ×10 • 4 identiques = ×5 • 3 identiques = ×1</li>
+          </ul>
+        </li>
+
+        <li>Les gains sont calculés en fonction de la valeur du symbole × multiplicateur × mise.</li>
+        <li>Si aucune combinaison n’est gagnante, la mise est perdue.</li>
+      </ul>
+
+      <div class="note-regle">
+        💡 Exemple : tu mises <strong>100 crédits</strong> sur une machine à 4 rouleaux et tu obtiens 4 🍊.
+        → Valeur orange = 2.2 • Multiplicateur = 6 → Gain = <strong>100 × 2.2 × 6 = 1320 crédits</strong>.
+      </div>
+    </div>
     <div class="panneau mt-12">
       <app-game-history-list [game]="'slots'" [limit]="5"></app-game-history-list>
     </div>
