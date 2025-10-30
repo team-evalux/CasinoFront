@@ -8,6 +8,8 @@ import { AdminGuard } from './guard/admin.guard';
 import { GameHistoryComponent } from './history/game-history.component';
 import {VerifyEmailComponent} from './email/verify-email.component';
 import {ForgotPasswordComponent} from './email/forgot-password.component';
+import {AboutComponent} from './about/about.component';
+import {SupportComponent} from './support/support.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'home', pathMatch: 'full' },
@@ -37,6 +39,9 @@ export const routes: Routes = [
 
   // Historique : si tu veux le laisser privé, on garde AuthGuard
   { path: 'history', component: GameHistoryComponent, canActivate: [AuthGuard] },
+
+  { path: 'about', component: AboutComponent },
+  { path: 'support', component: SupportComponent },
 
   // Fallback
   { path: '**', redirectTo: 'home' }

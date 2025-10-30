@@ -252,8 +252,8 @@ body.fond-casino{
 }
 
 .gift-btn img {
-  width: 60px;   /* agrandit l’image */
-  height: 60px;
+  width: 120px;   /* agrandit l’image */
+  height: 1220px;
   display: block;
 }
 
@@ -262,3 +262,37 @@ body.fond-casino{
   cursor: not-allowed;
 }
 
+/* ====== Logo centré (amélioré) ====== */
+.logo-centre {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  top: 2px; /* petit ajustement vertical */
+}
+
+.logo-centre a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 14, 18, 0.6);
+  border-radius: 18px; /* arrondi doux */
+  padding: 6px 10px;
+  border: 1px solid rgba(212, 175, 55, 0.35); /* léger contour doré */
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.25);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.logo-centre a:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 16px rgba(255, 215, 90, 0.45);
+}
+
+.logo-centre img {
+  height: 100px; /* légèrement réduit */
+  width: auto;
+  object-fit: cover;
+  border-radius: 10px; /* arrondit les coins de l’image */
+  margin-right: 0px; /* décalage léger vers la droite pour centrage optique */
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+}

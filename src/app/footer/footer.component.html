@@ -1,16 +1,41 @@
-<!-- src/app/shared/footer/footer.component.html -->
 <footer class="footer">
   <div class="footer-main conteneur">
+    <!-- Section gauche -->
     <div class="footer-left">
-      <h4>MonSite</h4>
-      <p>© 2025 MonSite. Tous droits réservés.</p>
-    </div>
-    <div class="footer-links">
-      <a routerLink="/home" fragment="top" (click)="scrollToTop()">Accueil</a>
+      <h4>Evalux Casino</h4>
+      <p>Un casino gratuit développé par deux jeunes développeurs (Angular & Java).</p>
+      <p>© 2025 Evalux Casino — Projet personnel et vitrine de compétences.</p>
     </div>
 
-    <div class="footer-info">
-      <p>Email : evalux.casino&#64;gmail.com</p>
+    <!-- Liens principaux -->
+    <div class="footer-links">
+      <h5>Navigation</h5>
+      <a routerLink="/home" (click)="scrollToTop()">Accueil</a>
+      <a routerLink="/about">À propos</a>
+      <a routerLink="/support">Support</a>
     </div>
+
+    <!-- Section Jeux -->
+    <div class="footer-games">
+      <h5>Jeux</h5>
+      <a routerLink="/play/coinflip">Coinflip</a>
+      <a routerLink="/play/slots">Machines à sous</a>
+      <a routerLink="/play/roulette">Roulette</a>
+      <a routerLink="/play/blackjack">Blackjack</a>
+    </div>
+
+    <!-- Contact -->
+    <div class="footer-info">
+      <h5>Contact</h5>
+      <p>Email : <a href="mailto:evalux.casino@gmail.com">evalux.casino&#64;gmail.com</a></p>
+      <p>
+        <a href="https://www.linkedin.com/in/evan-durand/" target="_blank">LinkedIn Dév 1</a><br>
+        <a href="https://www.linkedin.com/in/luxman-mahesan/" target="_blank">LinkedIn Dév 2</a>
+      </p>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <p>🛠️ Projet à but éducatif — toute faille ou bug trouvé est une aide précieuse !</p>
   </div>
 </footer>
