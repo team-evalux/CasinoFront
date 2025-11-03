@@ -1,28 +1,31 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, NgZone, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { AuthService, AuthResponse } from '../services/auth.service';
-import { catchError } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-register',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
-  templateUrl: './register.component.html'
+  templateUrl: './register.component.html',
+  styleUrls: ['./register.component.css']
 })
 export class RegisterComponent implements OnInit {
   formulaire: FormGroup;
   enCours = false;
   messageSucces: string | null = null;
   messageErreur: string | null = null;
-  tokenRecus: string | null = null;
+
+  showPassword = false; // 👈 toggle d’affichage
+
+  private PENDING_KEY = 'register.pending';
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private zone: NgZone
   ) {
     this.formulaire = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -37,6 +40,8 @@ export class RegisterComponent implements OnInit {
     }
   }
 
+  get f() { return this.formulaire.controls; }
+
   envoyer() {
     if (this.formulaire.invalid) {
       this.formulaire.markAllAsTouched();
@@ -47,32 +52,24 @@ export class RegisterComponent implements OnInit {
     this.messageErreur = null;
     this.messageSucces = null;
 
-    const email = this.formulaire.get('email')!.value as string;
-    const pseudo = this.formulaire.get('pseudo')!.value as string;
-    const motDePasse = this.formulaire.get('motDePasse')!.value as string;
+    const email = this.f['email'].value as string;
+    const pseudo = this.f['pseudo'].value as string;
+    const motDePasse = this.f['motDePasse'].value as string;
 
-    const payload: { email: string; pseudo: string; motDePasse: string } = {
-      email,
-      pseudo,
-      motDePasse
-    };
-
-    this.authService.inscription(payload)
-      .pipe(
-        catchError(err => {
-          this.messageErreur = err?.error || 'Erreur réseau ou serveur';
-          this.enCours = false;
-          return of(null);
-        })
-      )
-      .subscribe((res: AuthResponse | null) => {
+    this.authService.inscriptionSendCode({ email, pseudo }).subscribe({
+      next: (res) => {
+        sessionStorage.setItem(this.PENDING_KEY, JSON.stringify({ email, pseudo, motDePasse }));
         this.enCours = false;
-        if (!res) return;
-        this.tokenRecus = res.token;
-        this.messageSucces = 'Inscription réussie — token reçu.';
-        // localStorage.setItem('casino_token', res.token);
-        // si tu veux rediriger automatiquement après inscription :
-        // this.router.navigate(['/home']);
-      });
+        this.zone.run(() => {
+          this.router.navigate(['/verify-email'], { queryParams: { email } });
+        });
+      },
+      error: (err) => {
+        this.enCours = false;
+        if (err?.error?.error) this.messageErreur = err.error.error;
+        else if (typeof err?.error === 'string') this.messageErreur = err.error;
+        else this.messageErreur = 'Erreur réseau ou serveur';
+      }
+    });
   }
 }

@@ -1,0 +1,47 @@
+.lobby-wrap { max-width: 980px; margin: 24px auto; padding: 12px; }
+.lobby-head { display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; }
+.create-form { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.create-form input, .create-form select { padding:6px 8px; border-radius:8px; border:1px solid #ccc; }
+.grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap:12px; }
+.card { border:1px solid #eee; border-radius:12px; padding:12px; background:#fff; }
+.card button { padding:8px 12px; border-radius:8px; border:none; background:#1976d2; color:#fff; cursor:pointer; }
+.err { color:#b00020; }
+
+/* === Styles du cadenas repris du coinflip === */
+.coin-stage {
+  perspective: 1000px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 180px;
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.lock-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.lock-overlay .lock {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+
+.lock-overlay .cta {
+  margin-top: 10px;
+  display: inline-block;
+  background: #1976d2;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+}

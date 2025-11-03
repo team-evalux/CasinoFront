@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="140" height="190" viewBox="0 0 140 190">
+  <rect width="140" height="190" rx="12" ry="12" fill="#1e3a8a" stroke="white" stroke-width="4"></rect>
+  <rect x="12" y="12" width="116" height="166" rx="8" ry="8" fill="#2563eb" stroke="white" stroke-width="2"></rect>
+  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-size="32" fill="white" font-family="Arial">♣♦♥♠</text>
+</svg>

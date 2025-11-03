@@ -1,4 +1,3 @@
-// src/app/history/game-history-list.component.ts
 import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HistoryEntry, HistoryService } from '../services/history/history.service';
@@ -41,11 +40,14 @@ import { RouterLink } from '@angular/router';
           </div>
 
           <div style="text-align:right;min-width:120px">
-            <div [style.color]="it.montantGagne>0 ? 'green' : '#b00020'">
-              {{ it.montantGagne>0 ? '+' + it.montantGagne : '-' + it.montantJoue }}
+            <div [style.color]="netColorOf(it)">
+              {{ netLabelOf(it) }}
             </div>
-            <div style="font-size:0.85rem;color:#666">x{{ it.multiplier ? (it.multiplier | number:'1.2-2') : '—' }}</div>
+            <div style="font-size:0.85rem;color:#666">
+              x{{ it.multiplier ? (it.multiplier | number:'1.2-2') : '—' }}
+            </div>
           </div>
+
         </li>
       </ul>
 
@@ -88,10 +90,29 @@ export class GameHistoryListComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void { this.sub?.unsubscribe(); }
 
+  netGainOf(it: HistoryEntry | null | undefined): number {
+    if (!it) return 0;
+    return Number(it.montantGagne ?? 0) - Number(it.montantJoue ?? 0);
+  }
+  netLabelOf(it: HistoryEntry | null | undefined): string {
+    const n = this.netGainOf(it);
+    if (n > 0) return `+${n}`;
+    if (n < 0) return `-${Math.abs(n)}`;
+    return '0';
+  }
+  netColorOf(it: HistoryEntry | null | undefined): string {
+    const n = this.netGainOf(it);
+    if (n > 0) return 'green';
+    if (n < 0) return '#b00020';
+    return '#eab308';
+  }
+
+
   formatOutcome(it: HistoryEntry) {
     if (!it || !it.outcome) return null;
     const o = it.outcome;
 
+    // roulette
     if (it.game === 'roulette') {
       const map: Record<string,string> = {};
       o.split(',').forEach(p => {
@@ -103,6 +124,7 @@ export class GameHistoryListComponent implements OnInit, OnDestroy {
       return { type:'roulette', number: num, color, label: num != null ? `${num} ${color ? '(' + capitalize(color) + ')' : ''}`.trim() : o };
     }
 
+    // coinflip
     if (it.game === 'coinflip') {
       const map = this.parseKeyVals(o);
       const choice = (map['choice'] || this.grab(o, /choice\s*=\s*(pile|face)/i))?.toLowerCase() || null;
@@ -113,6 +135,16 @@ export class GameHistoryListComponent implements OnInit, OnDestroy {
       const status = win==null ? '' : (win ? '• Gagné' : '• Perdu');
       const label = `${left} → ${right} ${status}`.trim();
       return { type:'coinflip', choice, outcome, win, label };
+    }
+
+    // blackjack
+    if (it.game === 'blackjack') {
+      const map = this.parseKeyVals(o);
+      const total = map['total'] || this.grab(o, /total\s*=\s*(\d+)/i);
+      const outcome = (map['outcome'] || this.grab(o, /outcome\s*=\s*(\w+)/i))?.toUpperCase() || '';
+      const label = `Total: ${total || '?'} • ${outcome || ''}`;
+      const win = outcome === 'WIN' || outcome === 'BLACKJACK';
+      return { type: 'blackjack', total, outcome, win, label };
     }
 
     return { type:'autre', number: null, color: null, label: o };

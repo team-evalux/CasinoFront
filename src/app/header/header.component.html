@@ -15,7 +15,7 @@
 
       </button>
 
-      <h1>Mon Casino</h1>
+      <p><-- Ton bonus quotidien</p>
     </div>
 
     <!-- Logo centré -->
@@ -40,8 +40,8 @@
 
       <ng-template #showLogin>
         <form (ngSubmit)="submitLogin()" class="d-flex aic gap-8">
-          <input [(ngModel)]="email" name="email" type="email" placeholder="email" class="champ" style="width:180px;">
-          <input [(ngModel)]="motDePasse" name="motDePasse" type="password" placeholder="mot de passe" class="champ" style="width:160px;">
+          <input [(ngModel)]="email" name="email" type="email" placeholder="email" class="champ" style="width:180px;" maxlength="40">
+          <input [(ngModel)]="motDePasse" name="motDePasse" type="password" placeholder="mot de passe" class="champ" style="width:160px;" maxlength="20">
           <button type="submit" [disabled]="loading" class="bouton bouton--primaire">
             {{ loading ? 'Connexion…' : 'Se connecter' }}
           </button>
@@ -49,10 +49,16 @@
             S'inscrire
           </button>
         </form>
+        <button   class="bouton" type="bouton" style="margin-top:10px; width: 100px;">
+          <a  (click)="router.navigate(['/forgot-password'])" >Mot de passe oublié ?</a>
+        </button>
         <div *ngIf="error" style="color:#ffb3b3;margin-left:12px;">{{ error }}</div>
       </ng-template>
+
+
     </div>
   </div>
+
 
   <!-- Petit toast -->
   <div *ngIf="bonusMsg" style="position:fixed;top:12px;left:12px;background:#1f2937;color:#fff;padding:8px 10px;border-radius:8px;">

@@ -1,10 +1,9 @@
-// src/app/games/slot-machine/slot-machine.component.ts
 import { Component, OnDestroy, AfterViewInit, ViewChildren, QueryList, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { WalletService } from '../../services/wallet.service';
 import { Subscription } from 'rxjs';
-import { SlotPlayResponse, SlotService, SlotConfigResponse } from '../../services/game/slot.service';
+import { SlotPlayResponse, SlotService, SlotConfigResponse, SlotPlayRequest } from '../../services/game/slot.service';
 import { RouterLink } from '@angular/router';
 import { GameHistoryListComponent } from '../../history/game-history-list.component';
 import { HistoryService } from '../../services/history/history.service';
@@ -20,18 +19,23 @@ interface ReelModel { sequence: string[]; }
   styleUrls: ['./slot-machine.component.css']
 })
 export class SlotMachineComponent implements OnDestroy, AfterViewInit {
+  private static readonly DEFAULT_REELS = 3;
+
   mise: number = 100;
   minBet = 100;
   enCours = false;
   error: string | null = null;
 
-  // ✅ affichage retardé (ancien résultat visible pendant le spin)
   lastResult: SlotPlayResponse | null = null;
 
   currentBalance: number | null = null;
   symbols: string[] = [];
-  reelsCount = 3;
+  reelsCount = SlotMachineComponent.DEFAULT_REELS; // config active chargée depuis le back
   reels: ReelModel[] = [];
+
+  // choix joueur (par défaut = DEFAULT_REELS ; on recharge la config correspondante)
+  desiredReelsCount: number | null = SlotMachineComponent.DEFAULT_REELS;
+
   private loops = 6;
   private minSpinMs = 600;
   private spinStartAt = 0;
@@ -48,11 +52,9 @@ export class SlotMachineComponent implements OnDestroy, AfterViewInit {
   private autoSpinDelay = 900;
   private autoSpinTimeoutId: any = null;
 
-  // buffers commit fin d’anim
   private pendingResult: SlotPlayResponse | null = null;
   private pendingHistoryEntry: any | null = null;
 
-  // ✅ aperçu
   isLoggedIn = false;
 
   constructor(
@@ -63,15 +65,9 @@ export class SlotMachineComponent implements OnDestroy, AfterViewInit {
     private authService: AuthService
   ) {
     this.sub = this.wallet.balance$.subscribe(b => this.currentBalance = b ?? null);
-    this.configSub = this.game.getSlotsConfig().subscribe({
-      next: (cfg: SlotConfigResponse) => {
-        this.symbols = cfg.symbols || [];
-        this.reelsCount = cfg.reelsCount || 3;
-        this.buildReels();
-        this.cdr.detectChanges();
-      },
-      error: () => {}
-    });
+
+    // ⚠️ important : charger la config du nombre de rouleaux choisi (par défaut 3)
+    this.loadConfigFor(this.desiredReelsCount ?? SlotMachineComponent.DEFAULT_REELS);
 
     this.isLoggedIn = !!localStorage.getItem('jwt');
     try {
@@ -83,11 +79,36 @@ export class SlotMachineComponent implements OnDestroy, AfterViewInit {
 
   ngAfterViewInit(): void {}
 
+  /** Charge la config back pour N rouleaux, puis reconstruit les bandes */
+  private loadConfigFor(n: number) {
+    this.configSub?.unsubscribe();
+    this.configSub = this.game.getSlotsConfig(n).subscribe({
+      next: (cfgAny) => {
+        // on sait que le back renvoie une seule config quand reelsCount est fourni
+        const cfg = cfgAny as SlotConfigResponse;
+        this.symbols = cfg.symbols ?? [];
+        this.reelsCount = cfg.reelsCount ?? n;
+        // si l’utilisateur a demandé un autre nombre entre-temps, on aligne
+        this.desiredReelsCount = this.reelsCount;
+        this.buildReels();
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        // fallback local : 3 rouleaux, symboles simples
+        this.symbols = ['🍒', '🍋', '🍊', '⭐', '7️⃣'];
+        this.reelsCount = n;
+        this.buildReels();
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   private buildReels() {
     if (!this.symbols || this.symbols.length === 0) this.symbols = ['SYM'];
     this.reels = [];
     const pad = this.visibleCells();
-    for (let r = 0; r < this.reelsCount; r++) {
+    const count = (this.desiredReelsCount && this.desiredReelsCount > 0) ? this.desiredReelsCount : this.reelsCount;
+    for (let r = 0; r < count; r++) {
       const seq: string[] = [];
       for (let l = 0; l < this.loops; l++) for (const s of this.symbols) seq.push(s);
       for (let p = 0; p < pad; p++) seq.push(this.symbols[p % this.symbols.length]);
@@ -102,15 +123,23 @@ export class SlotMachineComponent implements OnDestroy, AfterViewInit {
     if (!this.mise || this.mise <= 0) { this.error = 'Mise invalide.'; return; }
     if (this.mise < this.minBet) { this.error = `Mise invalide : la mise minimale est de ${this.minBet} crédits.`; return; }
     if (this.currentBalance != null && this.mise > this.currentBalance) { this.error = 'Solde insuffisant.'; return; }
+    if (this.currentBalance != null && this.mise > this.currentBalance) {
+      this.error = 'Mise supérieure à votre solde.';
+      return;
+    }
     if (this.enCours) return;
 
     this.enCours = true;
     this.spinStartAt = Date.now();
     this.startVisualSpin();
 
-    this.game.playSlots({ montant: this.mise }).subscribe({
+    const req: SlotPlayRequest = {
+      montant: this.mise,
+      reelsCount: (this.desiredReelsCount && this.desiredReelsCount > 0) ? this.desiredReelsCount : undefined
+    };
+
+    this.game.playSlots(req).subscribe({
       next: (res) => {
-        // buffer : on affiche en fin d’anim
         this.pendingResult = res;
         this.pendingHistoryEntry = {
           game: 'slots',
@@ -138,6 +167,11 @@ export class SlotMachineComponent implements OnDestroy, AfterViewInit {
     if (!this.isLoggedIn) { this.error = 'Veuillez vous connecter pour jouer.'; return; }
     if (this.autoSpinActive) return;
     if (!this.mise || this.mise <= 0) { this.error = 'Mise invalide.'; return; }
+    // 🔒 solde vérifié avant auto-spin
+    if (this.currentBalance != null && this.mise > this.currentBalance) {
+      this.error = 'Solde insuffisant pour auto-spin.';
+      return;
+    }
     if (this.currentBalance != null && this.mise > this.currentBalance) { this.error = 'Solde insuffisant pour auto-spin.'; return; }
     this.remainingAutoSpins = (this.autoSpinCount && this.autoSpinCount > 0) ? Math.floor(this.autoSpinCount) : null;
     this.autoSpinActive = true;
@@ -148,6 +182,20 @@ export class SlotMachineComponent implements OnDestroy, AfterViewInit {
     this.autoSpinActive = false;
     this.remainingAutoSpins = null;
     if (this.autoSpinTimeoutId != null) { clearTimeout(this.autoSpinTimeoutId); this.autoSpinTimeoutId = null; }
+  }
+
+  /** appelé quand l’utilisateur change le nombre de rouleaux souhaité */
+  setDesiredReels(n: number | null) {
+    if (n != null) {
+      const clean = Math.max(1, Math.floor(n));
+      this.desiredReelsCount = clean;
+      // on recharge la config exacte côté back pour que symboles/poids suivent la bonne machine
+      this.loadConfigFor(clean);
+    } else {
+      this.desiredReelsCount = this.reelsCount;
+      this.buildReels();
+      this.cdr.detectChanges();
+    }
   }
 
   private onSpinComplete() {
@@ -228,7 +276,6 @@ export class SlotMachineComponent implements OnDestroy, AfterViewInit {
         this.transitionTimeouts.push(toId);
       }
 
-      // commit résultat + historique à la fin
       const commitAndFinish = () => {
         this.clearAllTimers();
         if (this.pendingResult) { this.lastResult = this.pendingResult; this.pendingResult = null; }
@@ -268,6 +315,24 @@ export class SlotMachineComponent implements OnDestroy, AfterViewInit {
     this.pendingHistoryEntry = null;
   }
 
+  // 👉 calcule le net à partir du dernier résultat
+  get netGain(): number {
+    const r = this.lastResult;
+    if (!r) return 0;
+    const mise = r.montantJoue ?? this.mise ?? 0;
+    const gagne = r.montantGagne ?? 0;
+    return gagne - mise;
+  }
+
+// 👉 format + signe
+  get netLabel(): string {
+    const n = this.netGain;
+    if (n > 0) return `+${n}`;
+    if (n < 0) return `-${Math.abs(n)}`;
+    return '0';
+  }
+
+
   private forceCleanup() {
     this.reelStrips.forEach(elref => {
       const el = elref.nativeElement;
@@ -295,11 +360,11 @@ export class SlotMachineComponent implements OnDestroy, AfterViewInit {
 
   private visibleCells(): number { return 3; }
 
-
   ngOnDestroy(): void {
     this.sub?.unsubscribe();
     this.configSub?.unsubscribe();
     this.clearAllTimers();
     this.stopAutoSpin();
   }
+  protected readonly Math = Math;
 }

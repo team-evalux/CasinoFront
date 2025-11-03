@@ -55,6 +55,23 @@ export class CoinflipComponent {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
+  // coinflip.component.ts
+  get netGain(): number {
+    const r = this.lastResult;
+    if (!r) return 0;
+    const mise = r.montantJoue ?? this.mise ?? 0;
+    const gagne = r.montantGagne ?? 0;
+    return gagne - mise;
+  }
+
+  get netLabel(): string {
+    const n = this.netGain;
+    if (n > 0) return `+${n}`;
+    if (n < 0) return `-${Math.abs(n)}`;
+    return '0';
+  }
+
+
   jouer() {
     this.error = null;
     this.message = null;
@@ -62,6 +79,10 @@ export class CoinflipComponent {
     if (!this.isLoggedIn) { this.error = 'Veuillez vous connecter pour jouer.'; return; }
     if (!this.mise || this.mise < this.minBet) {
       this.error = `Mise invalide : la mise minimale est de ${this.minBet} crédits.`;
+      return;
+    }
+    if (this.currentBalance !== null && this.mise > this.currentBalance) {
+      this.error = 'Mise supérieure à votre solde.';
       return;
     }
     if (!this.choix) { this.error = 'Choix requis.'; return; }
@@ -109,4 +130,5 @@ export class CoinflipComponent {
   }
 
   refreshBalance() { this.wallet.refreshBalance(); }
+  protected readonly Math = Math;
 }

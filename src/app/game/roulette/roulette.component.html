@@ -16,26 +16,68 @@
     <div class="mb-12">
       <label class="libelle">Valeur</label>
       <ng-container [ngSwitch]="betType">
-        <input *ngSwitchCase="'straight'" class="champ" type="number" min="0" max="36" [(ngModel)]="betValue" [disabled]="!isLoggedIn || enCours"/>
+        <input *ngSwitchCase="'straight'"
+               class="champ"
+               type="number"
+               min="0"
+               max="36"
+               maxlength="2"
+               [ngModel]="betValue"
+               (ngModelChange)="onBetValueChange($event)"
+               (keydown)="blockInvalidKeys($event)"
+               [disabled]="!isLoggedIn || enCours" />
+        <small *ngIf="isInvalidStraightBet()" style="color:#ff9b9b;">
+          ⚠️ Le numéro doit être entre 0 et 36.
+        </small>
+
+
+        <!-- Autres types de paris -->
         <select *ngSwitchCase="'color'" class="champ" [(ngModel)]="betValue" [disabled]="!isLoggedIn || enCours">
-          <option value="red">Rouge</option><option value="black">Noir</option>
+          <option value="red">Rouge</option>
+          <option value="black">Noir</option>
         </select>
+
         <select *ngSwitchCase="'parity'" class="champ" [(ngModel)]="betValue" [disabled]="!isLoggedIn || enCours">
-          <option value="even">Pair</option><option value="odd">Impair</option>
+          <option value="even">Pair</option>
+          <option value="odd">Impair</option>
         </select>
+
         <select *ngSwitchCase="'range'" class="champ" [(ngModel)]="betValue" [disabled]="!isLoggedIn || enCours">
-          <option value="low">1-18</option><option value="high">19-36</option>
+          <option value="low">1-18</option>
+          <option value="high">19-36</option>
         </select>
+
         <select *ngSwitchCase="'dozen'" class="champ" [(ngModel)]="betValue" [disabled]="!isLoggedIn || enCours">
-          <option value="1">1 (1-12)</option><option value="2">2 (13-24)</option><option value="3">3 (25-36)</option>
+          <option value="1">1 (1-12)</option>
+          <option value="2">2 (13-24)</option>
+          <option value="3">3 (25-36)</option>
         </select>
       </ng-container>
     </div>
 
     <div class="mb-12">
       <label class="libelle">Mise</label>
-      <input class="champ" type="number" [(ngModel)]="montant" min="1" [disabled]="!isLoggedIn || enCours"/>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <input class="champ" type="number"
+               [(ngModel)]="montant"
+               [attr.min]="minBet"
+               [attr.max]="currentBalance ?? 1000000"
+               [disabled]="!isLoggedIn || enCours" />
+        <button type="button"
+                (click)="montant = Math.min((montant || 0) * 2, currentBalance ?? 1000000)"
+                [disabled]="!isLoggedIn || enCours">
+          ×2
+        </button>
+        <button type="button"
+                (click)="montant = Math.max(Math.floor((montant || 0) / 2), minBet)"
+                [disabled]="!isLoggedIn || enCours">
+          /2
+        </button>
+      </div>
       <small class="sous-texte">Mise minimale : <strong>{{ minBet }}</strong> • Solde : <strong>{{ currentBalance ?? '—' }}</strong></small>
+      <small *ngIf="currentBalance !== null && montant > currentBalance" style="display:block;color:#ff9b9b;">
+        La mise ne peut pas dépasser votre solde ({{ currentBalance }} crédits).
+      </small>
     </div>
 
     <div class="boutons">
@@ -51,14 +93,34 @@
     <div class="panneau mt-12">
       <p>Solde : <strong>{{ currentBalance ?? '—' }}</strong></p>
       <div *ngIf="lastResult" class="d-flex aic gap-12 mt-8">
-        <div [style.background]="colorFor(lastResult.color)" class="pastille" style="width:56px;height:56px;font-size:20px;">{{ lastResult.number }}</div>
+        <div [style.background]="colorFor(lastResult.color)" class="pastille" style="width:56px;height:56px;font-size:20px;">
+          {{ lastResult.number }}
+        </div>
         <div>
-          <div style="font-weight:700">{{ lastResult.number }} <small style="text-transform:capitalize;margin-left:8px;">{{ lastResult.color }}</small></div>
-          <div *ngIf="lastResult.win" style="color:#34d399;margin-top:6px;">Gagné +{{ lastResult.montantGagne }}</div>
-          <div *ngIf="!lastResult.win" style="color:#f87171;margin-top:6px;">Perdu -{{ lastResult.montantJoue }}</div>
-          <div class="sous-texte mt-8">Multiplicateur : <strong>{{ resultMultiplier(lastResult) ?? '—' }}</strong></div>
+          <div style="font-weight:700">
+            {{ lastResult.number }}
+            <small style="text-transform:capitalize;margin-left:8px;">{{ lastResult.color }}</small>
+          </div>
+
+          <!-- ✅ affiche en net -->
+          <ng-container [ngSwitch]="true">
+            <div *ngSwitchCase="netGainOf(lastResult) > 0" style="color:#34d399;margin-top:6px;">
+              Gagné <strong>{{ netLabelOf(lastResult) }}</strong>
+            </div>
+            <div *ngSwitchCase="netGainOf(lastResult) === 0" style="color:#eab308;margin-top:6px;">
+              Mise rendue • <strong>0</strong>
+            </div>
+            <div *ngSwitchDefault style="color:#f87171;margin-top:6px;">
+              Perdu <strong>{{ netLabelOf(lastResult) }}</strong>
+            </div>
+          </ng-container>
+
+          <div class="sous-texte mt-8">
+            Multiplicateur : <strong>{{ resultMultiplier(lastResult) ?? '—' }}</strong>
+          </div>
         </div>
       </div>
+
       <div *ngIf="!lastResult" class="sous-texte">Aucun spin récent</div>
       <p *ngIf="error" class="mt-8" style="color:#ff9b9b">{{ error }}</p>
     </div>
@@ -124,5 +186,45 @@
         <button class="cell bottom" (click)="betType='range'; betValue='high'" [disabled]="!isLoggedIn || enCours">19 to 36</button>
       </div>
     </div>
+    <!-- ====== Règles du jeu : Roulette ====== -->
+    <div class="panneau mt-12 regles-jeu">
+      <h3 class="titre-regles">🎯 Règles du jeu — Roulette</h3>
+
+      <ul class="liste-regles">
+        <li>La <strong>mise minimale</strong> est de <strong>{{ minBet }}</strong> crédits.</li>
+        <li>Choisis ton <strong>type de pari</strong> parmi plusieurs options :
+          <ul>
+            <li><strong>Numéro</strong> → pari direct sur un numéro de 0 à 36.</li>
+            <li><strong>Couleur</strong> → rouge 🔴 ou noir ⚫.</li>
+            <li><strong>Pair / Impair</strong> → parie sur la parité du numéro.</li>
+            <li><strong>1-18 / 19-36</strong> → bas ou haut.</li>
+            <li><strong>Douzaine</strong> → 1–12, 13–24 ou 25–36.</li>
+          </ul>
+        </li>
+        <li>
+          Le multiplicateur dépend du type de pari :
+          <ul>
+            <li>Numéro exact → <strong>×36</strong></li>
+            <li>Couleur / Pair / Impair / 1-18 / 19-36 → <strong>×2</strong></li>
+            <li>Douzaine → <strong>×3</strong></li>
+          </ul>
+        </li>
+        <li>
+          Si le résultat correspond à ton pari, tu gagnes selon le multiplicateur. Sinon, ta mise est perdue.
+        </li>
+        <li>
+          Le <strong>0</strong> est vert et ne compte ni comme pair, ni impair, ni dans une douzaine.
+        </li>
+      </ul>
+
+      <div class="note-regle">
+        💡 Exemple : tu mises <strong>200 crédits</strong> sur <strong>rouge</strong>.
+        Si la bille tombe sur un numéro rouge, tu gagnes <strong>400 crédits</strong> (gain net +200).
+      </div>
+    </div>
+
   </div>
+
 </div>
+
+

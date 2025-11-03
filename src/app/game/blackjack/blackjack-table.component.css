@@ -1,0 +1,216 @@
+/* blackjack-table.component.css */
+
+/* Container */
+.bj-table {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 12px;
+}
+
+/* Header */
+.bj-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.title-area { display:flex; flex-direction:column; gap:6px; }
+.table-title { margin:0; font-size:20px; color:var(--gris-2); display:flex; gap:8px; align-items:baseline; }
+.table-title .muted { color:#9aa5ad; font-weight:600; font-size:0.9rem; }
+.table-title .table-name { color:var(--or-clair); font-weight:700; }
+.table-title .table-id { color:#dfe6eb; opacity:0.9; font-weight:600; }
+
+.meta { font-size:0.9rem; color:#9fb3b0; display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+.meta-item { color:#9fb3b0; }
+.you-turn { color: var(--accent); font-weight:800; }
+
+/* Close button */
+.actions-area .btn { padding:8px 12px; border-radius:8px; }
+.btn-close { background: linear-gradient(180deg,#ef4444,#b71c1c); color:white; border:none; }
+
+/* Main area layout: left = game, right = controls */
+.bj-main {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 16px;
+  align-items:start;
+}
+
+/* fallback for small screens */
+@media (max-width: 900px) {
+  .bj-main { grid-template-columns: 1fr; }
+}
+
+/* Card surfaces */
+.card-surface {
+  background: linear-gradient(180deg, rgba(22,27,31,0.9), rgba(14,18,20,0.85));
+  border: 1px solid rgba(212,175,55,0.12);
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: var(--ombre);
+}
+
+/* Result toast */
+.result-toast {
+  background: linear-gradient(90deg, rgba(52,211,153,0.12), rgba(255,211,106,0.06));
+  border-left: 4px solid var(--accent);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-weight:700;
+  margin-bottom:10px;
+  color: #e8f9ef;
+}
+
+/* Dealer panel */
+.dealer-panel { display:flex; flex-direction:column; gap:10px; align-items:center; text-align:center; }
+.dealer-head { display:flex; flex-direction:column; gap:6px; align-items:center; }
+.dealer-cards { display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap; margin-top:6px; }
+
+/* Seats grid */
+.seats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+/* Seat card */
+.seat-card {
+  background: linear-gradient(180deg, rgba(10,12,14,0.7), rgba(8,10,12,0.6));
+  border: 1px solid rgba(255,255,255,0.04);
+  padding: 10px;
+  border-radius: 10px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-height:140px;
+}
+.seat-head { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.seat-title { display:flex; flex-direction:column; gap:4px; }
+.seat-email { font-size:0.85rem; color:#b6c2c1; }
+.seat-empty { color:#9aa5ad; }
+
+/* status badge */
+.seat-badge { font-size:0.8rem; padding:6px 8px; border-radius:999px; background: rgba(255,255,255,0.03); color:#cfdfe0; }
+.seat-badge.badge-me { background: linear-gradient(90deg, rgba(52,211,153,0.12), rgba(96,165,250,0.06)); border: 1px solid rgba(52,211,153,0.12); color: var(--accent); font-weight:700; }
+.seat-badge.badge-active { background: linear-gradient(90deg, rgba(255,211,106,0.08), rgba(212,175,55,0.03)); border: 1px solid rgba(212,175,55,0.08); color: var(--or-clair); font-weight:800; }
+.seat-badge.badge-disconnected { opacity:0.6; filter:grayscale(0.6); }
+
+/* card images inside seat */
+.seat-cards { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.empty-slot { color:#7f8a8a; font-style:italic; padding:8px 4px; }
+
+/* seat info & controls */
+.seat-info { display:flex; justify-content:space-between; gap:8px; color:#b7c3c2; font-size:0.95rem; }
+.seat-controls { margin-top:6px; display:flex; justify-content:space-between; align-items:center; gap:6px; }
+.btn-row { display:flex; gap:6px; flex-wrap:wrap; }
+.sit-row { display:flex; gap:6px; }
+
+/* control buttons */
+.btn {
+  background: linear-gradient(180deg,#121517,#0b1012);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: #e6eef7;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight:700;
+}
+.btn:disabled { opacity:0.45; cursor:not-allowed; transform:none; }
+.btn-primary {
+  background: linear-gradient(180deg,var(--accent-2), #1e88e5);
+  color: white;
+  border: none;
+}
+
+/* controls panel (right) */
+.controls-panel { display:flex; flex-direction:column; gap:12px; position:sticky; top:82px; align-self:start; }
+.controls-panel h4 { margin:0; color:#f5f7fa; }
+.bet-box { display:flex; flex-direction:column; gap:8px; }
+.bet-actions { display:flex; gap:8px; margin-top:6px; }
+.limits { color:#9fb3b0; font-size:0.85rem; }
+.table-stats { margin-top:8px; color:#cfe0de; font-size:0.9rem; }
+
+/* loading / error */
+.loading-block { padding:22px; text-align:center; color:#b6c2c1; }
+.err { color:var(--rouge); font-weight:800; }
+
+/* small screens - tweak paddings */
+@media (max-width: 700px) {
+  .seat-card { min-height:120px; }
+  .card-img { width:56px; }
+  .bj-main { gap:10px; }
+  .controls-panel { position: static; top:auto; }
+}
+
+/* Keep your existing card-img sizing but ensure it fits in layout */
+.card-img {
+  width: 72px;
+  height: auto;
+  border-radius: 6px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.45);
+}
+.card-img.back { filter: grayscale(1); opacity:0.98; }
+
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.6);
+  display:flex; align-items:center; justify-content:center; z-index: 1000;
+}
+.modal {
+  background:#111; color:#fff; padding:16px; border-radius:8px; width: 320px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.4);
+}
+.modal .row { display:flex; gap:8px; margin-top:8px; }
+.modal input { width:100%; padding:8px; border-radius:6px; border:1px solid #333; background:#222; color:#fff; }
+.modal .err { color:#ff6b6b; margin-top:6px; }
+
+/* ====== Encadré des règles du jeu ====== */
+.regles-jeu {
+  background: linear-gradient(180deg, rgba(22,27,31,.85), rgba(16,21,24,.85));
+  border: 1px solid rgba(212,175,55,.25);
+  border-radius: var(--rayon);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04), var(--ombre);
+  padding: 16px 18px;
+  color: #e9edf2;
+}
+
+.titre-regles {
+  font-family: "Playfair Display", serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: #ffd36a;
+  margin-bottom: 10px;
+}
+
+.liste-regles {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.liste-regles li {
+  margin-bottom: 6px;
+  padding-left: 22px;
+  position: relative;
+  line-height: 1.5;
+}
+
+.liste-regles li::before {
+  content: "🃏";
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.note-regle {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-left: 3px solid #ffd36a;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #f5f5f5;
+  line-height: 1.4;
+}

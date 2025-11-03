@@ -1,0 +1,30 @@
+/* src/app/support/support.component.css */
+.conteneur {
+  max-width: 700px;
+  margin: 40px auto;
+  padding: 20px;
+  background: #1a1a1a;
+  color: #f1f5f9;
+  border-radius: 10px;
+}
+.champ {
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 8px;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: #111;
+  color: #fff;
+}
+.bouton--primaire {
+  background: #2563eb;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.success-msg {
+  margin-top: 15px;
+  color: #34d399;
+}

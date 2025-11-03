@@ -1,0 +1,44 @@
+.footer {
+  background: #111;
+  color: #f1f5f9;
+  padding: 28px 0 16px;
+  font-size: 14px;
+  border-top: 2px solid #333;
+}
+
+.footer-main {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.footer h4, .footer h5 {
+  color: #fff;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.footer a {
+  color: #cbd5e1;
+  text-decoration: none;
+  display: block;
+  margin-bottom: 6px;
+  transition: color 0.2s;
+}
+.footer a:hover {
+  color: #60a5fa;
+}
+
+.footer-left, .footer-links, .footer-info, .footer-games {
+  flex: 1 1 200px;
+}
+
+.footer-bottom {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 13px;
+  color: #9ca3af;
+}
