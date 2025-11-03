@@ -11,11 +11,14 @@ import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
 import { Router } from '@angular/router';
+import { environment } from '../../environments/environment';
+
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
   // adapte si ton backend n'est pas à cet url en dev
-  private apiBase = 'http://localhost:8080';
+
+private baseUrl = `${environment.apiBaseUrl}/auth`;
 
   constructor(private auth: AuthService, private router: Router) {}
 

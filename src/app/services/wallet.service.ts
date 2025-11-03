@@ -1,6 +1,7 @@
 import { Injectable, NgZone } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, catchError, of } from 'rxjs';
+import {environment} from '../../environments/environment';
 
 export interface WalletDto {
   id: number;
@@ -11,7 +12,7 @@ export interface WalletDto {
   providedIn: 'root'
 })
 export class WalletService {
-  private baseUrl = 'http://localhost:8080/api/wallet';
+  private baseUrl = `${environment.apiBaseUrl}/wallet`;
   private balanceSubject = new BehaviorSubject<number | null>(null);
   balance$ = this.balanceSubject.asObservable();
 

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import {environment} from '../../../environments/environment';
 
 export interface RouletteBetRequest {
   betType: string;
@@ -21,7 +22,7 @@ export interface RouletteBetResponse {
   providedIn: 'root'
 })
 export class RouletteService {
-  private base = 'http://localhost:8080/api/game';
+  private base = `${environment.apiBaseUrl}/game`;
 
   constructor(private http: HttpClient) {}
 

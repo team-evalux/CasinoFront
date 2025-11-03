@@ -7,6 +7,7 @@ import { WalletService } from '../services/wallet.service';
 import { BalanceHeaderComponent } from './balance-header.component';
 import { HttpClient } from '@angular/common/http';
 import { interval, Subscription } from 'rxjs';
+import {environment} from '../../environments/environment';
 
 @Component({
   selector: 'app-header',
@@ -19,8 +20,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
   // ---------- Types ----------
   // Réponse attendue par /api/bonus/status
   // (adapter si ton contrôleur renvoie autre chose)
-  private static readonly BONUS_STATUS_PATH = 'http://localhost:8080/api/bonus/status';
-  private static readonly BONUS_CLAIM_PATH  = 'http://localhost:8080/api/bonus/claim';
+  private static readonly BONUS_STATUS_PATH = `${environment.apiBaseUrl}/bonus/status`;
+  private static readonly BONUS_CLAIM_PATH  = `${environment.apiBaseUrl}/bonus/claim`;
+
 
   // ---------- State UI / Auth ----------
   email = '';

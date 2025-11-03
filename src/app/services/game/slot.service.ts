@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import {environment} from '../../../environments/environment';
 
 export interface SlotPlayRequest {
   montant: number;
@@ -32,7 +33,8 @@ export interface SlotConfigRequest {
 
 @Injectable({ providedIn: 'root' })
 export class SlotService {
-  private base = 'http://localhost:8080/api/game/slots';
+  private base = `${environment.apiBaseUrl}/game/slots`;
+
 
   constructor(private http: HttpClient) {}
 

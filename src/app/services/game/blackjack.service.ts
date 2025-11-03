@@ -6,6 +6,7 @@ import SockJS from 'sockjs-client';
 import { BJSeat, BJTableState } from './blackjack.models';
 import { catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import {environment} from '../../../environments/environment';
 
 // --- DTOs alignés avec ton back ---
 export interface BJCreateTableReq {
@@ -40,8 +41,8 @@ export interface ActionMsg { tableId: number | string; seatIndex: number; type: 
 
 @Injectable({ providedIn: 'root' })
 export class BlackjackService {
-  private apiBase = 'http://localhost:8080/api/bj';
-  private wsUrl  = 'http://localhost:8080/ws';
+  private apiBase = `${environment.apiBaseUrl}/bj`;
+  private wsUrl  = `${environment.wsBaseUrl}/ws`;
 
   private lobbySubject = new BehaviorSubject<BJTableSummary[] | null>(null);
   lobby$ = this.lobbySubject.asObservable();

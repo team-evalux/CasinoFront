@@ -3,6 +3,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import {environment} from '../../environments/environment';
 
 @Component({
   selector: 'app-support',
@@ -30,7 +31,7 @@ export class SupportComponent {
     }
 
     this.sending = true;
-    this.http.post('http://localhost:8080/api/support', {
+    this.http.post(`${environment.apiBaseUrl}/support`, {
       nom: this.nom,
       email: this.email,
       sujet: this.sujet,
