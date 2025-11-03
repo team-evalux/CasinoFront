@@ -1,40 +1,40 @@
+// src/app/interceptors/auth.interceptor.ts
 import { Injectable } from '@angular/core';
 import {
-  HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse
+  HttpInterceptor,
+  HttpRequest,
+  HttpHandler,
+  HttpEvent,
+  HttpErrorResponse
 } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
 import { Router } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
+  // Racine de l'API (ex: https://evaluxcasino.fr/api)
+  private apiRoot = environment.apiBaseUrl;
+
   constructor(private auth: AuthService, private router: Router) {}
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     const token = this.auth.getToken();
-    const url = req.url || '';
-
-    // Couvre /api/ en absolu ET relatif, et exclut uniquement /api/auth/**
-    const isApiCall =
-      url.includes('/api/'); // suffit pour https://evaluxcasino.fr/api/... ET /api/...
-
-    const isAuthEndpoint = url.includes('/api/auth/');
-
     let cloned = req;
 
-    if (token && isApiCall && !isAuthEndpoint) {
+    // Ajoute Authorization sur TOUT ce qui commence par /api,
+    // sauf le namespace /api/auth (login/register/forgot…)
+    if (
+      token &&
+      req.url.startsWith(this.apiRoot) &&
+      !req.url.startsWith(`${this.apiRoot}/auth`)
+    ) {
       cloned = req.clone({
         setHeaders: {
-          Authorization: `Bearer ${token}`,
-          // en bonus: un header pour vérifier visuellement dans Network que l'interceptor a tourné
-          'X-Debug-Auth-Interceptor': 'on'
+          Authorization: `Bearer ${token}`
         }
-      });
-    } else {
-      // Ajoute quand même un header de debug "off" pour confirmer que l’interceptor est ACTIF
-      cloned = req.clone({
-        setHeaders: { 'X-Debug-Auth-Interceptor': 'off' }
       });
     }
 
@@ -42,7 +42,7 @@ export class AuthInterceptor implements HttpInterceptor {
       catchError((err: any) => {
         if (err instanceof HttpErrorResponse && err.status === 401) {
           this.auth.logout();
-          this.router.navigate(['/home']);
+          this.router.navigate(['/home']); // ou une page de login si tu en as une
         }
         return throwError(() => err);
       })
