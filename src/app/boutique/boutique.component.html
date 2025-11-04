@@ -1,0 +1,19 @@
+<div class="conteneur">
+  <h2 class="titre-page">🛍️ Boutique</h2>
+
+  <p>Solde : <strong>{{ solde }} crédits</strong></p>
+  <p *ngIf="message" style="color:#facc15;">{{ message }}</p>
+
+  <div class="grid-items">
+    <div *ngFor="let item of items" class="carte-item" [style.borderColor]="couleurRarete(item.rarete)">
+      <img [src]="item.imagePath" [alt]="item.nom" class="item-img" />
+
+      <h3>{{ item.nom }}</h3>
+      <p [style.color]="couleurRarete(item.rarete)">{{ item.rarete }}</p>
+      <p>{{ item.prix }} crédits</p>
+      <button (click)="acheter(item)" class="bouton bouton--or">Acheter</button>
+    </div>
+  </div>
+
+  <a routerLink="/collection" class="bouton bouton--secondaire mt-12">Voir ma collection</a>
+</div>

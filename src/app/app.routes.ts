@@ -37,6 +37,11 @@ export const routes: Routes = [
   { path: 'admin/slots',     loadComponent: () => import('./admin/slots-admin.component').then(m => m.SlotsAdminComponent),        canActivate: [AuthGuard, AdminGuard] },
   { path: 'admin/roulette',  loadComponent: () => import('./admin/roulette-admin.component').then(m => m.RouletteAdminComponent),  canActivate: [AuthGuard, AdminGuard] },
 
+
+  { path: 'boutique', loadComponent: () => import('./boutique/boutique.component').then(m => m.BoutiqueComponent), canActivate: [AuthGuard] },
+  { path: 'collection', loadComponent: () => import('./collection/collection.component').then(m => m.CollectionComponent), canActivate: [AuthGuard] },
+
+
   // Historique : si tu veux le laisser privé, on garde AuthGuard
   { path: 'history', component: GameHistoryComponent, canActivate: [AuthGuard] },
 
