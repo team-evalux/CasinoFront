@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import {environment} from '../../../environments/environment';
 
 export interface HistoryEntry {
   id?: number;
@@ -18,7 +19,8 @@ export interface HistoryEntry {
   providedIn: 'root'
 })
 export class HistoryService {
-  private base = 'http://localhost:8080/api/history';
+  private base = `${environment.apiBaseUrl}/history`;
+
   private cacheLimit = 10;
   private entries$ = new BehaviorSubject<HistoryEntry[]>([]);
   public entriesObservable$ = this.entries$.asObservable();

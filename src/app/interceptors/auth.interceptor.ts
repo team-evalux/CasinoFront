@@ -11,11 +11,12 @@ import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
 import { Router } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
-  // adapte si ton backend n'est pas à cet url en dev
-  private apiBase = 'http://localhost:8080';
+  // Racine de l'API (ex: https://evaluxcasino.fr/api)
+  private apiRoot = environment.apiBaseUrl;
 
   constructor(private auth: AuthService, private router: Router) {}
 
@@ -23,11 +24,12 @@ export class AuthInterceptor implements HttpInterceptor {
     const token = this.auth.getToken();
     let cloned = req;
 
-    // n'ajoute le header Authorization que pour les appels vers ton API backend
+    // Ajoute Authorization sur TOUT ce qui commence par /api,
+    // sauf le namespace /api/auth (login/register/forgot…)
     if (
       token &&
-      req.url.startsWith(this.apiBase) &&
-      !req.url.includes('/api/auth/')
+      req.url.startsWith(this.apiRoot) &&
+      !req.url.startsWith(`${this.apiRoot}/auth`)
     ) {
       cloned = req.clone({
         setHeaders: {
@@ -36,16 +38,11 @@ export class AuthInterceptor implements HttpInterceptor {
       });
     }
 
-
     return next.handle(cloned).pipe(
       catchError((err: any) => {
-        if (err instanceof HttpErrorResponse) {
-          // si 401 -> probable token expiré ou non autorisé : logout et redirection
-          if (err.status === 401) {
-            this.auth.logout();
-            // protège contre boucle infinie : vérifie l'URL courante avant de naviguer
-            this.router.navigate(['/login']);
-          }
+        if (err instanceof HttpErrorResponse && err.status === 401) {
+          this.auth.logout();
+          this.router.navigate(['/home']); // ou une page de login si tu en as une
         }
         return throwError(() => err);
       })

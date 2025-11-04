@@ -20,3 +20,39 @@
 app-footer, .footer {
   /* margin-top: auto;  <-- pas nécessaire si .app-main a flex:1, mais inoffensif */
 }
+
+/* Overlay plein écran noir opaque */
+.app-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+}
+.app-drawer__backdrop {
+  position: absolute;
+  inset: 0;
+  background: #000;         /* noir plein */
+  opacity: 0.86;
+}
+.app-drawer__panel {
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%;
+  width: 88%;
+  max-width: 380px;
+  background: #0b0f10;      /* panneau opaque */
+  border-right: 1px solid rgba(212,175,55,.22);
+  box-shadow: 24px 0 60px rgba(0,0,0,.6);
+  padding: 16px;
+  overflow-y: auto;
+  transform: translateX(-100%);
+  animation: slideIn .25s ease forwards;
+}
+@keyframes slideIn { to { transform: translateX(0); } }
+
+.drawer-close {
+  position: absolute; top: 10px; right: 12px;
+  background: transparent; border: 0; color: #fff; font-size: 24px; cursor: pointer;
+}
+
+/* petit style util */
+.btn-link{ display:inline-block; padding:10px 12px; border:1px solid rgba(255,255,255,.12); border-radius:10px; color:#e8eef3; text-decoration:none; }

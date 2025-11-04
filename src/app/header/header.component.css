@@ -63,3 +63,39 @@
   box-shadow: 0 0 30px rgba(255, 215, 0, 0.9),
   0 0 60px rgba(255, 215, 0, 0.4);
 }
+
+/* --- barre principale --- */
+.en-tete{position:sticky;top:0;z-index:100;background:rgba(6,10,12,.85);backdrop-filter:blur(8px);border-bottom:1px solid rgba(212,175,55,.22);box-shadow:0 12px 30px rgba(0,0,0,.45)}
+.barre{display:grid;grid-template-columns:56px 1fr 56px;align-items:center;gap:8px;max-width:1100px;margin:0 auto;padding:10px 12px}
+.left,.right{display:flex;align-items:center;justify-content:center}
+.center{display:flex;justify-content:center}
+
+/* logo */
+.logo{display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(212,175,55,.35);border-radius:14px;padding:4px 8px;background:rgba(10,14,18,.6)}
+.logo img{height:48px;width:auto;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.45)}
+
+/* burger */
+.burger{border:0;background:none;width:36px;height:28px;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer}
+.burger span{display:block;height:3px;background:#eaeef3;border-radius:2px}
+
+/* actions desktop (cachées en mobile) */
+.actions-desktop{display:none;gap:12px;align-items:center}
+.actions-desktop .who{color:#cbd5df}
+
+/* bonus */
+.gift-btn{border:0;background:none;padding:0;cursor:default;opacity:.6;transition:opacity .2s,transform .2s}
+.gift-btn img{width:40px;height:40px;border-radius:50%;display:block}
+.gift-btn.available{cursor:pointer;opacity:1}
+.gift-btn.available:hover{transform:scale(1.06)}
+
+/* toast */
+.toast{position:fixed;top:12px;left:12px;background:#1f2937;color:#fff;padding:8px 10px;border-radius:8px;z-index:200}
+
+/* --- ≥ 992px : desktop --- */
+@media (min-width: 992px){
+  .barre{grid-template-columns:1fr auto 1fr}
+  .left{justify-content:flex-start}
+  .right{justify-content:flex-end}
+  .burger{display:none}
+  .actions-desktop{display:flex}
+}

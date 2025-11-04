@@ -2,6 +2,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import {environment} from '../../../environments/environment';
+
+
+
 
 export interface CoinFlipRequest {
   choix: 'pile' | 'face';
@@ -20,7 +24,8 @@ export interface CoinFlipResponse {
   providedIn: 'root'
 })
 export class CoinflipService {
-  private base = 'http://localhost:8080/api/game';
+  private base = `${environment.apiBaseUrl}/game`;
+
 
   constructor(private http: HttpClient) {}
 

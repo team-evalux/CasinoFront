@@ -2,6 +2,7 @@ import { Injectable, Injector } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { WalletService } from './wallet.service';
+import {environment} from '../../environments/environment';
 
 export interface AuthResponse {
   token: string;
@@ -12,7 +13,7 @@ export interface AuthResponse {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private baseUrl = 'http://localhost:8080/api/auth';
+  private baseUrl = `${environment.apiBaseUrl}/auth`;
 
   constructor(
     private http: HttpClient,
