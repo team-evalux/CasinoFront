@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { interval, Subscription } from 'rxjs';
+import {catchError, finalize, interval, Subscription, switchMap, timer} from 'rxjs';
 
 import { AuthService } from '../services/auth.service';
 import { WalletService } from '../services/wallet.service';
@@ -54,18 +54,35 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   // tick
   private tickSub?: Subscription;
+  private authSub?: Subscription;
 
   constructor() { this.loadUser(); }
 
   ngOnInit(): void {
+
+    if (this.isLoggedIn()) {
+      this.loadUser();
+      this.fetchBonusStatus();  // 👉 bouton prêt tout de suite si bonus dispo
+    }
+
+    // ✅ réagit aux changements d’auth (login/logout)
+    this.authSub = this.authService.loggedIn$.subscribe(isIn => {
+      if (isIn) {
+        this.loadUser();
+        this.fetchBonusStatus(); // 👉 déclenché immédiatement après login
+      } else {
+        this.bonusStatus = null;
+        this.statusFetchedAt = 0;
+      }
+    });
+
     this.tickSub = interval(1000).subscribe(() => {
       if (this.isLoggedIn() && this.bonusStatus && this.msUntilNextReset() <= 0) {
         this.fetchBonusStatus();
       }
     });
-    if (this.isLoggedIn()) this.fetchBonusStatus();
   }
-  ngOnDestroy(): void { this.tickSub?.unsubscribe(); }
+  ngOnDestroy(): void { this.tickSub?.unsubscribe(); this.authSub?.unsubscribe(); }
 
   // ---------- Auth ----------
   isLoggedIn(): boolean { return this.authService.isLoggedIn(); }
@@ -77,15 +94,29 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.error = null;
     if (!this.email || !this.motDePasse) { this.error = 'Email et mot de passe requis.'; return; }
     this.loading = true;
-    this.authService.login(this.email, this.motDePasse).subscribe({
-      next: () => {
-        this.loading = false; this.error = null;
-        this.loadUser(); this.fetchBonusStatus();
-        this.ui.closeMenu(); // referme le menu sur mobile
+
+    this.authService.login(this.email, this.motDePasse).pipe(
+      // important: on ne lance la requête status qu'après le succès du login
+      switchMap(() => {
+        // recharge l'utilisateur depuis le localStorage (pseudo/email)
+        this.loadUser();
+        // petite marge au cas où l'interceptor pose le token dans le même tick
+        return timer(0).pipe(switchMap(() => this.http.get<BonusStatus>(this.BONUS_STATUS_URL)));
+      }),
+      finalize(() => { this.loading = false; }),
+    ).subscribe({
+      next: (res) => {
+        this.bonusStatus = res;
+        this.statusFetchedAt = Date.now();
+        this.error = null;
+        this.ui.closeMenu();
       },
-      error: (err) => { this.loading = false; this.error = err?.error || 'Identifiants invalides'; }
+      error: (err) => {
+        this.error = err?.error || 'Identifiants invalides';
+      },
     });
   }
+
   logout() {
     this.authService.logout();
     this.wallet.clear?.();
@@ -99,11 +130,16 @@ export class HeaderComponent implements OnInit, OnDestroy {
   // ---------- Bonus ----------
   private fetchBonusStatus() {
     if (!this.isLoggedIn()) { this.bonusStatus = null; return; }
-    this.http.get<BonusStatus>(this.BONUS_STATUS_URL).subscribe({
+
+    this.http.get<BonusStatus>(this.BONUS_STATUS_URL).pipe(
+      // petit retry très court au cas où
+      catchError(() => timer(150).pipe(switchMap(() => this.http.get<BonusStatus>(this.BONUS_STATUS_URL))))
+    ).subscribe({
       next: (res) => { this.bonusStatus = res; this.statusFetchedAt = Date.now(); },
       error: () => { this.bonusStatus = null; this.statusFetchedAt = 0; }
     });
   }
+
   get canClaim(): boolean { return !!(this.isLoggedIn() && this.bonusStatus?.canClaim); }
   get giftTooltip(): string {
     if (!this.isLoggedIn()) return 'Connecte-toi pour le bonus';
