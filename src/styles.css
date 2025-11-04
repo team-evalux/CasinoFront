@@ -120,8 +120,14 @@ body.fond-casino{
   background: linear-gradient(180deg, rgba(5,8,10,.85), rgba(8,12,14,.75));
   border-bottom:1px solid rgba(212,175,55,.22);
   box-shadow: 0 12px 30px rgba(0,0,0,.45);
-  backdrop-filter: blur(8px);
 }
+.en-tete-casino::after{
+  content:"";
+  position:absolute; inset:0;
+  backdrop-filter: blur(8px);   /* même rendu visuel */
+  pointer-events:none;          /* ne bloque pas les clics */
+}
+
 .en-tete-casino .barre{
   display:grid; grid-template-columns: 1fr auto 1fr; align-items:center;
   gap:12px; padding:14px 16px; max-width:1100px; margin:0 auto;

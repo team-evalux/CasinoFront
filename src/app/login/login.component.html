@@ -1,4 +1,4 @@
-<!-- login.component.html -->
+<!-- src/app/login/login.component.html -->
 <div class="auth-wrapper" style="max-width:420px;margin:40px auto;padding:20px;border:1px solid #e5e5e5;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
   <header style="text-align:center;margin-bottom:16px;">
     <h2 style="margin:0 0 4px 0;">Connexion</h2>
@@ -9,19 +9,25 @@
     <div style="margin-bottom:12px;">
       <label for="email" style="display:block;font-weight:600;margin-bottom:6px;">Email</label>
       <input id="email" type="email" formControlName="email" placeholder="ex : toi@example.com"
+             maxlength="120"
+             autocomplete="email"
              style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;" />
       <div *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.invalid" style="color:#b00020;margin-top:6px;font-size:0.9rem;">
         <div *ngIf="loginForm.get('email')?.errors?.['required']">L'email est requis.</div>
         <div *ngIf="loginForm.get('email')?.errors?.['email']">Format d'email invalide.</div>
+        <div *ngIf="loginForm.get('email')?.errors?.['maxlength']">120 caractères max.</div>
       </div>
     </div>
 
     <div style="margin-bottom:12px;">
       <label for="motDePasse" style="display:block;font-weight:600;margin-bottom:6px;">Mot de passe</label>
       <input id="motDePasse" type="password" formControlName="motDePasse" placeholder="••••••••"
+             maxlength="128"
+             autocomplete="current-password"
              style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;" />
       <div *ngIf="loginForm.get('motDePasse')?.touched && loginForm.get('motDePasse')?.invalid" style="color:#b00020;margin-top:6px;font-size:0.9rem;">
         <div *ngIf="loginForm.get('motDePasse')?.errors?.['required']">Le mot de passe est requis.</div>
+        <div *ngIf="loginForm.get('motDePasse')?.errors?.['maxlength']">128 caractères max.</div>
       </div>
     </div>
 
@@ -32,7 +38,6 @@
         Se connecter
       </button>
 
-      <!-- utilisation de routerLink -->
       <button type="button" [routerLink]="['/register']"
               style="padding:8px 12px;border-radius:6px;border:1px solid #1976d2;background:white;color:#1976d2;cursor:pointer;">
         S'inscrire
@@ -43,5 +48,4 @@
       {{ errorMessage }}
     </p>
   </form>
-
 </div>
