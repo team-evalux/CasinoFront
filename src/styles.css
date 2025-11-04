@@ -237,37 +237,6 @@ body.fond-casino{
   font-weight: 700;
 }
 
-
-.gift-btn.available img {
-  filter: drop-shadow(0 0 6px gold);
-  transform: scale(1.1);
-  transition: transform 0.2s, filter 0.2s;
-}
-
-.gift-btn:disabled img {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-
-.gift-btn {
-  background: none;       /* supprime le fond du bouton */
-  border: none;           /* supprime la bordure */
-  padding: 0;             /* pas de marge interne */
-  cursor: pointer;
-}
-
-.gift-btn img {
-  width: 120px;   /* agrandit l’image */
-  height: 1220px;
-  display: block;
-}
-
-.gift-btn:disabled {
-  opacity: 0.5;   /* un petit effet quand désactivé */
-  cursor: not-allowed;
-}
-
 /* ====== Logo centré (amélioré) ====== */
 .logo-centre {
   display: flex;
