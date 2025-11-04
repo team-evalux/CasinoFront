@@ -332,6 +332,25 @@ export class SlotMachineComponent implements OnDestroy, AfterViewInit {
     return '0';
   }
 
+  limitAutoSpinInput(event: KeyboardEvent) {
+    const allowedKeys = ['Backspace', 'ArrowLeft', 'ArrowRight', 'Tab', 'Delete'];
+
+    if (allowedKeys.includes(event.key)) return;
+
+    // Autorise uniquement les chiffres
+    if (!/^\d$/.test(event.key)) {
+      event.preventDefault();
+      return;
+    }
+
+    const input = event.target as HTMLInputElement;
+
+    // Empêche plus de 4 chiffres
+    if (input.value.length >= 4) {
+      event.preventDefault();
+    }
+  }
+
 
   private forceCleanup() {
     this.reelStrips.forEach(elref => {

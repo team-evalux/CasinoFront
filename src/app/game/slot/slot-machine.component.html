@@ -38,17 +38,29 @@
 
       <div class="d-flex aic gap-8">
         <label class="libelle" style="margin:0;">Autospins</label>
-        <input class="champ" type="number" [(ngModel)]="autoSpinCount" min="0" title="0 = infini" style="width:90px;" [disabled]="!isLoggedIn || enCours">
+        <input
+          class="champ"
+          type="number"
+          min="0"
+          max="9999"
+          title="0 = infini"
+          style="width:90px;"
+          [(ngModel)]="autoSpinCount"
+          [disabled]="!isLoggedIn || enCours"
+          (keydown)="limitAutoSpinInput($event)"
+        />
         <button (click)="startAutoSpin()" [disabled]="!isLoggedIn || autoSpinActive || (currentBalance!=null && mise>currentBalance)" class="bouton">Auto-Spin</button>
         <button (click)="stopAutoSpin()" [disabled]="!isLoggedIn || !autoSpinActive" class="bouton bouton--secondaire">Stop</button>
       </div>
 
       <div style="min-width:180px;">
         <label class="libelle">Nombre rouleaux</label>
-        <select [(ngModel)]="desiredReelsCount"
-                (change)="setDesiredReels(desiredReelsCount)"
-                [disabled]="enCours || autoSpinActive">
-          <option *ngFor="let n of [3,4,5]" [ngValue]="n">{{n}} rouleaux</option>
+        <select
+          [(ngModel)]="desiredReelsCount"
+          (change)="setDesiredReels(desiredReelsCount)"
+          [disabled]="!isLoggedIn || enCours || autoSpinActive">
+
+        <option *ngFor="let n of [3,4,5]" [ngValue]="n">{{n}} rouleaux</option>
         </select>
       </div>
 
