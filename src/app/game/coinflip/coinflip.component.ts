@@ -30,6 +30,8 @@ export class CoinflipComponent {
   targetRot: string = '0deg';
   rotateDuration: string = '950ms';
   baseRotDeg: number = 0;
+  guestBalance = 1000; // solde fictif
+
 
   // ✅ hors connexion : aperçu uniquement
   isLoggedIn = false;
@@ -40,16 +42,44 @@ export class CoinflipComponent {
     private history: HistoryService,
     private authService: AuthService
   ) {
-    this.wallet.balance$.subscribe(b => this.currentBalance = b ?? null);
+    this.wallet.balance$.subscribe(b => {
+      // 💡 Si connecté → solde réel, sinon → solde fictif
+      this.currentBalance = this.isLoggedIn ? (b ?? null) : this.guestBalance;
+    });
 
-    // état connecté ?
+    // état initial
     this.isLoggedIn = !!localStorage.getItem('jwt');
+
     try {
       const maybe = (this.authService as any).isLoggedIn;
-      if (typeof maybe === 'function') this.isLoggedIn = !!maybe.call(this.authService);
-      (this.authService as any).authState$?.subscribe((v: any) => this.isLoggedIn = !!v);
+      if (typeof maybe === 'function') {
+        this.isLoggedIn = !!maybe.call(this.authService);
+      }
+
+      (this.authService as any).authState$?.subscribe((v: any) => {
+        const wasGuest = !this.isLoggedIn;
+        this.isLoggedIn = !!v;
+
+        if (this.isLoggedIn && wasGuest) {
+          // ⏫ Force la récupération du vrai solde
+          this.wallet.refreshBalance();
+        } else if (!this.isLoggedIn) {
+          // 🧮 Revenir au mode invité
+          this.currentBalance = this.guestBalance;
+        }
+      });
     } catch {}
   }
+
+  ngOnInit() {
+    if (this.isLoggedIn) {
+      this.wallet.refreshBalance();
+    } else {
+      this.currentBalance = this.guestBalance;
+    }
+  }
+
+
 
   private randInt(min: number, max: number): number {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -71,12 +101,79 @@ export class CoinflipComponent {
     return '0';
   }
 
+  jouerFictif() {
+    this.error = null;
+    this.message = null;
+
+    if (!this.mise || this.mise < this.minBet) {
+      this.error = `Mise invalide : minimum ${this.minBet} crédits.`;
+      return;
+    }
+
+    if (this.mise > this.guestBalance) {
+      this.error = 'Solde insuffisant.';
+      return;
+    }
+
+    if (!this.choix) {
+      this.error = 'Choix requis.';
+      return;
+    }
+
+    this.enCours = true;
+    this.resolutionEnCours = false;
+
+    // Simule un résultat aléatoire
+    const outcome: 'pile' | 'face' = Math.random() < 0.5 ? 'pile' : 'face';
+    const win = outcome === this.choix;
+
+    // Simule l’animation
+    const base = (outcome === 'face') ? 180 : 0;
+    const tours = this.randInt(6, 10);
+    const totalDeg = base + tours * 360;
+    this.targetRot = `${totalDeg}deg`;
+    this.rotateDuration = `${this.randInt(800, 1100)}ms`;
+    this.resolutionEnCours = true;
+
+    const montantGagne = win ? this.mise * 2 : 0;
+
+    // Met à jour le solde fictif
+    this.guestBalance = win
+      ? this.guestBalance - this.mise + montantGagne
+      : this.guestBalance - this.mise;
+
+    // Met à jour la balance affichée
+    this.currentBalance = this.guestBalance;
+
+    this.lastResult = {
+      outcome,
+      win,
+      montantJoue: this.mise,
+      montantGagne,
+      solde: this.guestBalance
+    };
+
+    this.message = win ? 'Bravo !' : 'Dommage.';
+
+    // Termine l’animation
+    const totalAnimMs = Math.max(680, parseInt(this.rotateDuration)) + 120;
+    setTimeout(() => {
+      this.enCours = false;
+      this.resolutionEnCours = false;
+      this.baseRotDeg = base;
+    }, totalAnimMs);
+  }
+
 
   jouer() {
     this.error = null;
     this.message = null;
 
-    if (!this.isLoggedIn) { this.error = 'Veuillez vous connecter pour jouer.'; return; }
+    if (!this.isLoggedIn) {
+      this.jouerFictif();
+      return;
+    }
+
     if (!this.mise || this.mise < this.minBet) {
       this.error = `Mise invalide : la mise minimale est de ${this.minBet} crédits.`;
       return;
