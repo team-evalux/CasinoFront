@@ -17,13 +17,6 @@
         </div>
         <div class="shadow"></div>
       </div>
-
-      <!-- 🔒 Overlay d’aperçu quand pas connecté -->
-      <div *ngIf="!isLoggedIn" class="lock-overlay">
-        <div class="lock">🔒</div>
-        <div>Connecte-toi pour jouer</div>
-        <a routerLink="/login" class="cta">Se connecter</a>
-      </div>
     </div>
 
     <div class="mb-12">
@@ -33,36 +26,53 @@
       </small>
 
       <div style="display:flex; align-items:center; gap:6px;">
-        <input class="champ" type="number" [(ngModel)]="mise" [attr.min]="minBet"  [attr.max]="currentBalance ?? maxBet" [disabled]="enCours || !isLoggedIn">
-        <button
-          type="button"
-          (click)="mise = Math.min(mise * 2, currentBalance ?? maxBet)"
-          [disabled]="enCours || !isLoggedIn">
+        <input class="champ" type="number"
+               [(ngModel)]="mise"
+               [attr.min]="minBet"
+               [attr.max]="currentBalance ?? maxBet"
+               [disabled]="enCours">
+        <button type="button"
+                (click)="mise = Math.min(mise * 2, currentBalance ?? maxBet)"
+                [disabled]="enCours">
           ×2
         </button>
-        <button
-          type="button"
-          (click)="mise = Math.max(Math.floor(mise / 2), minBet)"
-          [disabled]="enCours || !isLoggedIn">
+        <button type="button"
+                (click)="mise = Math.max(Math.floor(mise / 2), minBet)"
+                [disabled]="enCours">
           /2
         </button>
-
       </div>
-      <small class="sous-texte">Solde : <strong>{{ currentBalance ?? '—' }}</strong></small>
-      <small *ngIf="mise && mise < minBet" style="display:block;color:#ff9b9b;">La mise doit être ≥ {{ minBet }}.</small>
+
+      <!-- 🟢 Indication du mode invité -->
+      <div *ngIf="!isLoggedIn" style="color:#a3e635; margin-bottom:8px;">
+        🌐 Mode invité : crédits fictifs (non enregistrés)
+      </div>
+
+      <small class="sous-texte">
+        Solde : <strong>{{ currentBalance ?? '—' }}</strong>
+      </small>
+      <small *ngIf="mise && mise < minBet" style="display:block;color:#ff9b9b;">
+        La mise doit être ≥ {{ minBet }}.
+      </small>
     </div>
 
     <div class="mb-12">
       <label class="libelle">Choisis</label>
       <div class="d-flex gap-12">
-        <label><input type="radio" name="choix" [(ngModel)]="choix" value="pile" [disabled]="enCours || !isLoggedIn"> Pile</label>
-        <label><input type="radio" name="choix" [(ngModel)]="choix" value="face" [disabled]="enCours || !isLoggedIn"> Face</label>
+        <label>
+          <input type="radio" name="choix" [(ngModel)]="choix" value="pile" [disabled]="enCours">
+          Pile
+        </label>
+        <label>
+          <input type="radio" name="choix" [(ngModel)]="choix" value="face" [disabled]="enCours">
+          Face
+        </label>
       </div>
     </div>
 
     <div class="boutons">
       <button (click)="jouer()"
-              [disabled]="!isLoggedIn || enCours || !mise || mise < minBet"
+              [disabled]="enCours || !mise || mise < minBet"
               class="bouton bouton--primaire">
         Jouer
       </button>
@@ -73,7 +83,6 @@
       <div *ngIf="lastResult">
         <p><strong>Résultat :</strong> {{ lastResult?.outcome | uppercase }}</p>
 
-        <!-- Affiche le net -->
         <ng-container [ngSwitch]="true">
           <p *ngSwitchCase="netGain > 0" style="color:#34d399">
             Tu as gagné ! {{ netLabel }} crédits.
@@ -97,25 +106,15 @@
     </div>
   </div>
 
-  <!-- ====== Règles du jeu : Pile ou Face ====== -->
+  <!-- ====== Règles du jeu ====== -->
   <div class="panneau mt-12 regles-jeu">
     <h3 class="titre-regles">🎯 Règles du jeu — Pile ou Face</h3>
     <ul class="liste-regles">
-      <li>
-        Tu mises un certain nombre de <strong>crédits</strong> (minimum {{ minBet }}).
-      </li>
-      <li>
-        Choisis entre <strong>Pile</strong> ou <strong>Face</strong>.
-      </li>
-      <li>
-        Si le résultat correspond à ton choix, tu gagnes <strong>2× ta mise</strong>.
-      </li>
-      <li>
-        Sinon, tu perds ta mise.
-      </li>
-      <li>
-        Le résultat est entièrement <strong>aléatoire et équitable</strong> (50 % de chances de gagner).
-      </li>
+      <li>Tu mises un certain nombre de <strong>crédits</strong> (minimum {{ minBet }}).</li>
+      <li>Choisis entre <strong>Pile</strong> ou <strong>Face</strong>.</li>
+      <li>Si le résultat correspond à ton choix, tu gagnes <strong>2× ta mise</strong>.</li>
+      <li>Sinon, tu perds ta mise.</li>
+      <li>Le résultat est entièrement <strong>aléatoire et équitable</strong> (50 % de chances de gagner).</li>
     </ul>
 
     <div class="note-regle">
@@ -123,7 +122,6 @@
       Si tu gagnes, tu remportes <strong>400 crédits</strong> (soit un gain net de +200 crédits).
     </div>
   </div>
-
 
   <div class="panneau mt-12">
     <app-game-history-list [game]="'coinflip'" [limit]="5"></app-game-history-list>
