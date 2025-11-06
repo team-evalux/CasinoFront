@@ -20,7 +20,6 @@
         </ng-template>
       </div>
     </div>
-
     <!-- Centre : logo -->
     <div class="center">
       <a [routerLink]="['/home']" class="logo">
@@ -29,15 +28,35 @@
     </div>
 
     <!-- Droite : bonus -->
+    <!-- Droite : bonus (avec libellé & hint cliquable) -->
     <div class="right">
-      <button class="gift-btn" [class.available]="canClaim"
-              [disabled]="!canClaim || bonusLoading"
-              (click)="onClickGift()" [title]="giftTooltip">
-        <img src="assets/images/bonus.png" alt="Bonus quotidien" />
-      </button>
+      <div class="bonus-cta">
+        <button
+          class="gift-btn"
+          [class.available]="canClaim"
+          [disabled]="!canClaim || bonusLoading"
+          (click)="onClickGift()"
+          [title]="giftTooltip || (canClaim ? 'Bonus disponible — clique pour le réclamer' : 'Bonus indisponible pour le moment')"
+          [attr.aria-label]="giftTooltip || (canClaim ? 'Bonus disponible — cliquez pour le réclamer' : 'Bonus indisponible pour le moment')"
+          aria-describedby="bonus-hint"
+        >
+          <!-- halo animé quand dispo -->
+          <span class="ping" *ngIf="canClaim" aria-hidden="true"></span>
+
+          <img src="assets/images/bonus.png" alt="Icône bonus" />
+
+          <!-- badge 'Bonus' collé au bouton -->
+          <span class="badge-bonus" aria-hidden="true">Bonus</span>
+          <!-- libellé interne (mobile : visible, desktop : masqué) -->
+          <span class="badge-bonus-text">Bonus</span>
+        </button>
+
+
+      </div>
     </div>
   </div>
 
-  <!-- Toast -->
+
+    <!-- Toast -->
   <div *ngIf="bonusMsg" class="toast">{{ bonusMsg }}</div>
 </header>
