@@ -30,7 +30,9 @@ export class RegisterComponent implements OnInit {
     this.formulaire = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       pseudo: ['', [Validators.required, Validators.minLength(3)]],
-      motDePasse: ['', [Validators.required, Validators.minLength(6)]]
+      motDePasse: ['', [Validators.required, Validators.minLength(6)]],
+      // ✅ captcha requis (case à cocher)
+      captcha: [false, [Validators.requiredTrue]]
     });
   }
 
@@ -56,8 +58,11 @@ export class RegisterComponent implements OnInit {
     const pseudo = this.f['pseudo'].value as string;
     const motDePasse = this.f['motDePasse'].value as string;
 
+    // Ici, la case captcha est déjà validée côté front (requiredTrue).
+    // Si tu veux, tu peux aussi l’envoyer au back dans un corps JSON (ex: { captcha: true }).
+
     this.authService.inscriptionSendCode({ email, pseudo }).subscribe({
-      next: (res) => {
+      next: () => {
         sessionStorage.setItem(this.PENDING_KEY, JSON.stringify({ email, pseudo, motDePasse }));
         this.enCours = false;
         this.zone.run(() => {

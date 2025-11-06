@@ -108,3 +108,9 @@
 .titre-page{
   margin-bottom: 2px;
 }
+
+/* register.component.css */
+.captcha-ligne { display:flex; align-items:center; gap:8px; user-select:none; }
+.champ.invalide { border-color:#ff9b9b; }
+.erreur { color:#ff9b9b; font-size:.9rem; margin-top:4px; }
+

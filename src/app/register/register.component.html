@@ -47,6 +47,20 @@
         </div>
       </div>
 
+      <!-- ✅ Captcha (case à cocher obligatoire) -->
+      <div class="row">
+        <label class="libelle">Vérification</label>
+        <div class="field-wrap">
+          <label class="captcha-ligne">
+            <input type="checkbox" formControlName="captcha" />
+            <span>Je ne suis pas un robot</span>
+          </label>
+          <div class="erreur" *ngIf="f['captcha'].touched && f['captcha'].invalid">
+            Veuillez cocher la case “Je ne suis pas un robot”.
+          </div>
+        </div>
+      </div>
+
       <div class="actions">
         <button type="submit" class="bouton bouton--or" [disabled]="enCours || formulaire.invalid">
           {{ enCours ? 'Envoi…' : "S'inscrire" }}
