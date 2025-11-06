@@ -10,6 +10,7 @@ import {VerifyEmailComponent} from './email/verify-email.component';
 import {ForgotPasswordComponent} from './email/forgot-password.component';
 import {AboutComponent} from './about/about.component';
 import {SupportComponent} from './support/support.component';
+import {RgpdComponent} from './rgpd/rgpd.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'home', pathMatch: 'full' },
@@ -42,6 +43,8 @@ export const routes: Routes = [
 
   { path: 'about', component: AboutComponent },
   { path: 'support', component: SupportComponent },
+
+  { path: 'rgpd', component: RgpdComponent },
 
   // Fallback
   { path: '**', redirectTo: 'home' }
