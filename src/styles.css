@@ -271,3 +271,59 @@ body.fond-casino{
   margin-right: 0px; /* décalage léger vers la droite pour centrage optique */
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
 }
+
+
+/* ====== Créditation horaire (progress bar) ====== */
+.bonus-horaire{
+  background: linear-gradient(180deg, rgba(22,27,31,.75), rgba(16,21,24,.75));
+  border: 1px solid rgba(212,175,55,.22);
+  border-radius: var(--rayon);
+  padding: 12px;
+  box-shadow: var(--ombre);
+}
+
+.bonus-head{
+  display:flex; align-items:flex-end; justify-content:space-between;
+  gap:10px; margin-bottom:10px;
+}
+
+.bonus-title{
+  font-weight:700; color:#f5f7fa; display:flex; align-items:center; gap:10px;
+}
+.bonus-title .hint{
+  color:#b9c3cb; font-weight:500; opacity:.9;
+}
+
+.bonus-remaining{
+  font-variant-numeric: tabular-nums;
+  color:#ffe8a3; font-weight:800;
+  background: linear-gradient(180deg, rgba(212,175,55,.18), rgba(160,124,26,.18));
+  border:1px solid rgba(212,175,55,.35);
+  padding: 4px 8px; border-radius: 999px;
+}
+
+.bonus-bar{
+  position: relative;
+  width: 100%;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #0e1418, #0a0f12);
+  border: 1px solid rgba(255,255,255,.06);
+  overflow: hidden;
+}
+.bonus-bar__fill{
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--or-clair), var(--or-fonce));
+  box-shadow: inset 0 0 6px rgba(0,0,0,.25), 0 0 16px rgba(255,211,106,.25);
+  transition: width .25s linear; /* lisse l’animation */
+}
+
+/* Mobile: resserre la carte et la barre */
+@media (max-width: 640px){
+  .bonus-horaire { padding: 10px; }
+  .bonus-head { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .bonus-remaining { font-size: 0.95rem; }
+  .bonus-bar { height: 10px; }
+}
