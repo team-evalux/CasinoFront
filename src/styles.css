@@ -37,7 +37,7 @@ body.fond-casino{
   background-image:
     radial-gradient(1200px 600px at 50% -10%, rgba(52,163,152,.22), transparent 60%),
     radial-gradient(1200px 600px at 100% 0, rgba(101,163,255,.12), transparent 60%),
-    url("../public/assets/images/bg-feutre.jpg");
+    url("../public/assets/images/bg-feutre.png");
   background-size: cover, cover, cover;
   background-position: center, center, center;
   background-attachment: fixed, fixed, fixed;
