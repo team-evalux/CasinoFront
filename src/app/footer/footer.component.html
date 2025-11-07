@@ -13,6 +13,9 @@
       <a routerLink="/home" (click)="scrollToTop()">Accueil</a>
       <a routerLink="/about">À propos</a>
       <a routerLink="/support">Support</a>
+      <a routerLink="/rgpd">Confidentialité (RGPD)</a>
+      <a *ngIf="isLoggedIn()" routerLink="/account/delete">Suppression de compte</a>
+
     </div>
 
     <!-- Section Jeux -->

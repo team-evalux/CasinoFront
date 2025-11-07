@@ -1,0 +1,5 @@
+.hint { color:#9fb0bf; }
+.alert { padding:10px 12px; border-radius:10px; margin-top:8px; }
+.alert--warn { background:#3b2f00; color:#ffe8a3; border:1px solid rgba(255,215,0,.35); }
+.alert--ok   { background:#06331f; color:#bdf6da; border:1px solid rgba(52,211,153,.35); }
+.alert--err  { background:#3a0d0d; color:#ffb4b4; border:1px solid rgba(239,68,68,.35); }

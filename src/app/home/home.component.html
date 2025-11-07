@@ -3,6 +3,26 @@
     <section class="mb-12">
       <h2 class="titre-page">Bienvenue {{ pseudo }} 🎉</h2>
       <p class="texte-secondaire">Sélectionne un jeu ci-dessous pour commencer.</p>
+      <!-- Barre de progression – Créditation horaire -->
+      <section *ngIf="isLoggedIn()" class="bonus-horaire mt-12" >
+        <div class="bonus-head">
+          <div class="bonus-title">
+            ⏱️ Créditation horaire
+            <small class="hint">+100 crédits ajoutés chaque heure pile</small>
+          </div>
+          <div class="bonus-remaining" aria-live="polite">
+            {{ remainingLabel }}
+          </div>
+        </div>
+
+        <div class="bonus-bar" role="progressbar"
+             [attr.aria-valuemin]="0"
+             [attr.aria-valuemax]="100"
+             [attr.aria-valuenow]="percent | number:'1.0-0'">
+          <div class="bonus-bar__fill" [style.width.%]="percent"></div>
+        </div>
+      </section>
+
     </section>
 
     <section class="grille-jeux">
@@ -15,24 +35,11 @@
           <h3 style="margin:0 0 6px 0;font-family:'Playfair Display',serif;color:#f1f5f9;">Pile ou Face</h3>
           <p class="texte-secondaire">Mise simple — 2× payout si tu gagnes. Choisis pile ou face.</p>
         </div>
-        <div class="d-flex jcsb aic">
-          <span class="solde-chip">Min bet 100</span>
+        <div class="d-flex jcsb aic" style="gap:8px; flex-wrap:wrap;">
+          <div class="d-flex aic" style="gap:8px;">
+            <span class="solde-chip" title="Jouable sans compte">Mode invité</span>
+          </div>
           <a [routerLink]="['/play/coinflip']" class="bouton bouton--or">Jouer</a>
-        </div>
-      </article>
-
-      <!-- Roulette -->
-      <article class="carte-jeu">
-        <div class="carte-media">
-          <a [routerLink]="['/play/roulette']"><img src="assets/images/logo-roulette.png" alt="Roulette"></a>
-        </div>
-        <div>
-          <h3 style="margin:0 0 6px 0;font-family:'Playfair Display',serif;color:#f1f5f9;">Roulette</h3>
-          <p class="texte-secondaire">Numéro, couleur, pair/impair — place tes mises.</p>
-        </div>
-        <div class="d-flex jcsb aic">
-          <span class="solde-chip">Min bet 100</span>
-          <a [routerLink]="['/play/roulette']" class="bouton bouton--or">Jouer</a>
         </div>
       </article>
 
@@ -45,9 +52,27 @@
           <h3 style="margin:0 0 6px 0;font-family:'Playfair Display',serif;color:#f1f5f9;">Machine à sous</h3>
           <p class="texte-secondaire">Rouleaux, symboles, gains — tente ta chance.</p>
         </div>
-        <div class="d-flex jcsb aic">
-          <span class="solde-chip">Min bet 100</span>
+        <div class="d-flex jcsb aic" style="gap:8px; flex-wrap:wrap;">
+          <div class="d-flex aic" style="gap:8px;">
+            <span class="solde-chip" title="Jouable sans compte">Mode invité</span>
+          </div>
           <a [routerLink]="['/play/slots']" class="bouton bouton--or">Jouer</a>
+        </div>
+      </article>
+
+      <!-- Roulette -->
+      <article class="carte-jeu">
+        <div class="carte-media">
+          <a [routerLink]="['/play/roulette']"><img src="assets/images/logo-roulette.png" alt="Roulette"></a>
+        </div>
+        <div>
+          <h3 style="margin:0 0 6px 0;font-family:'Playfair Display',serif;color:#f1f5f9;">Roulette</h3>
+          <p class="texte-secondaire">Numéro, couleur, pair/impair — place tes mises.</p>
+        </div>
+        <div class="d-flex jcsb aic" style="gap:8px; flex-wrap:wrap;">
+          <div class="d-flex aic" style="gap:8px;">
+          </div>
+          <a [routerLink]="['/play/roulette']" class="bouton bouton--or">Jouer</a>
         </div>
       </article>
 
@@ -57,19 +82,16 @@
         </div>
         <div>
           <h3 style="margin:0 0 6px 0;font-family:'Playfair Display',serif;color:#f1f5f9;">BlackJack</h3>
-          <p class="texte-secondaire">Affronte le croupier ! Tente d’atteindre 21 sans le dépasser pour remporter la partie.</p>
+          <p class="texte-secondaire">Multijoueur — affronte le croupier avec d’autres joueurs et vise 21 sans le dépasser.</p>
         </div>
-        <div class="d-flex jcsb aic">
-          <span class="solde-chip">Min bet 100</span>
+        <div class="d-flex jcsb aic" style="gap:8px; flex-wrap:wrap;">
+          <div class="d-flex aic" style="gap:8px;">
+          </div>
           <a [routerLink]="['/play/blackjack']" class="bouton bouton--or">Jouer</a>
         </div>
       </article>
 
     </section>
-
-
-
-
 
     <section class="mt-16">
       <app-history-widget></app-history-widget>

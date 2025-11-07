@@ -42,3 +42,11 @@
   font-size: 13px;
   color: #9ca3af;
 }
+
+/* src/app/footer/footer.component.css – petit style pour le lien danger */
+.danger-link{
+  color:#fca5a5;
+  font-weight:700;
+}
+.danger-link:hover{ color:#f87171; }
+

@@ -10,6 +10,7 @@ import {VerifyEmailComponent} from './email/verify-email.component';
 import {ForgotPasswordComponent} from './email/forgot-password.component';
 import {AboutComponent} from './about/about.component';
 import {SupportComponent} from './support/support.component';
+import {RgpdComponent} from './rgpd/rgpd.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'home', pathMatch: 'full' },
@@ -45,8 +46,14 @@ export const routes: Routes = [
   // Historique : si tu veux le laisser privé, on garde AuthGuard
   { path: 'history', component: GameHistoryComponent, canActivate: [AuthGuard] },
 
+  // ...
+  { path: 'account/delete', loadComponent: () => import('./account/delete-account.component').then(m => m.DeleteAccountComponent), canActivate: [AuthGuard] },
+// ...
+
   { path: 'about', component: AboutComponent },
   { path: 'support', component: SupportComponent },
+
+  { path: 'rgpd', component: RgpdComponent },
 
   // Fallback
   { path: '**', redirectTo: 'home' }

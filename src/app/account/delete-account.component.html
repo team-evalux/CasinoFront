@@ -1,0 +1,28 @@
+<!-- src/app/account/delete-account.component.html -->
+<div class="conteneur">
+  <div class="panneau">
+    <h2 class="titre-page">Supprimer mon compte</h2>
+    <p class="texte-secondaire">
+      Cette action est <strong>définitive</strong>. Elle supprimera votre historique de jeu, votre wallet et votre compte.
+    </p>
+
+    <div class="form-zone">
+      <label class="libelle">Confirmez votre email</label>
+      <input class="champ" type="email" [(ngModel)]="saisieEmail" [placeholder]="emailAffiche || 'votre@email'"
+             [disabled]="enCours" autocomplete="off" />
+      <small class="hint">Tapez exactement votre email pour confirmer.</small>
+    </div>
+
+    <div class="boutons">
+      <button class="bouton bouton--danger"
+              (click)="supprimerCompte()"
+              [disabled]="!confirmationValide || enCours">
+        {{ enCours ? 'Suppression…' : 'Supprimer définitivement' }}
+      </button>
+      <a routerLink="/home" class="bouton bouton--secondaire">Annuler</a>
+    </div>
+
+    <p *ngIf="messageErr" style="color:#ff9b9b" class="mt-12">{{ messageErr }}</p>
+    <p *ngIf="messageOk" style="color:#34d399" class="mt-12">{{ messageOk }}</p>
+  </div>
+</div>

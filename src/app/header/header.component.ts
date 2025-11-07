@@ -9,6 +9,7 @@ import { AuthService } from '../services/auth.service';
 import { WalletService } from '../services/wallet.service';
 import { BalanceHeaderComponent } from './balance-header.component';
 import { UiService } from '../services/ui.service';
+import {environment} from '../../environments/environment';
 
 type BonusStatus = {
   canClaim: boolean;
@@ -28,8 +29,9 @@ type BonusStatus = {
 })
 export class HeaderComponent implements OnInit, OnDestroy {
   // URLs bonus via environment
-  private readonly BONUS_STATUS_URL ='http://localhost:8080/api/bonus/status';
-  private readonly BONUS_CLAIM_URL  = 'http://localhost:8080/api/bonus/claim';
+  private readonly API = environment.apiBaseUrl;   // ex: 'https://api.evaluxcasino.fr/api' OU '/api'
+  private readonly BONUS_STATUS_URL = `${this.API}/bonus/status`;
+  private readonly BONUS_CLAIM_URL  = `${this.API}/bonus/claim`;
 
   // services
   private authService = inject(AuthService);

@@ -3,6 +3,7 @@
     <h2 class="titre-page">Machine à sous</h2>
 
     <p class="sous-texte">
+      <ng-container *ngIf="!isLoggedIn">🌐 Mode invité — crédits fictifs • </ng-container>
       Solde : <strong>{{ currentBalance ?? '—' }}</strong> •
       Mise minimale : <strong>{{ minBet }}</strong> •
       Machine chargée : <strong>{{ reelsCount }} rouleaux</strong>
@@ -16,13 +17,13 @@
                  [(ngModel)]="mise"
                  [attr.min]="minBet"
                  [attr.max]="currentBalance || 1000000"
-                 [disabled]="!isLoggedIn || enCours"/>
+                 [disabled]="enCours"/>
           <button type="button"
                   (click)="mise = Math.min((mise || 0) * 2, currentBalance || 1000000)"
-                  [disabled]="!isLoggedIn || enCours">×2</button>
+                  [disabled]="enCours">×2</button>
           <button type="button"
                   (click)="mise = Math.max(Math.floor((mise || 0) / 2), minBet)"
-                  [disabled]="!isLoggedIn || enCours">/2</button>
+                  [disabled]="enCours">/2</button>
         </div>
         <small class="sous-texte">
           Mise minimale : <strong>{{ minBet }}</strong> • Solde : <strong>{{ currentBalance ?? '—' }}</strong>
@@ -32,25 +33,26 @@
         </small>
       </div>
 
-      <button (click)="jouer()" [disabled]="!isLoggedIn || enCours" class="bouton bouton--primaire" style="width:120px;">
+      <button (click)="jouer()"
+              [disabled]="enCours || !mise || mise < minBet || (currentBalance!==null && mise>currentBalance)"
+              class="bouton bouton--primaire"
+              style="width:120px;">
         {{ enCours ? 'Spinning…' : 'Spin' }}
       </button>
 
       <div class="d-flex aic gap-8">
         <label class="libelle" style="margin:0;">Autospins</label>
-        <input
-          class="champ"
-          type="number"
-          min="0"
-          max="9999"
-          title="0 = infini"
-          style="width:90px;"
-          [(ngModel)]="autoSpinCount"
-          [disabled]="!isLoggedIn || enCours"
-          (keydown)="limitAutoSpinInput($event)"
-        />
-        <button (click)="startAutoSpin()" [disabled]="!isLoggedIn || autoSpinActive || (currentBalance!=null && mise>currentBalance)" class="bouton">Auto-Spin</button>
-        <button (click)="stopAutoSpin()" [disabled]="!isLoggedIn || !autoSpinActive" class="bouton bouton--secondaire">Stop</button>
+        <input class="champ" type="number" [(ngModel)]="autoSpinCount" min="0" title="0 = infini" style="width:90px;" [disabled]="enCours">
+        <button (click)="startAutoSpin()"
+                [disabled]="autoSpinActive || enCours || (currentBalance!=null && mise>currentBalance) || !mise || mise<minBet"
+                class="bouton">
+          Auto-Spin
+        </button>
+        <button (click)="stopAutoSpin()"
+                [disabled]="!autoSpinActive"
+                class="bouton bouton--secondaire">
+          Stop
+        </button>
       </div>
 
       <div style="min-width:180px;">
@@ -80,11 +82,7 @@
         <div class="mask"></div>
       </div>
 
-      <div *ngIf="!isLoggedIn" class="lock-overlay">
-        <div class="lock">🔒</div>
-        <div>Connecte-toi pour lancer un spin</div>
-        <a routerLink="/login" class="cta">Se connecter</a>
-      </div>
+      <!-- ⛔️ aucun overlay/cadenas en mode invité -->
     </div>
 
     <div *ngIf="lastResult" class="panneau mt-12">
@@ -98,7 +96,7 @@
         <p *ngSwitchDefault style="color:#f87171;margin:0;">Tu as perdu. <strong>{{ netLabel }}</strong> crédits.</p>
       </ng-container>
 
-      <p class="mt-8">Solde : <strong>{{ lastResult.solde }}</strong></p>
+      <p class="mt-8">Solde : <strong>{{ lastResult.solde ?? currentBalance }}</strong></p>
     </div>
 
     <!-- ====== Règles du jeu : Machine à sous ====== -->
@@ -127,7 +125,7 @@
           </ul>
         </li>
 
-        <li>Les gains sont calculés en fonction de la valeur du symbole × multiplicateur × mise.</li>
+        <li>Les gains = mise × (valeur de base du symbole gagnant) × multiplicateur.</li>
         <li>Si aucune combinaison n’est gagnante, la mise est perdue.</li>
       </ul>
 
@@ -136,6 +134,7 @@
         → Valeur orange = 2.2 • Multiplicateur = 6 → Gain = <strong>100 × 2.2 × 6 = 1320 crédits</strong>.
       </div>
     </div>
+
     <div class="panneau mt-12">
       <app-game-history-list [game]="'slots'" [limit]="5"></app-game-history-list>
     </div>
