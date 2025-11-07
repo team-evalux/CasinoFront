@@ -41,6 +41,10 @@ export const routes: Routes = [
   // Historique : si tu veux le laisser privé, on garde AuthGuard
   { path: 'history', component: GameHistoryComponent, canActivate: [AuthGuard] },
 
+  // ...
+  { path: 'account/delete', loadComponent: () => import('./account/delete-account.component').then(m => m.DeleteAccountComponent), canActivate: [AuthGuard] },
+// ...
+
   { path: 'about', component: AboutComponent },
   { path: 'support', component: SupportComponent },
 
