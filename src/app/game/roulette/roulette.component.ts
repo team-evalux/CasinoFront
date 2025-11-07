@@ -77,6 +77,27 @@ export class RouletteComponent implements OnDestroy {
     return RouletteComponent.RED_SET.has(Number(n));
   }
 
+  limitAutoSpinInput(event: KeyboardEvent) {
+    const allowedKeys = ['Backspace', 'ArrowLeft', 'ArrowRight', 'Tab', 'Delete'];
+
+    if (allowedKeys.includes(event.key)) return;
+
+    // autorise uniquement les chiffres
+    if (!/^\d$/.test(event.key)) {
+      event.preventDefault();
+      return;
+    }
+
+    const input = event.target as HTMLInputElement;
+
+    // empêche plus de 4 chiffres
+    if (input.value.length >= 4) {
+      event.preventDefault();
+    }
+  }
+
+
+
   // 👉 gain net pour un résultat (positif, négatif ou 0)
   netGainOf(res: RouletteBetResponse | null): number {
     if (!res) return 0;
@@ -125,7 +146,13 @@ export class RouletteComponent implements OnDestroy {
       return;
     }
 
+
     if (!this.betType || this.betValue == null) { this.error = 'Pari invalide'; return; }
+    if (!this.isBetValueValid()) {
+      this.error = 'Pari invalide : veuillez choisir une valeur avant de jouer.';
+      return;
+    }
+
     if (this.enCours) return;
 
     this.enCours = true;
@@ -196,6 +223,32 @@ export class RouletteComponent implements OnDestroy {
       }
     });
   }
+
+  private isBetValueValid(): boolean {
+    if (!this.betType) return false;
+
+    switch (this.betType) {
+      case 'straight':
+        const num = Number(this.betValue);
+        return !isNaN(num) && num >= 0 && num <= 36;
+
+      case 'color':
+        return this.betValue === 'red' || this.betValue === 'black';
+
+      case 'parity':
+        return this.betValue === 'even' || this.betValue === 'odd';
+
+      case 'range':
+        return this.betValue === 'low' || this.betValue === 'high';
+
+      case 'dozen':
+        return ['1', '2', '3'].includes(this.betValue);
+
+      default:
+        return false;
+    }
+  }
+
 
   startAutoSpin(count?: number) {
     if (!this.isLoggedIn) { this.error = 'Veuillez vous connecter pour jouer.'; return; }

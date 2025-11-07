@@ -81,8 +81,13 @@
     </div>
 
     <div class="boutons">
-      <input type="number" min="1" placeholder="Nb de tours"
-             [(ngModel)]="autoSpinCount" [disabled]="autoSpinActive">
+      <input type="number" min="1" max="9999"
+        placeholder="Nb de tours"
+        [(ngModel)]="autoSpinCount"
+        [disabled]="!isLoggedIn || autoSpinActive"
+        (keydown)="limitAutoSpinInput($event)"
+      />
+
       <button (click)="jouer()" [disabled]="!isLoggedIn || enCours || !montant || montant < minBet" class="bouton bouton--or">Placer le pari</button>
       <button (click)="startAutoSpin(autoSpinCount!)" [disabled]="!isLoggedIn || autoSpinActive || montant<minBet || !autoSpinCount " class="bouton">Auto (N)</button>
       <button (click)="startAutoSpin()" [disabled]="!isLoggedIn || autoSpinActive || montant<minBet" class="bouton">Auto ∞</button>

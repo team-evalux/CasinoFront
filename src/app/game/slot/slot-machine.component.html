@@ -57,10 +57,12 @@
 
       <div style="min-width:180px;">
         <label class="libelle">Nombre rouleaux</label>
-        <select [(ngModel)]="desiredReelsCount"
-                (change)="setDesiredReels(desiredReelsCount)"
-                [disabled]="enCours || autoSpinActive">
-          <option *ngFor="let n of [3,4,5]" [ngValue]="n">{{n}} rouleaux</option>
+        <select
+          [(ngModel)]="desiredReelsCount"
+          (change)="setDesiredReels(desiredReelsCount)"
+          [disabled]="!isLoggedIn || enCours || autoSpinActive">
+
+        <option *ngFor="let n of [3,4,5]" [ngValue]="n">{{n}} rouleaux</option>
         </select>
       </div>
 
