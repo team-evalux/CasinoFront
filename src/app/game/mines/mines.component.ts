@@ -13,6 +13,8 @@ import { RouterLink } from '@angular/router';
 import { Subscription, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { GameHistoryListComponent } from '../../history/game-history-list.component';
+import { HistoryService } from '../../services/history/history.service';
+
 
 @Component({
   selector: 'app-mines',
@@ -57,32 +59,36 @@ export class MinesComponent implements OnInit, OnDestroy {
   constructor(
     private api: MinesService,
     private wallet: WalletService,
-    private auth: AuthService
+    private auth: AuthService,
+    private history: HistoryService
   ) {}
+
 
   ngOnInit() {
     this.isLoggedIn = !!this.auth.getToken();
-      if (this.isLoggedIn) {
-        this.api.resume().subscribe(r => {
-          if (r.active) {
-            this.sessionId = r.sessionId;
-            this.mines = r.mines;
-            this.mise = r.mise;
-            this.safeCount = r.safeCount;
-            this.revealed = new Set<number>(r.revealed || []);
-            this.nextMultiplier = this.table[this.safeCount + 1] || this.table[this.safeCount] || 1;
-          } else {
-            this.sessionId = null;
-            this.finished = false;
-          }
-        });
 
+    if (this.isLoggedIn) {
+      this.api.resume().subscribe(r => {
+        if (r.active) {
+          this.sessionId = r.sessionId;
+          this.mines = r.mines;
+          this.mise = r.mise;
+          this.safeCount = r.safeCount;
+          this.revealed = new Set<number>(r.revealed || []);
+          this.nextMultiplier = this.table[this.safeCount + 1] || this.table[this.safeCount] || 1;
+        } else {
+          this.sessionId = null;
+          this.finished = false;
+        }
+        this.clampInputs();
+      });
 
+      this.wallet.refreshBalance().subscribe(b => {
+        this.currentBalance = b?.solde ?? 0;
+        this.clampInputs();
+      });
 
-
-      this.wallet.refreshBalance().subscribe(b => (this.currentBalance = b?.solde ?? null));
-
-      // 🔄 restauration de session locale si présente
+      // restauration éventuelle
       const saved = localStorage.getItem('mines_state');
       if (saved) {
         try {
@@ -96,7 +102,7 @@ export class MinesComponent implements OnInit, OnDestroy {
           this.bombs = new Set<number>(s.bombs || []);
           this.table = s.table || {};
           this.nextMultiplier = s.nextMultiplier || 1;
-        } catch (e) {
+        } catch {
           localStorage.removeItem('mines_state');
         }
       }
@@ -105,6 +111,7 @@ export class MinesComponent implements OnInit, OnDestroy {
     }
 
     this.rebuildLocalTable();
+    this.clampInputs();
   }
 
   // =========================
@@ -128,6 +135,7 @@ export class MinesComponent implements OnInit, OnDestroy {
   }
 
   loadTable() {
+    this.clampMines();
     this.rebuildLocalTable();
   }
 
@@ -158,6 +166,97 @@ export class MinesComponent implements OnInit, OnDestroy {
   }
 
   // =========================
+  //   Helpers bornes
+  // =========================
+  protected getMaxMise(): number {
+    return this.isLoggedIn
+      ? (this.currentBalance ?? 0)
+      : (this.guestBalance ?? 0);
+  }
+
+  private clampMise() {
+    const max = this.getMaxMise();
+    let v = Number(this.mise);
+
+    if (isNaN(v) || v < this.minBet) v = this.minBet;
+    if (max > 0 && v > max) v = max;
+
+    this.mise = v;
+  }
+
+  private clampMines() {
+    let v = Number(this.mines);
+    if (isNaN(v) || v < 1) v = 1;
+    if (v > 24) v = 24;
+    this.mines = v;
+  }
+
+  private clampInputs() {
+    this.clampMise();
+    this.clampMines();
+  }
+
+  // =========================
+  //   Handlers de saisie (anti spam / anti troll)
+  // =========================
+
+  /** 🔒 borne la mise (appelé sur ngModelChange et sur les boutons) */
+  onMiseChange(value: any) {
+    let v = Number(value);
+    if (isNaN(v)) v = this.minBet;
+
+    const max = this.getMaxMise();
+    if (v < this.minBet) v = this.minBet;
+    if (max > 0 && v > max) v = max;
+
+    this.mise = v;
+  }
+
+  /** 🔒 bloque les caractères non numériques et limite la longueur selon le solde */
+  blockMiseKeys(event: KeyboardEvent) {
+    const allowed = ['Backspace', 'ArrowLeft', 'ArrowRight', 'Tab', 'Delete'];
+    if (allowed.includes(event.key)) return;
+
+    if (!/^\d$/.test(event.key)) {
+      event.preventDefault();
+      return;
+    }
+
+    const input = event.target as HTMLInputElement;
+    const max = this.getMaxMise() || 0;
+    const maxLen = Math.max(String(max || 0).length, String(this.minBet).length);
+
+    if (input.value.length >= maxLen) {
+      event.preventDefault();
+    }
+  }
+
+  /** 🔒 borne les mines (1–24) */
+  onMinesChange(value: any) {
+    let v = Number(value);
+    if (isNaN(v) || v < 1) v = 1;
+    if (v > 24) v = 24;
+    this.mines = v;
+    this.rebuildLocalTable();
+  }
+
+  /** 🔒 bloque non numérique & >2 chiffres pour mines */
+  blockMinesKeys(event: KeyboardEvent) {
+    const allowed = ['Backspace', 'ArrowLeft', 'ArrowRight', 'Tab', 'Delete'];
+    if (allowed.includes(event.key)) return;
+
+    if (!/^\d$/.test(event.key)) {
+      event.preventDefault();
+      return;
+    }
+
+    const input = event.target as HTMLInputElement;
+    if (input.value.length >= 2) {
+      event.preventDefault();
+    }
+  }
+
+  // =========================
   //       Démarrer partie
   // =========================
   start() {
@@ -167,14 +266,27 @@ export class MinesComponent implements OnInit, OnDestroy {
     this.safeCount = 0;
     this.finished = false;
     this.sessionId = null;
+
+    this.clampInputs();
     this.rebuildLocalTable();
+
+    const balance = this.getMaxMise();
+
+    if (!this.mise || this.mise < this.minBet) {
+      this.error = `Mise invalide : minimum ${this.minBet} crédits.`;
+      return;
+    }
+    if (this.mise > balance) {
+      this.error = 'Mise supérieure à ton solde.';
+      return;
+    }
+    if (this.mines < 1 || this.mines > 24) {
+      this.error = 'Nombre de mines invalide (1 à 24).';
+      return;
+    }
 
     // --- MODE INVITÉ
     if (!this.isLoggedIn) {
-      if (this.mise > (this.guestBalance ?? 0)) {
-        this.error = 'Solde insuffisant.';
-        return;
-      }
       this.guestBalance -= this.mise;
       this.currentBalance = this.guestBalance;
 
@@ -191,7 +303,12 @@ export class MinesComponent implements OnInit, OnDestroy {
     // --- MODE CONNECTÉ
     this.enCours = true;
     this.api.start({ montant: this.mise, mines: this.mines })
-      .pipe(catchError(err => { this.error = err?.error?.error || 'Erreur start'; return of(null); }))
+      .pipe(
+        catchError(err => {
+          this.error = err?.error?.error || 'Erreur start';
+          return of(null);
+        })
+      )
       .subscribe((res: MinesStartResponse | null) => {
         this.enCours = false;
         if (!res) return;
@@ -220,14 +337,18 @@ export class MinesComponent implements OnInit, OnDestroy {
       this.safeCount = this.guestSafes.size;
       const currentMult = this.table[this.safeCount] || 1;
       this.nextMultiplier = this.table[this.safeCount + 1] || currentMult;
-      this.saveState();
       return;
     }
 
     // --- MODE CONNECTÉ
     this.enCours = true;
     this.api.pick({ sessionId: this.sessionId, index: i })
-      .pipe(catchError(err => { this.error = err?.error?.error || 'Erreur pick'; return of(null); }))
+      .pipe(
+        catchError(err => {
+          this.error = err?.error?.error || 'Erreur pick';
+          return of(null);
+        })
+      )
       .subscribe((res: MinesPickResponse | null) => {
         this.enCours = false;
         if (!res) return;
@@ -236,18 +357,30 @@ export class MinesComponent implements OnInit, OnDestroy {
         if (res.bomb) {
           for (const b of res.bombs || []) this.bombs.add(b);
           this.finished = true;
+
+          // garder la mise avant de reset la session
+          const mise = this.mise || 0;
+
           this.sessionId = null;
-
-          // 🔥 Reset complet côté client
           this.clearState();
-          localStorage.removeItem('mines_state');
 
-          // 🔥 Reset côté serveur (supprime toute session résiduelle)
+          // 🧾 push historique si connecté
+          if (this.isLoggedIn) {
+            this.history.pushLocal({
+              game: 'mines',
+              outcome: `bomb index=${res.index}`,
+              montantJoue: mise,
+              montantGagne: 0,
+              multiplier: 0,
+              createdAt: new Date().toISOString()
+            });
+          }
+
+          // 🔥 reset côté serveur
           this.api.reset().subscribe({
-            complete: () => console.log("Session mines réinitialisée après bombe")
+            complete: () => console.log('Session mines réinitialisée après bombe')
           });
-        }
-        else {
+        } else {
           this.safeCount = res.safeCount;
           const currentMult = this.table[this.safeCount] || 1;
           this.nextMultiplier = this.table[this.safeCount + 1] || currentMult;
@@ -277,16 +410,39 @@ export class MinesComponent implements OnInit, OnDestroy {
     // --- MODE CONNECTÉ
     this.enCours = true;
     this.api.cashout({ sessionId: this.sessionId })
-      .pipe(catchError(err => { this.error = err?.error?.error || 'Erreur cashout'; return of(null); }))
+      .pipe(
+        catchError(err => {
+          this.error = err?.error?.error || 'Erreur cashout';
+          return of(null);
+        })
+      )
       .subscribe((res: MinesCashoutResponse | null) => {
         this.enCours = false;
         if (!res) return;
+
+        // capture la mise avant nettoyage
+        const mise = this.mise || 0;
+        const mult = res.multiplier ?? (mise ? res.payout / mise : 0);
+
         this.finished = true;
         this.sessionId = null;
         this.clearState();
+
         this.wallet.applyOptimisticDelta(res.payout);
         this.wallet.refreshBalance().subscribe(b => (this.currentBalance = b?.solde ?? null));
         for (const b of res.bombs || []) this.bombs.add(b);
+
+        // 🧾 historique mines
+        if (this.isLoggedIn) {
+          this.history.pushLocal({
+            game: 'mines',
+            outcome: `cashout safe=${res.safeCount}`,
+            montantJoue: mise,
+            montantGagne: res.payout,
+            multiplier: Math.round(mult * 100) / 100,
+            createdAt: new Date().toISOString()
+          });
+        }
       });
   }
 
@@ -294,10 +450,13 @@ export class MinesComponent implements OnInit, OnDestroy {
   //         Helpers UI
   // =========================
   canStart(): boolean {
-    return !this.sessionId && !this.enCours &&
+    const balance = this.getMaxMise();
+    return !this.sessionId &&
+      !this.enCours &&
       this.mise >= this.minBet &&
-      this.currentBalance != null &&
-      this.mise <= this.currentBalance;
+      this.mise <= balance &&
+      this.mines >= 1 &&
+      this.mines <= 24;
   }
 
   canCashout(): boolean {

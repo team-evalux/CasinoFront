@@ -9,26 +9,53 @@
     </p>
 
     <div class="d-flex gap-12 mb-12 aic" style="flex-wrap:wrap;">
+
+      <!-- Mise -->
       <div class="bloc">
         <label class="libelle">Mise</label>
         <div class="ligne">
-          <input class="champ" type="number" [(ngModel)]="mise" [disabled]="!!sessionId" [attr.min]="minBet" [attr.max]="currentBalance||1000000"/>
-          <button (click)="mise=Math.max(minBet,Math.floor((mise||0)/2))" [disabled]="!!sessionId">/2</button>
-          <button (click)="mise=Math.min((mise||0)*2,currentBalance||1000000)" [disabled]="!!sessionId">×2</button>
+          <input class="champ"
+                 type="number"
+                 [ngModel]="mise"
+                 (ngModelChange)="onMiseChange($event)"
+                 (keydown)="blockMiseKeys($event)"
+                 [disabled]="!!sessionId"
+                 [attr.min]="minBet"
+                 [attr.max]="getMaxMise() || 0" />
+          <button (click)="onMiseChange(Math.floor((mise||0)/2))"
+                  [disabled]="!!sessionId">/2</button>
+          <button (click)="onMiseChange((mise||0)*2)"
+                  [disabled]="!!sessionId">×2</button>
         </div>
-        <small class="sous-texte">Mise min : <strong>{{ minBet }}</strong></small>
+        <small class="sous-texte">
+          Mise min : <strong>{{ minBet }}</strong>
+          • Mise max : <strong>{{ getMaxMise() || 0 }}</strong>
+        </small>
       </div>
 
+      <!-- Mines -->
       <div class="bloc">
         <label class="libelle">Mines</label>
         <div class="ligne">
-          <input class="champ" type="number" [(ngModel)]="mines" min="1" max="24" (change)="loadTable()" [disabled]="!!sessionId"/>
-          <button (click)="mines=Math.max(1,mines-1); loadTable();" [disabled]="!!sessionId">-</button>
-          <button (click)="mines=Math.min(24,mines+1); loadTable();" [disabled]="!!sessionId">+</button>
+          <input class="champ"
+                 type="number"
+                 [ngModel]="mines"
+                 (ngModelChange)="onMinesChange($event)"
+                 (keydown)="blockMinesKeys($event)"
+                 [disabled]="!!sessionId"
+                 min="1"
+                 max="24" />
+          <button (click)="onMinesChange(mines-1)"
+                  [disabled]="!!sessionId">-</button>
+          <button (click)="onMinesChange(mines+1)"
+                  [disabled]="!!sessionId">+</button>
         </div>
-        <small class="sous-texte">Diamants max possibles : <strong>{{ 25 - (mines||0) }}</strong></small>
+        <small class="sous-texte">
+          Diamants max possibles : <strong>{{ 25 - (mines||0) }}</strong>
+        </small>
       </div>
 
+      <!-- Boutons -->
       <button class="bouton bouton--primaire" style="width:140px;"
               (click)="start()"
               [disabled]="!canStart()">
@@ -68,16 +95,35 @@
 
     <!-- Résumé simple -->
     <div *ngIf="finished" class="panneau mt-12">
-      <ng-container *ngIf="sessionId===null; else finSrv">
-        <!-- cas invité : rien de spécial -->
-      </ng-container>
-      <ng-template #finSrv>
-        <!-- (placeholder si tu veux afficher autre chose quand sessionId reste non nul) -->
-      </ng-template>
       <p class="mt-8">Partie terminée.</p>
-      <p class="sous-texte">Relancez avec “Démarrer”.</p>
+      <p class="sous-texte">Relance avec « Démarrer ».</p>
     </div>
 
+    <!-- ====== Règles du jeu : Mines ====== -->
+    <div class="panneau mt-12 regles-jeu">
+      <h3 class="titre-regles">🎯 Règles du jeu — Mines</h3>
+      <ul class="liste-regles">
+        <li>La grille contient <strong>25 cases</strong>. Tu choisis le nombre de <strong>mines</strong> entre 1 et 24.</li>
+        <li>Plus il y a de mines, plus les <strong>multiplicateurs</strong> augmentent, mais le risque aussi.</li>
+        <li>Tu sélectionnes ta <strong>mise</strong>, puis tu cliques sur <strong>« Démarrer »</strong> pour lancer la partie.</li>
+        <li>À chaque clic sur une case non révélée :
+          <br>• Si tu trouves un 💎, ton <strong>multiplicateur actuel augmente</strong> et tu peux continuer.
+          <br>• Si tu tombes sur une 💣, tu <strong>perds toute ta mise</strong> et la partie se termine.
+        </li>
+        <li>À tout moment après avoir trouvé au moins un 💎, tu peux cliquer sur <strong>« Encaisser »</strong> :
+          tu récupères <strong>mise × multiplicateur</strong> en <strong>crédits réels</strong>.</li>
+        <li>La partie se termine automatiquement si tu as découvert toutes les cases sûres (tous les diamants possibles).</li>
+      </ul>
+
+      <div class="note-regle">
+        💡 Exemple : tu mises <strong>100 crédits</strong> avec <strong>3 mines</strong>.
+        Après quelques clics sécurisés, ton multiplicateur atteint <strong>×2.40</strong>.
+        Si tu encaisses à ce moment-là, tu remportes <strong>240 crédits</strong>.
+        Si tu cliques une fois de trop et touches une 💣, tu perds les 100 crédits misés.
+      </div>
+    </div>
+
+    <!-- Historique -->
     <div class="panneau mt-12">
       <app-game-history-list [game]="'mines'" [limit]="5"></app-game-history-list>
     </div>

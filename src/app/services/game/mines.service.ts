@@ -27,10 +27,7 @@ export interface MinesConfigResponse {
 export class MinesService {
   private baseUrl = `${environment.apiBaseUrl}/game/mines`;
   constructor(private http: HttpClient) {}
-
-  config(mines: number): Observable<MinesConfigResponse> {
-    return this.http.get<MinesConfigResponse>(`${this.baseUrl}/config`, { params: { mines } as any });
-  }
+  
   start(req: MinesStartRequest): Observable<MinesStartResponse> {
     return this.http.post<MinesStartResponse>(`${this.baseUrl}/start`, req);
   }
