@@ -1,0 +1,316 @@
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import {
+  MinesService,
+  MinesStartResponse,
+  MinesPickResponse,
+  MinesCashoutResponse
+} from '../../services/game/mines.service';
+import { WalletService } from '../../services/wallet.service';
+import { AuthService } from '../../services/auth.service';
+import { RouterLink } from '@angular/router';
+import { Subscription, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { GameHistoryListComponent } from '../../history/game-history-list.component';
+
+@Component({
+  selector: 'app-mines',
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterLink, GameHistoryListComponent],
+  templateUrl: './mines.component.html',
+  styleUrls: ['./mines.component.css']
+})
+export class MinesComponent implements OnInit, OnDestroy {
+  readonly GRID = 25;
+  readonly HOUSE_EDGE = 0.98;
+  readonly CELLS = Array.from({ length: this.GRID }, (_, i) => i);
+
+  mines = 3;
+  mise = 100;
+  minBet = 100;
+
+  sessionId: string | null = null;
+  finished = false;
+  enCours = false;
+  error: string | null = null;
+
+  revealed = new Set<number>();
+  bombs = new Set<number>();
+  safeCount = 0;
+
+  // --- solde
+  isLoggedIn = false;
+  currentBalance: number | null = null;
+  guestBalance = 1000;
+
+  // --- multiplicateurs
+  table: { [k: number]: number } = {};
+  nextMultiplier = 0;
+
+  // --- mode invité local
+  private guestBombs: Set<number> = new Set();
+  private guestSafes: Set<number> = new Set();
+
+  private walletSub?: Subscription;
+
+  constructor(
+    private api: MinesService,
+    private wallet: WalletService,
+    private auth: AuthService
+  ) {}
+
+  ngOnInit() {
+    this.isLoggedIn = !!this.auth.getToken();
+      if (this.isLoggedIn) {
+        this.api.resume().subscribe(r => {
+          if (r.active) {
+            this.sessionId = r.sessionId;
+            this.mines = r.mines;
+            this.mise = r.mise;
+            this.safeCount = r.safeCount;
+            this.revealed = new Set<number>(r.revealed || []);
+            this.nextMultiplier = this.table[this.safeCount + 1] || this.table[this.safeCount] || 1;
+          } else {
+            this.sessionId = null;
+            this.finished = false;
+          }
+        });
+
+
+
+
+      this.wallet.refreshBalance().subscribe(b => (this.currentBalance = b?.solde ?? null));
+
+      // 🔄 restauration de session locale si présente
+      const saved = localStorage.getItem('mines_state');
+      if (saved) {
+        try {
+          const s = JSON.parse(saved);
+          this.sessionId = s.sessionId;
+          this.mines = s.mines;
+          this.mise = s.mise;
+          this.safeCount = s.safeCount;
+          this.finished = s.finished;
+          this.revealed = new Set<number>(s.revealed || []);
+          this.bombs = new Set<number>(s.bombs || []);
+          this.table = s.table || {};
+          this.nextMultiplier = s.nextMultiplier || 1;
+        } catch (e) {
+          localStorage.removeItem('mines_state');
+        }
+      }
+    } else {
+      this.currentBalance = this.guestBalance;
+    }
+
+    this.rebuildLocalTable();
+  }
+
+  // =========================
+  //   Multiplicateurs locaux
+  // =========================
+  private rebuildLocalTable() {
+    const m = Math.min(24, Math.max(1, this.mines));
+    const safe = this.GRID - m;
+    const map: { [k: number]: number } = {};
+    let numer = 1;
+    let denom = 1;
+    for (let k = 1; k <= safe; k++) {
+      numer *= (safe - (k - 1));
+      denom *= (this.GRID - (k - 1));
+      const pk = denom > 0 ? numer / denom : 0;
+      const mult = pk > 0 ? (1 / pk) * this.HOUSE_EDGE : 0;
+      map[k] = Math.floor(mult * 10000) / 10000;
+    }
+    this.table = map;
+    this.nextMultiplier = this.table[1] || 1;
+  }
+
+  loadTable() {
+    this.rebuildLocalTable();
+  }
+
+  // =========================
+  //    Sauvegarde locale
+  // =========================
+  private saveState() {
+    if (!this.isLoggedIn || !this.sessionId || this.finished) {
+      localStorage.removeItem('mines_state');
+      return;
+    }
+    const state = {
+      sessionId: this.sessionId,
+      mines: this.mines,
+      mise: this.mise,
+      safeCount: this.safeCount,
+      finished: this.finished,
+      revealed: Array.from(this.revealed),
+      bombs: Array.from(this.bombs),
+      table: this.table,
+      nextMultiplier: this.nextMultiplier
+    };
+    localStorage.setItem('mines_state', JSON.stringify(state));
+  }
+
+  private clearState() {
+    localStorage.removeItem('mines_state');
+  }
+
+  // =========================
+  //       Démarrer partie
+  // =========================
+  start() {
+    this.error = null;
+    this.revealed.clear();
+    this.bombs.clear();
+    this.safeCount = 0;
+    this.finished = false;
+    this.sessionId = null;
+    this.rebuildLocalTable();
+
+    // --- MODE INVITÉ
+    if (!this.isLoggedIn) {
+      if (this.mise > (this.guestBalance ?? 0)) {
+        this.error = 'Solde insuffisant.';
+        return;
+      }
+      this.guestBalance -= this.mise;
+      this.currentBalance = this.guestBalance;
+
+      this.guestBombs.clear();
+      while (this.guestBombs.size < this.mines) {
+        this.guestBombs.add(Math.floor(Math.random() * this.GRID));
+      }
+      this.guestSafes.clear();
+      this.sessionId = 'guest-' + Date.now();
+      this.nextMultiplier = this.table[1] || 1;
+      return;
+    }
+
+    // --- MODE CONNECTÉ
+    this.enCours = true;
+    this.api.start({ montant: this.mise, mines: this.mines })
+      .pipe(catchError(err => { this.error = err?.error?.error || 'Erreur start'; return of(null); }))
+      .subscribe((res: MinesStartResponse | null) => {
+        this.enCours = false;
+        if (!res) return;
+        this.sessionId = res.sessionId;
+        this.nextMultiplier = this.table[1] || 1;
+        this.saveState();
+      });
+  }
+
+  // =========================
+  //         Clic case
+  // =========================
+  clickCell(i: number) {
+    if (!this.sessionId || this.finished || this.revealed.has(i)) return;
+
+    // --- MODE INVITÉ
+    if (!this.isLoggedIn) {
+      this.revealed.add(i);
+      if (this.guestBombs.has(i)) {
+        this.bombs.add(i);
+        this.finished = true;
+        this.sessionId = null;
+        return;
+      }
+      this.guestSafes.add(i);
+      this.safeCount = this.guestSafes.size;
+      const currentMult = this.table[this.safeCount] || 1;
+      this.nextMultiplier = this.table[this.safeCount + 1] || currentMult;
+      this.saveState();
+      return;
+    }
+
+    // --- MODE CONNECTÉ
+    this.enCours = true;
+    this.api.pick({ sessionId: this.sessionId, index: i })
+      .pipe(catchError(err => { this.error = err?.error?.error || 'Erreur pick'; return of(null); }))
+      .subscribe((res: MinesPickResponse | null) => {
+        this.enCours = false;
+        if (!res) return;
+        this.revealed.add(i);
+
+        if (res.bomb) {
+          for (const b of res.bombs || []) this.bombs.add(b);
+          this.finished = true;
+          this.sessionId = null;
+
+          // 🔥 Reset complet côté client
+          this.clearState();
+          localStorage.removeItem('mines_state');
+
+          // 🔥 Reset côté serveur (supprime toute session résiduelle)
+          this.api.reset().subscribe({
+            complete: () => console.log("Session mines réinitialisée après bombe")
+          });
+        }
+        else {
+          this.safeCount = res.safeCount;
+          const currentMult = this.table[this.safeCount] || 1;
+          this.nextMultiplier = this.table[this.safeCount + 1] || currentMult;
+          this.saveState();
+        }
+      });
+  }
+
+  // =========================
+  //         Encaisser
+  // =========================
+  cashout() {
+    if (!this.sessionId || this.finished || this.safeCount <= 0) return;
+
+    // --- MODE INVITÉ
+    if (!this.isLoggedIn) {
+      const mult = this.table[this.safeCount] || 1;
+      const payout = Math.round(this.mise * mult);
+      this.guestBalance += payout;
+      this.currentBalance = this.guestBalance;
+      this.finished = true;
+      this.sessionId = null;
+      this.clearState();
+      return;
+    }
+
+    // --- MODE CONNECTÉ
+    this.enCours = true;
+    this.api.cashout({ sessionId: this.sessionId })
+      .pipe(catchError(err => { this.error = err?.error?.error || 'Erreur cashout'; return of(null); }))
+      .subscribe((res: MinesCashoutResponse | null) => {
+        this.enCours = false;
+        if (!res) return;
+        this.finished = true;
+        this.sessionId = null;
+        this.clearState();
+        this.wallet.applyOptimisticDelta(res.payout);
+        this.wallet.refreshBalance().subscribe(b => (this.currentBalance = b?.solde ?? null));
+        for (const b of res.bombs || []) this.bombs.add(b);
+      });
+  }
+
+  // =========================
+  //         Helpers UI
+  // =========================
+  canStart(): boolean {
+    return !this.sessionId && !this.enCours &&
+      this.mise >= this.minBet &&
+      this.currentBalance != null &&
+      this.mise <= this.currentBalance;
+  }
+
+  canCashout(): boolean {
+    return !!this.sessionId && !this.finished && this.safeCount > 0 && !this.enCours;
+  }
+
+  canPick(): boolean {
+    return !!this.sessionId && !this.finished && !this.enCours;
+  }
+
+  ngOnDestroy() {
+    this.walletSub?.unsubscribe();
+  }
+
+  protected readonly Math = Math;
+}

@@ -1,0 +1,85 @@
+<div class="conteneur">
+  <div class="slot-wrap">
+    <h2 class="titre-page">💎 Mines (5×5) — révélation progressive</h2>
+
+    <p class="sous-texte">
+      <ng-container *ngIf="!isLoggedIn">🌐 Mode invité — crédits fictifs • </ng-container>
+      Solde : <strong>{{ currentBalance ?? '—' }}</strong> •
+      Mise minimale : <strong>{{ minBet }}</strong>
+    </p>
+
+    <div class="d-flex gap-12 mb-12 aic" style="flex-wrap:wrap;">
+      <div class="bloc">
+        <label class="libelle">Mise</label>
+        <div class="ligne">
+          <input class="champ" type="number" [(ngModel)]="mise" [disabled]="!!sessionId" [attr.min]="minBet" [attr.max]="currentBalance||1000000"/>
+          <button (click)="mise=Math.max(minBet,Math.floor((mise||0)/2))" [disabled]="!!sessionId">/2</button>
+          <button (click)="mise=Math.min((mise||0)*2,currentBalance||1000000)" [disabled]="!!sessionId">×2</button>
+        </div>
+        <small class="sous-texte">Mise min : <strong>{{ minBet }}</strong></small>
+      </div>
+
+      <div class="bloc">
+        <label class="libelle">Mines</label>
+        <div class="ligne">
+          <input class="champ" type="number" [(ngModel)]="mines" min="1" max="24" (change)="loadTable()" [disabled]="!!sessionId"/>
+          <button (click)="mines=Math.max(1,mines-1); loadTable();" [disabled]="!!sessionId">-</button>
+          <button (click)="mines=Math.min(24,mines+1); loadTable();" [disabled]="!!sessionId">+</button>
+        </div>
+        <small class="sous-texte">Diamants max possibles : <strong>{{ 25 - (mines||0) }}</strong></small>
+      </div>
+
+      <button class="bouton bouton--primaire" style="width:140px;"
+              (click)="start()"
+              [disabled]="!canStart()">
+        {{ sessionId ? 'Partie en cours' : 'Démarrer' }}
+      </button>
+
+      <button class="bouton bouton--secondaire" style="width:140px;"
+              (click)="cashout()"
+              [disabled]="!canCashout()">
+        Encaisser {{ safeCount>0 ? ('(×'+(table[safeCount]||0)+')') : '' }}
+      </button>
+
+      <a [routerLink]="['/home']" class="bouton">Retour</a>
+    </div>
+
+    <p *ngIf="sessionId && !finished" class="sous-texte">
+      Diamants trouvés : <strong>{{ safeCount }}</strong> •
+      Prochain palier : <strong>×{{ nextMultiplier || 0 }}</strong>
+    </p>
+    <p *ngIf="error" class="erreur">{{ error }}</p>
+
+    <!-- Grille -->
+    <div class="grid" [class.disabled]="enCours">
+      <button type="button"
+              *ngFor="let idx of CELLS"
+              class="cellule"
+              [class.revelee]="revealed.has(idx)"
+              [class.bomb]="revealed.has(idx) && bombs.has(idx)"
+              (click)="canPick() && clickCell(idx)">
+        <ng-container *ngIf="revealed.has(idx); else hidden">
+          <span *ngIf="bombs.has(idx)">💣</span>
+          <span *ngIf="!bombs.has(idx)">💎</span>
+        </ng-container>
+        <ng-template #hidden> </ng-template>
+      </button>
+    </div>
+
+    <!-- Résumé simple -->
+    <div *ngIf="finished" class="panneau mt-12">
+      <ng-container *ngIf="sessionId===null; else finSrv">
+        <!-- cas invité : rien de spécial -->
+      </ng-container>
+      <ng-template #finSrv>
+        <!-- (placeholder si tu veux afficher autre chose quand sessionId reste non nul) -->
+      </ng-template>
+      <p class="mt-8">Partie terminée.</p>
+      <p class="sous-texte">Relancez avec “Démarrer”.</p>
+    </div>
+
+    <div class="panneau mt-12">
+      <app-game-history-list [game]="'mines'" [limit]="5"></app-game-history-list>
+    </div>
+  </div>
+</div>
