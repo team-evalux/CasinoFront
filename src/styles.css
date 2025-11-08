@@ -327,3 +327,9 @@ body.fond-casino{
   .bonus-remaining { font-size: 0.95rem; }
   .bonus-bar { height: 10px; }
 }
+/* Réduction des images pour Mines et BlackJack */
+.carte-jeu:nth-child(3) .carte-media img,   /* Mines */
+.carte-jeu:nth-child(5) .carte-media img {  /* BlackJack */
+  width: 110px;
+  height: 110px;
+}
