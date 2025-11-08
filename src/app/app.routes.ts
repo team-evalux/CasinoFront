@@ -26,6 +26,8 @@ export const routes: Routes = [
   { path: 'play/coinflip', loadComponent: () => import('./game/coinflip/coinflip.component').then(m => m.CoinflipComponent) },
   { path: 'play/slots',    loadComponent: () => import('./game/slot/slot-machine.component').then(m => m.SlotMachineComponent) },
   { path: 'play/roulette', loadComponent: () => import('./game/roulette/roulette.component').then(m => m.RouletteComponent) },
+  { path: 'play/mines', loadComponent: () => import('./game/mines/mines.component').then(m => m.MinesComponent) },
+
   // src/app/app.routes.ts (ajoute les 2 lignes ci-dessous)
   { path: 'play/blackjack', loadComponent: () => import('./game/blackjack/blackjack-lobby.component').then(m => m.BlackjackLobbyComponent) },
   { path: 'play/blackjack/table/:id', loadComponent: () => import('./game/blackjack/blackjack-table.component').then(m => m.BlackjackTableComponent) },
@@ -37,11 +39,6 @@ export const routes: Routes = [
   { path: 'admin/coinflip',  loadComponent: () => import('./admin/coinflip-admin.component').then(m => m.CoinflipAdminComponent),  canActivate: [AuthGuard, AdminGuard] },
   { path: 'admin/slots',     loadComponent: () => import('./admin/slots-admin.component').then(m => m.SlotsAdminComponent),        canActivate: [AuthGuard, AdminGuard] },
   { path: 'admin/roulette',  loadComponent: () => import('./admin/roulette-admin.component').then(m => m.RouletteAdminComponent),  canActivate: [AuthGuard, AdminGuard] },
-
-
-  { path: 'boutique', loadComponent: () => import('./boutique/boutique.component').then(m => m.BoutiqueComponent), canActivate: [AuthGuard] },
-  { path: 'collection', loadComponent: () => import('./collection/collection.component').then(m => m.CollectionComponent), canActivate: [AuthGuard] },
-
 
   // Historique : si tu veux le laisser privé, on garde AuthGuard
   { path: 'history', component: GameHistoryComponent, canActivate: [AuthGuard] },

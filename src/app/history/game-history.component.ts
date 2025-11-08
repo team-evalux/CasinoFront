@@ -19,10 +19,10 @@ import { RouterLink } from '@angular/router';
           [class.active]="selectedGames.includes(g)"
           style="padding:6px 12px;border-radius:6px;border:1px solid #ccc;background:white;cursor:pointer;transition:.2s;"
         >
-          {{ g | titlecase }}
+          {{ displayName(g) }}
         </button>
         &nbsp; &nbsp; &nbsp;
-        <button (click)="clearSelection()" style="padding:6px 12px;border-radius:6px;border:1px solid #ccc;background:#blue;">Reset</button>
+        <button (click)="clearSelection()" style="padding:6px 12px;border-radius:6px;border:1px solid #ccc;background:white;">Réinitialiser</button>
       </div>
 
       <div *ngIf="loading" style="margin-top:12px;">Chargement...</div>
@@ -41,7 +41,7 @@ import { RouterLink } from '@angular/router';
         </thead>
         <tbody>
         <tr *ngFor="let it of filteredItems">
-          <td style="padding:8px;">{{ it.game | titlecase }}</td>
+          <td style="padding:8px;">{{ displayName(it.game) }}</td>
           <td style="padding:8px;">{{ formatOutcome(it)?.label || it.outcome }}</td>
           <td style="padding:8px;">{{ it.montantJoue }}</td>
           <td style="padding:8px;" [style.color]="netColorOf(it)">{{ netLabelOf(it) }}</td>
@@ -71,7 +71,8 @@ import { RouterLink } from '@angular/router';
   `]
 })
 export class GameHistoryComponent implements OnInit {
-  allGames = ['coinflip', 'roulette', 'slots', 'blackjack']; // 🔸 Tes jeux
+  // 🔹 Ajout de "mines" dans la liste des jeux
+  allGames = ['coinflip', 'roulette', 'slots', 'blackjack', 'mines'];
   selectedGames: string[] = [];
   items: HistoryEntry[] = [];
   filteredItems: HistoryEntry[] = [];
@@ -100,7 +101,7 @@ export class GameHistoryComponent implements OnInit {
     });
   }
 
-  /** 🔘 Sélection / désélection */
+  // --- Filtres ---
   toggleGame(g: string) {
     if (this.selectedGames.includes(g)) {
       this.selectedGames = this.selectedGames.filter(x => x !== g);
@@ -117,13 +118,13 @@ export class GameHistoryComponent implements OnInit {
 
   applyFilter() {
     if (this.selectedGames.length === 0) {
-      this.filteredItems = this.items; // aucun filtre = tout afficher
+      this.filteredItems = this.items;
     } else {
       this.filteredItems = this.items.filter(i => this.selectedGames.includes(i.game));
     }
   }
 
-  // --- fonctions utilitaires déjà dans ton code ---
+  // --- Utilitaires ---
   netGainOf(it: HistoryEntry | null | undefined): number {
     if (!it) return 0;
     return Number(it.montantGagne ?? 0) - Number(it.montantJoue ?? 0);
@@ -141,6 +142,19 @@ export class GameHistoryComponent implements OnInit {
     return '#eab308';
   }
 
+  // Nom affiché lisible
+  displayName(game: string): string {
+    switch (game) {
+      case 'coinflip': return 'Pile ou Face';
+      case 'slots': return 'Machine à sous';
+      case 'roulette': return 'Roulette';
+      case 'blackjack': return 'BlackJack';
+      case 'mines': return 'Mines';
+      default: return game;
+    }
+  }
+
+  // Formatage spécifique du champ outcome
   formatOutcome(it: HistoryEntry) {
     if (!it || !it.outcome) return null;
     const o = it.outcome;
@@ -168,6 +182,13 @@ export class GameHistoryComponent implements OnInit {
       const total = o.match(/total\s*=\s*(\d+)/i)?.[1];
       const outcome = o.match(/outcome\s*=\s*(\w+)/i)?.[1];
       return { type:'blackjack', label: `Total: ${total || '?'} • ${outcome || ''}` };
+    }
+
+    if (it.game === 'mines') {
+      const mines = o.match(/mines\s*=\s*(\d+)/i)?.[1];
+      const safe = o.match(/safe\s*=\s*(\d+)/i)?.[1];
+      const status = o.includes('bomb') ? '💣 Perdu' : '💎 Terminé';
+      return { type:'mines', label: `${safe ? safe + ' diamants' : ''} • ${status}` };
     }
 
     return { type:'autre', label: o };
