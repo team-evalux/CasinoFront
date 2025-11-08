@@ -26,6 +26,8 @@ export const routes: Routes = [
   { path: 'play/coinflip', loadComponent: () => import('./game/coinflip/coinflip.component').then(m => m.CoinflipComponent) },
   { path: 'play/slots',    loadComponent: () => import('./game/slot/slot-machine.component').then(m => m.SlotMachineComponent) },
   { path: 'play/roulette', loadComponent: () => import('./game/roulette/roulette.component').then(m => m.RouletteComponent) },
+  { path: 'play/mines', loadComponent: () => import('./game/mines/mines.component').then(m => m.MinesComponent) },
+
   // src/app/app.routes.ts (ajoute les 2 lignes ci-dessous)
   { path: 'play/blackjack', loadComponent: () => import('./game/blackjack/blackjack-lobby.component').then(m => m.BlackjackLobbyComponent) },
   { path: 'play/blackjack/table/:id', loadComponent: () => import('./game/blackjack/blackjack-table.component').then(m => m.BlackjackTableComponent) },

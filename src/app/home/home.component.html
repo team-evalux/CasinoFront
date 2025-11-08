@@ -3,8 +3,9 @@
     <section class="mb-12">
       <h2 class="titre-page">Bienvenue {{ pseudo }} 🎉</h2>
       <p class="texte-secondaire">Sélectionne un jeu ci-dessous pour commencer.</p>
+
       <!-- Barre de progression – Créditation horaire -->
-      <section *ngIf="isLoggedIn()" class="bonus-horaire mt-12" >
+      <section *ngIf="isLoggedIn()" class="bonus-horaire mt-12">
         <div class="bonus-head">
           <div class="bonus-title">
             ⏱️ Créditation horaire
@@ -22,23 +23,23 @@
           <div class="bonus-bar__fill" [style.width.%]="percent"></div>
         </div>
       </section>
-
     </section>
 
+    <!-- ===== Liste des jeux ===== -->
     <section class="grille-jeux">
       <!-- Coinflip -->
       <article class="carte-jeu">
         <div class="carte-media">
-          <a [routerLink]="['/play/coinflip']"><img src="assets/images/logo-coinflip.png" alt="Pile ou Face"></a>
+          <a [routerLink]="['/play/coinflip']">
+            <img src="assets/images/logo-coinflip.png" alt="Pile ou Face">
+          </a>
         </div>
         <div>
           <h3 style="margin:0 0 6px 0;font-family:'Playfair Display',serif;color:#f1f5f9;">Pile ou Face</h3>
           <p class="texte-secondaire">Mise simple — 2× payout si tu gagnes. Choisis pile ou face.</p>
         </div>
-        <div class="d-flex jcsb aic" style="gap:8px; flex-wrap:wrap;">
-          <div class="d-flex aic" style="gap:8px;">
-            <span class="solde-chip" title="Jouable sans compte">Mode invité</span>
-          </div>
+        <div class="d-flex jcsb aic" style="gap:8px;flex-wrap:wrap;">
+          <span class="solde-chip">Mode invité</span>
           <a [routerLink]="['/play/coinflip']" class="bouton bouton--or">Jouer</a>
         </div>
       </article>
@@ -46,51 +47,68 @@
       <!-- Slots -->
       <article class="carte-jeu">
         <div class="carte-media">
-          <a [routerLink]="['/play/slots']"><img src="assets/images/logo-slot.png" alt="Machine à sous"></a>
+          <a [routerLink]="['/play/slots']">
+            <img src="assets/images/logo-slot.png" alt="Machine à sous">
+          </a>
         </div>
         <div>
           <h3 style="margin:0 0 6px 0;font-family:'Playfair Display',serif;color:#f1f5f9;">Machine à sous</h3>
           <p class="texte-secondaire">Rouleaux, symboles, gains — tente ta chance.</p>
         </div>
-        <div class="d-flex jcsb aic" style="gap:8px; flex-wrap:wrap;">
-          <div class="d-flex aic" style="gap:8px;">
-            <span class="solde-chip" title="Jouable sans compte">Mode invité</span>
-          </div>
+        <div class="d-flex jcsb aic" style="gap:8px;flex-wrap:wrap;">
+          <span class="solde-chip">Mode invité</span>
           <a [routerLink]="['/play/slots']" class="bouton bouton--or">Jouer</a>
+        </div>
+      </article>
+
+      <!-- Mines -->
+      <article class="carte-jeu">
+        <div class="carte-media">
+          <a [routerLink]="['/play/mines']">
+            <img src="assets/images/logo-mine.png" alt="Jeu des mines">
+          </a>
+        </div>
+        <div>
+          <h3 style="margin:0 0 6px 0;font-family:'Playfair Display',serif;color:#f1f5f9;">Mines</h3>
+          <p class="texte-secondaire">Révèle les diamants sans tomber sur une mine 💣 !</p>
+        </div>
+        <div class="d-flex jcsb aic" style="gap:8px;flex-wrap:wrap;">
+          <span class="solde-chip">Mode invité</span>
+          <a [routerLink]="['/play/mines']" class="bouton bouton--or">Jouer</a>
         </div>
       </article>
 
       <!-- Roulette -->
       <article class="carte-jeu">
         <div class="carte-media">
-          <a [routerLink]="['/play/roulette']"><img src="assets/images/logo-roulette.png" alt="Roulette"></a>
+          <a [routerLink]="['/play/roulette']">
+            <img src="assets/images/logo-roulette.png" alt="Roulette">
+          </a>
         </div>
         <div>
           <h3 style="margin:0 0 6px 0;font-family:'Playfair Display',serif;color:#f1f5f9;">Roulette</h3>
           <p class="texte-secondaire">Numéro, couleur, pair/impair — place tes mises.</p>
         </div>
-        <div class="d-flex jcsb aic" style="gap:8px; flex-wrap:wrap;">
-          <div class="d-flex aic" style="gap:8px;">
-          </div>
+        <div class="d-flex jcsb aic" style="gap:8px;flex-wrap:wrap;">
           <a [routerLink]="['/play/roulette']" class="bouton bouton--or">Jouer</a>
         </div>
       </article>
 
+      <!-- BlackJack -->
       <article class="carte-jeu">
         <div class="carte-media">
-          <a [routerLink]="['/play/blackjack']"><img src="assets/images/logo-blackjack.png" alt="BJ"></a>
+          <a [routerLink]="['/play/blackjack']">
+            <img src="assets/images/logo-blackjack.png" alt="BlackJack">
+          </a>
         </div>
         <div>
           <h3 style="margin:0 0 6px 0;font-family:'Playfair Display',serif;color:#f1f5f9;">BlackJack</h3>
-          <p class="texte-secondaire">Multijoueur — affronte le croupier avec d’autres joueurs et vise 21 sans le dépasser.</p>
+          <p class="texte-secondaire">Affronte le croupier et vise 21 sans dépasser.</p>
         </div>
-        <div class="d-flex jcsb aic" style="gap:8px; flex-wrap:wrap;">
-          <div class="d-flex aic" style="gap:8px;">
-          </div>
+        <div class="d-flex jcsb aic" style="gap:8px;flex-wrap:wrap;">
           <a [routerLink]="['/play/blackjack']" class="bouton bouton--or">Jouer</a>
         </div>
       </article>
-
     </section>
 
     <section class="mt-16">
