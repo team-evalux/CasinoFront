@@ -1,0 +1,60 @@
+<div class="lb-wrap">
+  <header class="lb-hero">
+    <div class="lb-hero__content">
+      <h1>Classement général</h1>
+      <p>Top joueurs par solde de crédits — visible par tous.</p>
+      <div class="lb-hero__controls">
+        <label class="inline">
+          Afficher
+          <select [(ngModel)]="limit" (change)="fetch()">
+            <option [ngValue]="10">10</option>
+            <option [ngValue]="25">25</option>
+            <option [ngValue]="50">50</option>
+            <option [ngValue]="100">100</option>
+          </select>
+          premiers
+        </label>
+
+        <button class="btn" (click)="fetch()" [disabled]="loading">
+          {{ loading ? 'Actualisation…' : 'Rafraîchir' }}
+        </button>
+
+        <a class="btn ghost" routerLink="/home">⬅ Accueil</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="lb-card">
+    <div *ngIf="error" class="msg error">{{ error }}</div>
+    <div *ngIf="!error && loading" class="msg">Chargement…</div>
+
+    <div class="table-wrap" *ngIf="!error && !loading">
+      <table class="lb-table">
+        <thead>
+        <tr>
+          <th>Rang</th>
+          <th>Joueur</th>
+          <th class="right">Solde (crédits)</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr *ngFor="let row of data">
+          <td class="rang">
+              <span class="medal" [class.gold]="medal(row.rang)==='gold'"
+                    [class.silver]="medal(row.rang)==='silver'"
+                    [class.bronze]="medal(row.rang)==='bronze'">
+                {{ row.rang }}
+              </span>
+          </td>
+          <td class="pseudo">
+            <div class="pill">{{ row.pseudo }}</div>
+          </td>
+          <td class="right"><strong>{{ row.solde | number:'1.0-0' }}</strong></td>
+        </tr>
+        </tbody>
+      </table>
+
+      <div *ngIf="!data.length" class="msg">Aucun joueur à afficher.</div>
+    </div>
+  </section>
+</div>
