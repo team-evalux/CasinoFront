@@ -9,11 +9,6 @@
 
       <div class="actions-desktop">
 
-        <a class="bouton"
-           [routerLink]="['/shop/avatars']">
-          Boutique d'avatars
-        </a>
-
         <ng-container *ngIf="isLoggedIn(); else desktopLogin">
 
           <!-- Avatar / Initiale -->
@@ -29,6 +24,11 @@
               {{ (userObj?.pseudo || userObj?.email || 'U').slice(0,1) }}
             </div>
           </ng-template>
+
+          <a class="bouton"
+             [routerLink]="['/shop/avatars']">
+            Boutique d'avatars
+          </a>
 
           <a class="bouton"
              [routerLink]="['/inventory/avatars']">
@@ -47,7 +47,13 @@
         <ng-template #desktopLogin>
           <button class="bouton" [routerLink]="['/register']">S'inscrire</button>
           <button class="bouton bouton--primaire" (click)="ui.openMenu()">Se connecter</button>
+          <a class="bouton"
+             [routerLink]="['/shop/avatars']">
+            Boutique d'avatars
+          </a>
         </ng-template>
+
+
       </div>
 
     </div>
