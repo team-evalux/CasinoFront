@@ -1,0 +1,146 @@
+.inv-wrapper {
+  max-width: 800px;
+  margin: 30px auto;
+  padding: 0 16px 40px;
+}
+
+h1 {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  color: #9fb0bd;
+  margin-bottom: 18px;
+}
+
+.info,
+.error,
+.toast {
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.info {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.error {
+  background: rgba(255, 0, 72, 0.08);
+  border: 1px solid rgba(255, 0, 72, 0.4);
+  color: #ff657a;
+}
+
+.toast {
+  background: rgba(0, 180, 120, 0.12);
+  border: 1px solid rgba(0, 180, 120, 0.5);
+  color: #4be1a5;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #0b1015;
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+.item.equipped {
+  border-color: #3fe3ff;
+  box-shadow: 0 0 6px rgba(63, 227, 255, 0.2);
+}
+
+.image {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: radial-gradient(circle at top, rgba(255,255,255,0.08), transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.line1 {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.18);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #9fb0bd;
+}
+
+.line2 {
+  font-size: 11px;
+  color: #6f8291;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+}
+
+.btn-equip {
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: none;
+  font-size: 12px;
+  cursor: pointer;
+  background: linear-gradient(to right, #1c88ff, #3fe3ff);
+  color: #020408;
+  font-weight: 600;
+}
+
+.btn-equip:disabled {
+  opacity: 0.55;
+  cursor: default;
+}

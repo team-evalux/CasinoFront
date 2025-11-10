@@ -1,0 +1,83 @@
+<section class="shop-wrapper">
+  <h1>Boutique d'avatars</h1>
+
+  <p class="subtitle">
+    Dépense tes crédits pour débloquer des avatars <strong>communs</strong>,
+    <strong>rares</strong>, <strong>épiques</strong> et <strong>légendaires</strong>.
+  </p>
+
+  <div class="status-line">
+    <ng-container *ngIf="(balance$ | async) as bal; else noBal">
+      <span>Ton solde : <strong>{{ bal }} crédits</strong></span>
+    </ng-container>
+    <ng-template #noBal>
+      <span>Ton solde : <span class="muted">—</span></span>
+    </ng-template>
+
+    <a routerLink="/inventory/avatars" class="link-inventory" *ngIf="isLoggedIn()">
+      Voir mon inventaire
+    </a>
+  </div>
+
+  <div *ngIf="loading" class="info">Chargement de la boutique…</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+  <div *ngIf="infoMsg" class="toast">{{ infoMsg }}</div>
+
+  <div class="grid" *ngIf="!loading && avatars.length">
+    <div
+      class="card"
+      *ngFor="let avatar of avatars"
+      [ngClass]="rarityClass(avatar.rarete)"
+    >
+      <div class="image-wrapper">
+        <img
+          *ngIf="avatar.imageUrl; else fallback"
+          [src]="avatar.imageUrl"
+          [alt]="avatar.nom"
+        />
+        <ng-template #fallback>
+          <div class="placeholder">{{ avatar.nom[0] }}</div>
+        </ng-template>
+      </div>
+
+      <div class="content">
+        <div class="title-line">
+          <h3>{{ avatar.nom }}</h3>
+          <span class="badge" [ngClass]="rarityClass(avatar.rarete)">
+            {{ rarityLabel(avatar.rarete) }}
+          </span>
+        </div>
+
+        <p class="price">{{ avatar.prix }} crédits</p>
+
+        <div class="actions">
+          <ng-container *ngIf="isLoggedIn(); else needLogin">
+            <ng-container *ngIf="(balance$ | async) as bal">
+              <button
+                class="btn"
+                [disabled]="buyingId === avatar.id || !canBuy(avatar, bal)"
+                (click)="buy(avatar, bal)"
+              >
+                <ng-container *ngIf="hasAvatar(avatar)">Déjà possédé</ng-container>
+                <ng-container *ngIf="!hasAvatar(avatar)">
+                  <span *ngIf="buyingId !== avatar.id">Acheter</span>
+                  <span *ngIf="buyingId === avatar.id">Achat…</span>
+                </ng-container>
+              </button>
+            </ng-container>
+          </ng-container>
+
+          <ng-template #needLogin>
+            <button class="btn btn-ghost" disabled>
+              Connecte-toi pour acheter
+            </button>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p *ngIf="!loading && !avatars.length" class="info">
+    Aucun avatar disponible pour le moment.
+  </p>
+</section>

@@ -1,0 +1,61 @@
+<section class="inv-wrapper">
+  <h1>Mon inventaire d'avatars</h1>
+
+  <p class="subtitle">
+    Choisis l'avatar qui te représentera partout sur le site.
+  </p>
+
+  <div *ngIf="loading" class="info">Chargement…</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+  <div *ngIf="infoMsg" class="toast">{{ infoMsg }}</div>
+
+  <div class="list" *ngIf="!loading && avatars.length">
+    <div
+      class="item"
+      *ngFor="let av of avatars"
+      [class.equipped]="av.equipe"
+    >
+      <div class="image">
+        <img
+          *ngIf="av.imageUrl; else fallback"
+          [src]="av.imageUrl"
+          [alt]="av.nom"
+        />
+        <ng-template #fallback>
+          <div class="placeholder">{{ av.nom[0] }}</div>
+        </ng-template>
+      </div>
+
+      <div class="meta">
+        <div class="line1">
+          <span class="name">{{ av.nom }}</span>
+          <span class="badge">{{ rarityLabel(av.rarete) }}</span>
+        </div>
+        <div class="line2">
+          <span *ngIf="av.dateAcquisition">
+            Acquis le {{ av.dateAcquisition | date:'dd/MM/yyyy HH:mm' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button
+          class="btn-equip"
+          [disabled]="isEquipped(av) || equippingId === av.avatarId"
+          (click)="equip(av)"
+        >
+          <ng-container *ngIf="isEquipped(av)">Équipé</ng-container>
+          <ng-container *ngIf="!isEquipped(av)">
+            <span *ngIf="equippingId !== av.avatarId">Équiper</span>
+            <span *ngIf="equippingId === av.avatarId">...</span>
+          </ng-container>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <p *ngIf="!loading && !avatars.length" class="info">
+    Tu n'as pas encore d'avatar. Va faire un tour dans la
+    <a routerLink="/shop/avatars">boutique</a>.
+  </p>
+</section>

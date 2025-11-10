@@ -10,6 +10,8 @@ import { WalletService } from '../services/wallet.service';
 import { BalanceHeaderComponent } from './balance-header.component';
 import { UiService } from '../services/ui.service';
 import {environment} from '../../environments/environment';
+import {EquippedAvatarDto} from '../services/boutique/avatar.models';
+import {AvatarService} from '../services/boutique/avatar.service';
 
 type BonusStatus = {
   canClaim: boolean;
@@ -39,6 +41,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   protected router = inject(Router);
   protected ui = inject(UiService);
+  private avatarService = inject(AvatarService);
+
+  equippedAvatar: EquippedAvatarDto | null = null;
 
   // UI/auth
   bonusLoading = false;
@@ -57,24 +62,33 @@ export class HeaderComponent implements OnInit, OnDestroy {
   // tick
   private tickSub?: Subscription;
   private authSub?: Subscription;
+  private avatarSub?: Subscription;
 
   constructor() { this.loadUser(); }
 
   ngOnInit(): void {
 
+    this.avatarSub = this.avatarService.equipped$.subscribe(av => {
+      this.equippedAvatar = av;
+    });
+
     if (this.isLoggedIn()) {
       this.loadUser();
-      this.fetchBonusStatus();  // 👉 bouton prêt tout de suite si bonus dispo
+      this.fetchBonusStatus();
+      this.loadEquippedAvatar(); // charge l’état initial depuis le back
     }
 
-    // ✅ réagit aux changements d’auth (login/logout)
+    // réagit aux changements d’auth (login/logout)
     this.authSub = this.authService.loggedIn$.subscribe(isIn => {
       if (isIn) {
         this.loadUser();
-        this.fetchBonusStatus(); // 👉 déclenché immédiatement après login
+        this.fetchBonusStatus();
+        this.loadEquippedAvatar(); // refresh après login
       } else {
         this.bonusStatus = null;
         this.statusFetchedAt = 0;
+        this.equippedAvatar = null;
+        this.avatarService.clearEquipped();
       }
     });
 
@@ -84,7 +98,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
       }
     });
   }
-  ngOnDestroy(): void { this.tickSub?.unsubscribe(); this.authSub?.unsubscribe(); }
+  ngOnDestroy(): void { this.tickSub?.unsubscribe(); this.authSub?.unsubscribe(); this.avatarSub?.unsubscribe(); }
 
   // ---------- Auth ----------
   isLoggedIn(): boolean { return this.authService.isLoggedIn(); }
@@ -119,9 +133,18 @@ export class HeaderComponent implements OnInit, OnDestroy {
     });
   }
 
+  private loadEquippedAvatar() {
+    this.avatarService.getEquipped().subscribe({
+      error: () => { /* on ignore, le header restera avec la dernière valeur connue */ }
+    });
+  }
+
+
+
   logout() {
     this.authService.logout();
     this.wallet.clear?.();
+    this.avatarService.clearEquipped(); // 👈 optionnel mais propre
     this.loadUser();
     this.bonusStatus = null;
     this.statusFetchedAt = 0;

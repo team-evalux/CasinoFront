@@ -9,16 +9,45 @@
 
       <div class="actions-desktop">
         <ng-container *ngIf="isLoggedIn(); else desktopLogin">
-          <!--          <span class="who">Salut, <strong>{{ userObj?.pseudo || userObj?.email }}</strong></span>-->
+
+          <!-- Avatar équipé -->
+          <div class="avatar-equipped" *ngIf="equippedAvatar as av">
+            <img *ngIf="av.imageUrl; else avatarFallback"
+                 [src]="av.imageUrl"
+                 [alt]="av.nom" />
+          </div>
+          <ng-template #avatarFallback>
+            <div class="avatar-equipped avatar-fallback">
+              {{ (userObj?.pseudo || userObj?.email || 'U').slice(0,1) }}
+            </div>
+          </ng-template>
+
+          <!-- Liens -->
+          <a class="bouton"
+             [routerLink]="['/shop/avatars']">
+            Boutique d'avatars
+          </a>
+
+          <a class="bouton"
+             [routerLink]="['/inventory/avatars']">
+            Mes avatars
+          </a>
+
+          <!-- Solde -->
           <app-balance-header></app-balance-header>
-          <button class="bouton bouton--danger" (click)="logout()">Se déconnecter</button>
+
+          <!-- Logout -->
+          <button class="bouton bouton--danger" (click)="logout()">
+            Se déconnecter
+          </button>
         </ng-container>
+
         <ng-template #desktopLogin>
           <button class="bouton" [routerLink]="['/register']">S'inscrire</button>
-          <!-- AVANT: (click)="isMenuOpen=true" ou routerLink -->
-          <button class="bouton bouton--primaire" (click)="ui.openMenu()">Se connecter</button> <!-- ✅ -->
+          <button class="bouton bouton--primaire" (click)="ui.openMenu()">Se connecter</button>
         </ng-template>
       </div>
+
     </div>
     <!-- Centre : logo -->
     <div class="center">

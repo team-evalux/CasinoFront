@@ -43,9 +43,14 @@ export const routes: Routes = [
   // Historique : si tu veux le laisser privé, on garde AuthGuard
   { path: 'history', component: GameHistoryComponent, canActivate: [AuthGuard] },
 
-  // ...
   { path: 'account/delete', loadComponent: () => import('./account/delete-account.component').then(m => m.DeleteAccountComponent), canActivate: [AuthGuard] },
-// ...
+
+  // Boutique d'avatars (publique)
+  { path: 'shop/avatars', loadComponent: () => import('./shop/avatar-shop.component').then(m => m.AvatarShopComponent) },
+
+  // Inventaire (réservé aux connectés)
+  { path: 'inventory/avatars', loadComponent: () => import('./inventory/avatar-inventory.component').then(m => m.AvatarInventoryComponent), canActivate: [AuthGuard] },
+
 
   { path: 'about', component: AboutComponent },
   { path: 'support', component: SupportComponent },
