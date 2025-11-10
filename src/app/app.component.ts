@@ -8,7 +8,8 @@ import { FooterComponent } from './footer/footer.component';
 import { LoginComponent } from './login/login.component';
 import { BalanceHeaderComponent } from './header/balance-header.component'; // ✅
 
-import { AuthService } from './services/auth.service'; // ✅
+import { AuthService } from './services/auth.service';
+import {ChatComponent} from '../chat/chat.component'; // ✅
 
 @Component({
   selector: 'app-root',
@@ -20,7 +21,9 @@ import { AuthService } from './services/auth.service'; // ✅
     HeaderComponent,
     FooterComponent,
     LoginComponent,
-    BalanceHeaderComponent, // ✅
+    BalanceHeaderComponent,
+    ChatComponent,
+    // ✅
   ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']

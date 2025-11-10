@@ -333,3 +333,52 @@ body.fond-casino{
   width: 110px;
   height: 110px;
 }
+
+
+/* === Bouton flottant du chat global === */
+.chat-toggle {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #ffd700;
+  border: none;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  font-size: 28px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: transform 0.25s ease, right 0.45s ease;
+  z-index: 3000; /* Toujours au-dessus de tout */
+}
+
+.chat-toggle:hover {
+  transform: scale(1.1);
+}
+
+/* Quand le chat est ouvert, on décale le bouton à gauche */
+body.chat-ouvert .chat-toggle {
+  right: 380px; /* correspond à la largeur du panneau + marge */
+}
+
+/* --- Panneau du chat (pour contexte) --- */
+.chat-panel {
+  position: fixed;
+  top: 0;
+  right: -360px;
+  width: 360px;
+  height: 100vh;
+  background: #0b1015;
+  color: #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  border-left: 2px solid #ffd700;
+  box-shadow: -6px 0 20px rgba(0, 0, 0, 0.6);
+  transition: right 0.45s ease;
+  z-index: 2500;
+}
+
+.chat-panel.ouvert {
+  right: 0;
+}
+
