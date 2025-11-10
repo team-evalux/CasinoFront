@@ -51,6 +51,11 @@ export const routes: Routes = [
   // Inventaire (réservé aux connectés)
   { path: 'inventory/avatars', loadComponent: () => import('./inventory/avatar-inventory.component').then(m => m.AvatarInventoryComponent), canActivate: [AuthGuard] },
 
+  { path: 'admin/avatars',
+    loadComponent: () => import('./admin/avatar-admin.component').then(m => m.AvatarAdminComponent),
+    canActivate: [AuthGuard, AdminGuard]
+  },
+
 
   { path: 'about', component: AboutComponent },
   { path: 'support', component: SupportComponent },

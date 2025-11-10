@@ -1,0 +1,154 @@
+.admin-wrapper {
+  max-width: 900px;
+  margin: 24px auto;
+  padding: 0 16px 40px;
+}
+
+h2 {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: #9fb0bd;
+  margin-bottom: 16px;
+}
+
+.card {
+  background: #0b1015;
+  border-radius: 10px;
+  padding: 14px 14px 16px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+  margin: 0 0 10px;
+  font-size: 17px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(180px,1fr));
+  gap: 10px 14px;
+  margin-bottom: 12px;
+}
+
+label {
+  font-size: 12px;
+  color: #cdd9e5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+input,
+select {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: #05070a;
+  color: #eef3ff;
+  font-size: 13px;
+}
+
+.checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+.checkbox input {
+  width: 14px;
+  height: 14px;
+}
+
+.btn-primary {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(to right, #1c88ff, #3fe3ff);
+  color: #020408;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn-primary:disabled {
+  opacity: .5;
+  cursor: default;
+}
+
+.msg {
+  margin-bottom: 8px;
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.02);
+}
+
+.msg-ok {
+  border: 1px solid rgba(0,200,120,0.6);
+  color: #4be1a5;
+}
+
+.msg-error {
+  border: 1px solid rgba(255,80,80,0.7);
+  color: #ff8080;
+}
+
+.avatar-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.avatar-table th,
+.avatar-table td {
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  padding: 4px 6px;
+  text-align: left;
+}
+
+.avatar-table th {
+  font-weight: 600;
+  color: #9fb0bd;
+}
+
+.mini {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.btn-small {
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: none;
+  font-size: 11px;
+  cursor: pointer;
+  background: #b91c1c;
+  color: #fff;
+}
+
+.btn-small:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+.back {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.btn-back {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: transparent;
+  color: #e5e7eb;
+  font-size: 12px;
+  cursor: pointer;
+}

@@ -68,7 +68,7 @@ export class AvatarInventoryComponent implements OnInit {
 
     this.avatarService.equipAvatar(av.avatarId).subscribe({
       next: updated => {
-        // maj locale : un seul équipé
+        // maj locale
         this.avatars = this.avatars.map(x => ({
           ...x,
           equipe: x.avatarId === updated.avatarId

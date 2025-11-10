@@ -7,6 +7,7 @@ export interface AvatarDto {
   rarete: AvatarRarity;
   prix: number;
   imageUrl?: string;
+  actif: boolean;
   defaut: boolean;
 }
 

@@ -8,25 +8,27 @@
       </button>
 
       <div class="actions-desktop">
+
+        <a class="bouton"
+           [routerLink]="['/shop/avatars']">
+          Boutique d'avatars
+        </a>
+
         <ng-container *ngIf="isLoggedIn(); else desktopLogin">
 
-          <!-- Avatar équipé -->
-          <div class="avatar-equipped" *ngIf="equippedAvatar as av">
-            <img *ngIf="av.imageUrl; else avatarFallback"
-                 [src]="av.imageUrl"
-                 [alt]="av.nom" />
+          <!-- Avatar / Initiale -->
+          <div class="avatar-equipped">
+            <ng-container *ngIf="equippedAvatar as av; else avatarFallback">
+              <img *ngIf="av.imageUrl; else avatarFallback"
+                   [src]="av.imageUrl"
+                   [alt]="av.nom" />
+            </ng-container>
           </div>
           <ng-template #avatarFallback>
             <div class="avatar-equipped avatar-fallback">
               {{ (userObj?.pseudo || userObj?.email || 'U').slice(0,1) }}
             </div>
           </ng-template>
-
-          <!-- Liens -->
-          <a class="bouton"
-             [routerLink]="['/shop/avatars']">
-            Boutique d'avatars
-          </a>
 
           <a class="bouton"
              [routerLink]="['/inventory/avatars']">

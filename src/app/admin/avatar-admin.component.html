@@ -1,0 +1,117 @@
+<div class="admin-wrapper">
+  <h2>Administration — Boutique d'avatars</h2>
+
+  <p class="subtitle">
+    Crée de nouveaux avatars pour la boutique sans passer par la base de données.
+  </p>
+
+  <!-- Messages -->
+  <div *ngIf="message" class="msg msg-ok">{{ message }}</div>
+  <div *ngIf="error" class="msg msg-error">{{ error }}</div>
+
+  <!-- Formulaire création -->
+  <section class="card">
+    <h3>Nouvel avatar</h3>
+
+    <div class="form-grid">
+      <label>
+        Code*
+        <input [(ngModel)]="form.code" name="code" placeholder="AVATAR_SUPER_LUCK" />
+      </label>
+
+      <label>
+        Nom*
+        <input [(ngModel)]="form.nom" name="nom" placeholder="Super Lucky" />
+      </label>
+
+      <label>
+        Rareté*
+        <select [(ngModel)]="form.rarete" name="rarete">
+          <option value="COMMUN">Commun</option>
+          <option value="RARE">Rare</option>
+          <option value="EPIQUE">Épique</option>
+          <option value="LEGENDAIRE">Légendaire</option>
+        </select>
+      </label>
+
+      <label>
+        Prix (crédits)*
+        <input type="number" min="0" [(ngModel)]="form.prix" name="prix" />
+      </label>
+
+      <label>
+        Image URL
+        <input [(ngModel)]="form.imageUrl" name="imageUrl"
+               placeholder="/assets/avatars/commun.png" />
+      </label>
+
+      <label class="checkbox">
+        <input type="checkbox" [(ngModel)]="form.actif" name="actif" />
+        Actif (visible en boutique)
+      </label>
+
+      <label class="checkbox">
+        <input type="checkbox" [(ngModel)]="form.defaut" name="defaut" />
+        Avatar par défaut
+      </label>
+    </div>
+
+    <button class="btn-primary"
+            (click)="create()"
+            [disabled]="loading">
+      {{ loading ? 'Création...' : 'Créer l\'avatar' }}
+    </button>
+  </section>
+
+  <!-- Liste avatars existants -->
+  <section class="card" style="margin-top:18px;">
+    <h3>Liste des avatars</h3>
+
+    <div *ngIf="loadingList" class="msg">Chargement...</div>
+
+    <div *ngIf="!loadingList && !avatars.length" class="msg">
+      Aucun avatar pour le moment.
+    </div>
+
+    <table *ngIf="!loadingList && avatars.length" class="avatar-table">
+      <thead>
+      <tr>
+        <th>ID</th>
+        <th>Visuel</th>
+        <th>Code</th>
+        <th>Nom</th>
+        <th>Rareté</th>
+        <th>Prix</th>
+        <th>Actif</th>
+        <th>Defaut</th>
+        <th></th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr *ngFor="let av of avatars">
+        <td>{{ av.id }}</td>
+        <td>
+          <img *ngIf="av.imageUrl" [src]="av.imageUrl" [alt]="av.nom" class="mini" />
+        </td>
+        <td>{{ av.code }}</td>
+        <td>{{ av.nom }}</td>
+        <td>{{ av.rarete }}</td>
+        <td>{{ av.prix }}</td>
+        <td>{{ av.actif ? '✔' : '✖' }}</td>
+        <td>{{ av.defaut ? '✔' : '' }}</td>
+        <td>
+          <!-- Toggle actif/inactif -->
+          <button class="btn-small"
+                  (click)="toggleActive(av)">
+            {{ av.actif ? 'Désactiver' : 'Activer' }}
+          </button>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <div class="back">
+    <button routerLink="/home" class="btn-back">⬅ Retour à l'accueil</button>
+  </div>
+</div>
