@@ -50,6 +50,37 @@ export class MinesComponent implements OnInit, OnDestroy {
   table: { [k: number]: number } = {};
   nextMultiplier = 0;
 
+  // --- Ajouts en haut de classe ---
+  overlayVisible = false;
+  overlayTitle: string | null = null;
+  overlaySubtitle: string | null = null;
+
+  get currentMultiplier(): number {
+    return this.table[this.safeCount] || 0;
+  }
+  get nextPayout(): number {
+    const mult = this.table[this.safeCount] || 1;
+    return Math.floor((this.mise || 0) * mult);
+  }
+
+
+  private showOverlay(title: string, subtitle?: string) {
+    this.overlayTitle = title;
+    this.overlaySubtitle = subtitle || null;
+    this.overlayVisible = true;
+  }
+
+  rejouer() {
+    // On réinitialise l’UI et relance directement une partie avec les mêmes paramètres
+    this.overlayVisible = false;
+    this.finished = false;
+    this.sessionId = null;
+    this.revealed.clear();
+    this.bombs.clear();
+    this.start();
+  }
+
+
   // --- mode invité local
   private guestBombs: Set<number> = new Set();
   private guestSafes: Set<number> = new Set();
@@ -112,6 +143,7 @@ export class MinesComponent implements OnInit, OnDestroy {
 
     this.rebuildLocalTable();
     this.clampInputs();
+    this.overlayVisible = false;
   }
 
   // =========================
@@ -260,13 +292,16 @@ export class MinesComponent implements OnInit, OnDestroy {
   //       Démarrer partie
   // =========================
   start() {
+    this.overlayVisible = false;
+    this.overlayTitle = null;
+    this.overlaySubtitle = null;
+
     this.error = null;
     this.revealed.clear();
     this.bombs.clear();
     this.safeCount = 0;
     this.finished = false;
     this.sessionId = null;
-
     this.clampInputs();
     this.rebuildLocalTable();
 
@@ -296,6 +331,7 @@ export class MinesComponent implements OnInit, OnDestroy {
       }
       this.guestSafes.clear();
       this.sessionId = 'guest-' + Date.now();
+      this.overlayVisible = false;
       this.nextMultiplier = this.table[1] || 1;
       return;
     }
@@ -355,20 +391,27 @@ export class MinesComponent implements OnInit, OnDestroy {
         this.revealed.add(i);
 
         if (res.bomb) {
+          // marque la bombe et termine
           for (const b of res.bombs || []) this.bombs.add(b);
           this.finished = true;
 
-          // garder la mise avant de reset la session
+          // ✅ mets à jour immédiatement le nombre de diamants trouvés
+          this.safeCount = res.safeCount ?? this.safeCount;
+
+          // garde la mise avant de reset la session
           const mise = this.mise || 0;
 
+          // nettoie la session UI
           this.sessionId = null;
           this.clearState();
 
-          // 🧾 push historique si connecté
+          // 🧾 push historique local **complet** (inclut mines & safe)
           if (this.isLoggedIn) {
             this.history.pushLocal({
               game: 'mines',
-              outcome: `bomb index=${res.index}`,
+              // format compact compris par ton formatteur :
+              // mines=<n>,safe=<k>,bomb=true,index=<i>
+              outcome: `mines=${this.mines},safe=${this.safeCount},bomb=true,index=${res.index}`,
               montantJoue: mise,
               montantGagne: 0,
               multiplier: 0,
@@ -376,7 +419,7 @@ export class MinesComponent implements OnInit, OnDestroy {
             });
           }
 
-          // 🔥 reset côté serveur
+          // 🔥 reset côté serveur (optionnel, tu le gardes)
           this.api.reset().subscribe({
             complete: () => console.log('Session mines réinitialisée après bombe')
           });
@@ -401,9 +444,17 @@ export class MinesComponent implements OnInit, OnDestroy {
       const payout = Math.round(this.mise * mult);
       this.guestBalance += payout;
       this.currentBalance = this.guestBalance;
+
+// ✅ on nettoie immédiatement la grille
+      this.revealed.clear();
+      this.bombs.clear();
+
       this.finished = true;
       this.sessionId = null;
       this.clearState();
+
+// Overlay d’info
+      this.showOverlay('✅ Encaissement réussi', `+${payout} crédits (×${Math.round(mult*100)/100})`);
       return;
     }
 
@@ -420,9 +471,13 @@ export class MinesComponent implements OnInit, OnDestroy {
         this.enCours = false;
         if (!res) return;
 
-        // capture la mise avant nettoyage
+        // capture
         const mise = this.mise || 0;
         const mult = res.multiplier ?? (mise ? res.payout / mise : 0);
+
+// ✅ on nettoie visuellement la grille
+        this.revealed.clear();
+        this.bombs.clear();
 
         this.finished = true;
         this.sessionId = null;
@@ -430,19 +485,23 @@ export class MinesComponent implements OnInit, OnDestroy {
 
         this.wallet.applyOptimisticDelta(res.payout);
         this.wallet.refreshBalance().subscribe(b => (this.currentBalance = b?.solde ?? null));
-        for (const b of res.bombs || []) this.bombs.add(b);
+        for (const b of res.bombs || []) this.bombs.add(b); // <- si tu veux afficher les bombes, laisse ; sinon supprime cette ligne.
 
-        // 🧾 historique mines
+// 🧾 historique (inchangé)
         if (this.isLoggedIn) {
           this.history.pushLocal({
             game: 'mines',
             outcome: `cashout safe=${res.safeCount}`,
             montantJoue: mise,
             montantGagne: res.payout,
-            multiplier: Math.round(mult * 100) / 100,
+            multiplier: Math.round((mult || 0) * 100) / 100,
             createdAt: new Date().toISOString()
           });
         }
+
+// Overlay d’info
+        this.showOverlay('✅ Encaissement réussi', `+${res.payout} crédits (×${Math.round((mult||0)*100)/100})`);
+
       });
   }
 

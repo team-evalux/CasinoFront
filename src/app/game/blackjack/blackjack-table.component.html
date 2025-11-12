@@ -136,22 +136,53 @@
     </section>
 
     <!-- RIGHT : betting panel -->
-    <aside class="controls-panel card-surface">
+    <aside class="controls-panel card-surface" *ngIf="state as s">
       <h4>Mise & contrôles</h4>
 
       <div *ngIf="s.phase === 'BETTING' && mySeat() as me">
+
+        <!-- Mise actuelle -->
+        <div class="info-block" *ngIf="currentBet > 0" style="margin-bottom:6px;">
+          Mise actuelle : <strong>{{ currentBet }}</strong> crédits
+        </div>
+
+        <!-- Champ -->
         <app-bet-input
           [(value)]="betAmount"
           [solde]="solde"
           [min]="s.minBet || 1"
           [max]="(s.maxBet && s.maxBet>0) ? s.maxBet : null"
-          label="Ta mise">
+          [label]="currentBet > 0 ? 'Ajouter à la mise' : 'Ta mise'"
+          (valueChange)="onBetInputChange()">
         </app-bet-input>
 
+        <!-- Actions -->
         <div class="bet-actions" style="margin-top:8px;">
-          <button class="btn btn-primary" (click)="bet()" [disabled]="!canPlaceBet(s)">
+          <!-- Première mise -->
+          <button class="btn btn-primary"
+                  *ngIf="currentBet === 0"
+                  (click)="placeInitialBet()"
+                  [disabled]="!canPlaceInitialBet(s)">
             Miser
           </button>
+
+          <!-- Après une première mise -->
+          <ng-container *ngIf="currentBet > 0">
+            <button class="btn btn-primary"
+                    (click)="addToBet()"
+                    [disabled]="!canAddToBet(s)">
+              Ajouter
+            </button>
+            <button class="btn"
+                    (click)="cancelBet()">
+              Annuler
+            </button>
+          </ng-container>
+        </div>
+
+        <div class="limits" style="margin-top:6px;">
+          Min/Max: <strong>{{ s.minBet || 0 }} / {{ s.maxBet && s.maxBet>0 ? s.maxBet : '∞' }}</strong> —
+          Solde: <strong>{{ solde }}</strong>
         </div>
       </div>
 
