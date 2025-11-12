@@ -46,6 +46,8 @@ export const routes: Routes = [
   // ...
   { path: 'account/delete', loadComponent: () => import('./account/delete-account.component').then(m => m.DeleteAccountComponent), canActivate: [AuthGuard] },
 // ...
+  { path: 'leaderboard', loadComponent: () => import('./leaderboard/leaderboard.component').then(m => m.LeaderboardComponent) },
+
 
   { path: 'about', component: AboutComponent },
   { path: 'support', component: SupportComponent },
