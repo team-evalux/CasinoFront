@@ -158,7 +158,8 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
       if (!this.error) this.loading = false;
 
       if (s?.phase === 'BETTING') {
-        if (!this.userEditedBet && s.minBet != null && Number(s.minBet) > 0) {
+        // 👉 ne force le min que si l’utilisateur n’a pas encore misé ET n’a pas touché l’input
+        if (!this.userEditedBet && this.currentBet === 0 && s.minBet != null && Number(s.minBet) > 0) {
           this.betAmount = Number(s.minBet);
         }
       } else {
@@ -229,6 +230,84 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
       }
     });
   }
+
+  // --- Helpers ---
+
+  get currentBet(): number {
+    return Number(this.mySeat()?.hand?.bet || 0);
+  }
+
+  private validateTotalAmount(s: BJTableState, total: number): boolean {
+    if (!s) return false;
+    const min = s.minBet || 0;
+    const max = s.maxBet || 0;
+    if (total <= 0) return false;
+    if (min > 0 && total < min) return false;
+    if (max > 0 && total > max) return false;
+
+    // delta = ajout demandé ; on le borne par le solde affiché
+    const delta = total - this.currentBet;
+    if (delta <= 0) return false;
+    if (this.solde < delta) return false;
+    return true;
+  }
+
+  canPlaceInitialBet(s: BJTableState | null): boolean {
+    if (!s || this.currentBet > 0) return false;
+    const v = Number(this.betAmount) || 0;
+    if (v <= 0 || this.solde < v) return false;
+    const min = s.minBet || 0, max = s.maxBet || 0;
+    if (min > 0 && v < min) return false;
+    if (max > 0 && v > max) return false;
+    return true;
+  }
+
+  canAddToBet(s: BJTableState | null): boolean {
+    if (!s || this.currentBet <= 0) return false;
+    const add = Number(this.betAmount) || 0;
+    if (add <= 0) return false;
+    const newTotal = this.currentBet + add;
+    return this.validateTotalAmount(s, newTotal);
+  }
+
+// --- Actions ---
+
+  async placeInitialBet() {
+    if (!this.state || !this.canPlaceInitialBet(this.state)) return;
+    const me = this.mySeat(); if (!me) { this.error = 'Tu dois être à la table.'; return; }
+    try {
+      await this.bj.wsBet(this.tableId, Number(this.betAmount), me.index);
+      // Le bouton “Miser” disparaîtra dès que TABLE_STATE revient avec bet>0
+    } catch (e: any) {
+      this.error = e?.message || 'Erreur lors de la mise'; setTimeout(() => this.error = null, 3500);
+    }
+  }
+
+  async addToBet() {
+    if (!this.state) return;
+    const add = Number(this.betAmount) || 0;
+    const newTotal = this.currentBet + add;
+    if (!this.canAddToBet(this.state)) return;
+    const me = this.mySeat(); if (!me) { this.error = 'Tu dois être à la table.'; return; }
+    try {
+      await this.bj.wsBet(this.tableId, newTotal, me.index);
+      this.userEditedBet = false;
+    } catch (e: any) {
+      this.error = e?.message || 'Erreur lors de l’ajout'; setTimeout(() => this.error = null, 3500);
+    }
+  }
+
+  async cancelBet() {
+    if (!this.state || this.currentBet <= 0) return;
+    const me = this.mySeat(); if (!me) { this.error = 'Tu dois être à la table.'; return; }
+    try {
+      await this.bj.wsBet(this.tableId, 0, me.index); // ⬅️ annule (patch back)
+      this.userEditedBet = false;
+    } catch (e: any) {
+      this.error = e?.message || 'Impossible d’annuler'; setTimeout(() => this.error = null, 3500);
+    }
+  }
+
 
   // Efface l’erreur pendant la saisie
   onCodeInputChange() {

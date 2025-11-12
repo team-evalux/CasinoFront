@@ -333,3 +333,43 @@ body.fond-casino{
   width: 110px;
   height: 110px;
 }
+
+/* === Contraste lisible sur fond blanc pour l'historique === */
+.hist-card, .hist-page{
+  background:#fff;
+  color:#0b0f10;                  /* texte par défaut : noir */
+}
+
+/* Titres dans ces cartes/pages */
+.hist-card h3, .hist-card h4,
+.hist-page h2{
+  color:#0b0f10;
+}
+
+/* Sous-textes/dates plus sombres (au lieu de #666) */
+.hist-date,
+.hist-muted,
+.hist-mult {
+  color:#111827;                  /* gris très foncé */
+  opacity:.95;
+}
+
+/* Zone de droite (montants) */
+.hist-right{ text-align:right; min-width:120px; }
+
+/* CTA "Voir tout" sur fond blanc */
+.hist-see-all{
+  padding:6px 10px; border-radius:6px; border:1px solid #ddd;
+  background:#fff; color:#0b0f10; cursor:pointer;
+}
+
+/* ✅ Fallback anti-#666 en inline style (sans toucher aux gains/pertes colorés) */
+.hist-card [style*="color:#666"],
+.hist-page [style*="color:#666"]{ color:#0b0f10 !important; }
+
+/* Badge coinflip (évite le débordement et reste lisible) */
+.pill-coin{
+  width:auto; min-width:34px; height:26px;
+  padding:0 8px; border-radius:999px;
+  font-size:.64rem; font-weight:800; line-height:1; color:#fff;
+}
