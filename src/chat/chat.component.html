@@ -1,28 +1,62 @@
-<!-- Bouton flottant pour ouvrir le chat -->
-<button class="chat-toggle" (click)="toggle()">
-  💬
-</button>
+<!-- Bouton flottant visible seulement si connecté -->
+<button class="chat-toggle" *ngIf="isLogged" (click)="toggle()">💬</button>
 
-<!-- Panneau latéral -->
 <div class="chat-panel" [class.ouvert]="ouvert">
   <div class="chat-header">
     <h3>Chat général</h3>
     <button class="close-btn" (click)="toggle()">×</button>
   </div>
 
-  <div class="chat-messages">
+  <div class="chat-messages" #scrollZone>
     <div *ngFor="let m of messages" class="chat-message">
-      <strong>{{ m.pseudo }}:</strong>
-      <span>{{ m.contenu }}</span>
+      <strong
+        class="pseudo"
+        [class.disabled]="m.pseudo.trim().toLowerCase() === currentPseudo.trim().toLowerCase()"
+        (click)="openTipPopup(m.pseudo)"
+      >
+        {{ m.pseudo }}
+      </strong>
+      <span class="contenu">{{ m.contenu }}</span>
+      <button *ngIf="isAdmin" class="delete-msg" (click)="supprimerMessage(m.id)">✖</button>
     </div>
   </div>
 
-  <div class="chat-input">
-    <input type="text" [(ngModel)]="nouveauMessage" maxlength="150"
-           placeholder="Écris ton message..." (keyup.enter)="envoyer()" />
+  <div *ngIf="!isLogged" class="chat-warning">
+    🔒 Connecte-toi pour participer au chat !
+  </div>
+
+  <div class="chat-input" *ngIf="isLogged">
+    <input
+      type="text"
+      [(ngModel)]="nouveauMessage"
+      maxlength="150"
+      placeholder="Écris ton message..."
+      (keyup.enter)="envoyer()"
+    />
     <button (click)="envoyer()" [disabled]="chargement">Envoyer</button>
   </div>
 
-  <!-- Bouton vider visible uniquement pour ADMIN -->
   <button *ngIf="isAdmin" class="clear-btn" (click)="viderChat()">🧹 Vider</button>
+</div>
+
+<!-- Popup de tip -->
+<div class="tip-popup" *ngIf="popupVisible">
+  <div class="tip-box">
+    <h4>Tipper {{ targetPseudo }}</h4>
+    <p>Ton solde actuel : <strong>{{ currentSolde }}</strong> crédits</p>
+
+    <input
+      type="number"
+      [(ngModel)]="tipMontant"
+      min="1"
+      placeholder="Montant en crédits"
+    />
+
+    <div class="actions">
+      <button (click)="envoyerTip()">Envoyer 💰</button>
+      <button class="close" (click)="closeTipPopup()">Annuler</button>
+    </div>
+
+    <p class="msg" *ngIf="tipMsg">{{ tipMsg }}</p>
+  </div>
 </div>

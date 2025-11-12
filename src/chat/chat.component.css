@@ -74,8 +74,32 @@
   word-wrap: break-word;
 }
 
-.chat-message strong {
+.chat-message:hover {
+  border-color: rgba(255,211,106,0.3);
+  background: rgba(255,255,255,0.07);
+}
+
+/* === Pseudo cliquable === */
+.pseudo {
   color: #ffd36a;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.pseudo:hover {
+  color: #fff5c2;
+  text-decoration: underline;
+}
+.pseudo.disabled {
+  color: #888;
+  cursor: default;
+  text-decoration: none;
+  pointer-events: none;
+}
+
+.contenu {
+  display: block;
+  margin-top: 3px;
+  line-height: 1.4;
 }
 
 /* === Zone de saisie === */
@@ -120,7 +144,7 @@
   box-shadow: 0 0 12px rgba(255,215,0,0.5);
 }
 
-/* === Message d’erreur ou d’avertissement === */
+/* === Message d’avertissement === */
 .chat-warning {
   background: rgba(255, 90, 90, 0.1);
   color: #ff9b9b;
@@ -132,11 +156,160 @@
   text-align: center;
 }
 
-/* Scrollbar dorée discrète */
+/* === Scrollbar dorée === */
 .chat-messages::-webkit-scrollbar {
   width: 6px;
 }
 .chat-messages::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #ffd36a, #a07c1a);
   border-radius: 4px;
+}
+
+/* === Bouton supprimer un message (admin) === */
+.delete-msg {
+  background: transparent;
+  border: none;
+  color: #ff7676;
+  font-size: 14px;
+  cursor: pointer;
+  margin-left: 8px;
+  transition: transform 0.15s ease, color 0.2s ease;
+}
+.delete-msg:hover {
+  color: #ff4d4d;
+  transform: scale(1.2);
+}
+
+/* === Bouton vider (admin) === */
+.clear-btn {
+  background: transparent;
+  border: none;
+  color: #ffd36a;
+  font-size: 14px;
+  padding: 10px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.clear-btn:hover {
+  color: #fff;
+}
+
+/* === Bouton du chat flottant === */
+.chat-toggle {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: linear-gradient(180deg, #ffd36a, #a07c1a);
+  border: 1px solid rgba(212,175,55,0.7);
+  border-radius: 50%;
+  width: 54px;
+  height: 54px;
+  font-size: 24px;
+  cursor: pointer;
+  color: #1a1200;
+  box-shadow: 0 0 20px rgba(255,215,0,0.4);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  z-index: 2600;
+}
+
+.chat-toggle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 30px rgba(255,215,0,0.6);
+}
+
+/* === Popup Tip === */
+.tip-popup {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2600;
+}
+
+.tip-box {
+  background: #0c1116;
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  border-radius: 12px;
+  padding: 20px;
+  color: #f1f5f9;
+  text-align: center;
+  width: 280px;
+  box-shadow: 0 0 20px rgba(255,215,0,0.3);
+  animation: tipFadeIn 0.25s ease-out;
+}
+
+@keyframes tipFadeIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.tip-box h4 {
+  margin-top: 0;
+  color: #ffd36a;
+}
+
+.tip-box p {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #e2e8f0;
+}
+
+.tip-box input {
+  width: 100%;
+  margin: 10px 0;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: #0b1216;
+  color: #fff;
+  text-align: center;
+}
+
+.tip-box .actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.tip-box button {
+  flex: 1;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.tip-box button:first-child {
+  background: linear-gradient(180deg, #ffd36a, #a07c1a);
+  color: #1a1200;
+}
+
+.tip-box button:first-child:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 12px rgba(255,215,0,0.5);
+}
+
+.tip-box button.close {
+  background: rgba(255,255,255,0.1);
+  color: #f1f5f9;
+}
+
+.tip-box .msg {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #a7f3d0;
+}
+
+/* === Améliorations diverses === */
+.chat-message strong {
+  font-weight: 600;
+}
+.contenu {
+  display: inline-block;
+  margin-top: 4px;
 }
