@@ -123,33 +123,37 @@
       </div>
     </div>
 
-    <!-- ====== Règles du jeu : Mines ====== -->
+    <!-- Règles -->
     <div class="panneau mt-12 regles-jeu">
       <h3 class="titre-regles">🎯 Règles du jeu — Mines</h3>
       <ul class="liste-regles">
         <li>La grille contient <strong>25 cases</strong>. Tu choisis le nombre de <strong>mines</strong> entre 1 et 24.</li>
-        <li>Plus il y a de mines, plus les <strong>multiplicateurs</strong> augmentent, mais le risque aussi.</li>
-        <li>Tu sélectionnes ta <strong>mise</strong>, puis tu cliques sur <strong>« Démarrer »</strong> pour lancer la partie.</li>
-        <li>À chaque clic sur une case non révélée :
-          <br>• Si tu trouves un 💎, ton <strong>multiplicateur actuel augmente</strong> et tu peux continuer.
-          <br>• Si tu tombes sur une 💣, tu <strong>perds toute ta mise</strong> et la partie se termine.
+        <li>Plus il y a de mines, plus les <strong>multiplicateurs</strong> augmentent.</li>
+        <li>Tu sélectionnes ta mise, puis tu cliques sur Démarrer.</li>
+        <li>À chaque clic :
+          <br>• 💎 = tu continues
+          <br>• 💣 = tu perds la mise
         </li>
-        <li>À tout moment après avoir trouvé au moins un 💎, tu peux cliquer sur <strong>« Encaisser »</strong> :
-          tu récupères <strong>mise × multiplicateur</strong> en <strong>crédits réels</strong>.</li>
-        <li>La partie se termine automatiquement si tu as découvert toutes les cases sûres (tous les diamants possibles).</li>
+        <li>Tu peux encaisser après avoir trouvé au moins 1 diamant.</li>
       </ul>
-
-      <div class="note-regle">
-        💡 Exemple : tu mises <strong>100 crédits</strong> avec <strong>3 mines</strong>.
-        Après quelques clics sécurisés, ton multiplicateur atteint <strong>×2.40</strong>.
-        Si tu encaisses à ce moment-là, tu remportes <strong>240 crédits</strong>.
-        Si tu cliques une fois de trop et touches une 💣, tu perds les 100 crédits misés.
-      </div>
     </div>
 
-    <!-- Historique -->
     <div class="panneau mt-12">
       <app-game-history-list [game]="'mines'" [limit]="5"></app-game-history-list>
+    </div>
+  </div>
+</div>
+
+<!-- ⚠ Popup sortie -->
+<div class="leave-popup" *ngIf="showLeavePopup">
+  <div class="leave-box">
+    <h3>Attention</h3>
+    <p>Votre mise risque d'être perdue.<br>
+      Voulez-vous vraiment quitter la partie ?</p>
+
+    <div class="actions">
+      <button class="btn-stay" (click)="cancelLeave()">Rester</button>
+      <button class="btn-leave" (click)="confirmLeave()">Quitter</button>
     </div>
   </div>
 </div>

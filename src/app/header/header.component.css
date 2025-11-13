@@ -345,4 +345,15 @@
   transform: scale(1.1);
 }
 
+/* visible uniquement sur desktop */
+.desktop-only {
+  display: none;
+}
+
+@media (min-width: 900px) { /* ajuste la largeur si tu veux */
+  .desktop-only {
+    display: block;
+  }
+}
+
 

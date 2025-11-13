@@ -8,7 +8,10 @@ import { FooterComponent } from './footer/footer.component';
 import { LoginComponent } from './login/login.component';
 import { BalanceHeaderComponent } from './header/balance-header.component'; // ✅
 
-import { AuthService } from './services/auth.service'; // ✅
+import { AuthService } from './services/auth.service';
+import { WalletService } from './services/wallet.service';
+
+import {ChatComponent} from '../chat/chat.component'; // ✅
 
 @Component({
   selector: 'app-root',
@@ -20,15 +23,27 @@ import { AuthService } from './services/auth.service'; // ✅
     HeaderComponent,
     FooterComponent,
     LoginComponent,
-    BalanceHeaderComponent, // ✅
+    BalanceHeaderComponent,
+    ChatComponent,
+    // ✅
   ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
+
 export class AppComponent {
   ui = inject(UiService);
   private router = inject(Router);
-  private auth = inject(AuthService); // ✅
+  private auth = inject(AuthService);
+  private wallet = inject(WalletService);// ✅
+
+  ngOnInit() {
+    // 🔥 Si déjà loggé au chargement, connecter SSE automatiquement
+    if (this.auth.isLoggedIn()) {
+      this.wallet.connectSse();
+      this.wallet.refreshBalance().subscribe();
+    }
+  }
 
   constructor() {
     // Ferme le drawer à chaque navigation (après login/register, etc.)

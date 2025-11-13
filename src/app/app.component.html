@@ -5,6 +5,7 @@
   <main class="app-main">
     <router-outlet></router-outlet>
   </main>
+  <app-chat></app-chat>
 
   <app-footer></app-footer>
 </div>
@@ -42,6 +43,8 @@
            routerLink="/home" (click)="ui.closeMenu()">Accueil</a>
         <a class="bouton" style="width:100%;text-align:center;"
            routerLink="/history" (click)="ui.closeMenu()">Historique</a>
+        <a class="bouton" style="width:100%;text-align:center;"
+           routerLink="/leaderboard" (click)="ui.closeMenu()">Leaderboard</a>
         <a class="bouton" style="width:100%;text-align:center;"
            routerLink="/about" (click)="ui.closeMenu()">À propos</a>
         <a class="bouton" style="width:100%;text-align:center;"
