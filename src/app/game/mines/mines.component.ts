@@ -9,7 +9,7 @@ import {
 } from '../../services/game/mines.service';
 import { WalletService } from '../../services/wallet.service';
 import { AuthService } from '../../services/auth.service';
-import { RouterLink } from '@angular/router';
+import {NavigationStart, Router, RouterLink} from '@angular/router';
 import { Subscription, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { GameHistoryListComponent } from '../../history/game-history-list.component';
@@ -55,6 +55,10 @@ export class MinesComponent implements OnInit, OnDestroy {
   overlayTitle: string | null = null;
   overlaySubtitle: string | null = null;
 
+  showLeavePopup = false;
+  private pendingNavigation: string | null = null;
+
+
   get currentMultiplier(): number {
     return this.table[this.safeCount] || 0;
   }
@@ -91,8 +95,26 @@ export class MinesComponent implements OnInit, OnDestroy {
     private api: MinesService,
     private wallet: WalletService,
     private auth: AuthService,
-    private history: HistoryService
-  ) {}
+    private history: HistoryService,
+    private router: Router
+  ) {
+    this.router.events.subscribe(event => {
+      if (event instanceof NavigationStart) {
+        if (this.shouldBlockLeave()) {
+
+          // On annule la navigation courante en ré-affichant l’URL actuelle
+          this.pendingNavigation = event.url;
+          this.showLeavePopup = true;
+
+          // Important : on force Angular à rester sur place
+          this.router.navigateByUrl(this.router.url);
+
+        }
+      }
+    });
+
+  }
+
 
 
   ngOnInit() {
@@ -144,6 +166,9 @@ export class MinesComponent implements OnInit, OnDestroy {
     this.rebuildLocalTable();
     this.clampInputs();
     this.overlayVisible = false;
+
+    window.addEventListener('beforeunload', this.beforeUnloadHandler);
+
   }
 
   // =========================
@@ -460,7 +485,8 @@ export class MinesComponent implements OnInit, OnDestroy {
 
     // --- MODE CONNECTÉ
     this.enCours = true;
-    this.api.cashout({ sessionId: this.sessionId })
+    if (!this.sessionId) return;
+    this.api.cashout({ sessionId: this.sessionId as string })
       .pipe(
         catchError(err => {
           this.error = err?.error?.error || 'Erreur cashout';
@@ -505,6 +531,100 @@ export class MinesComponent implements OnInit, OnDestroy {
       });
   }
 
+  beforeUnloadHandler = (e: any) => {
+    if (this.shouldBlockLeave()) {
+      e.preventDefault();
+      e.returnValue = "";
+      return "";
+    }
+    return;
+  };
+
+  cancelLeave() {
+    this.showLeavePopup = false;
+    this.pendingNavigation = null;
+  }
+
+  confirmLeave() {
+    this.showLeavePopup = false;
+
+    // On capture l'état au moment du quit
+    const hasSession = !!this.sessionId;
+    const hasRevealed = this.safeCount > 0;
+
+    // --- Cas 1 : au moins 1 diamant -> encaissement automatique ---
+    if (hasSession && hasRevealed) {
+
+      // invité
+      if (!this.isLoggedIn) {
+        const mult = this.table[this.safeCount] || 1;
+        const payout = Math.round(this.mise * mult);
+        this.guestBalance += payout;
+        this.currentBalance = this.guestBalance;
+      }
+
+      // connecté
+      if (this.isLoggedIn) {
+        if (!this.sessionId) return;
+
+        this.api.cashout({ sessionId: this.sessionId as string }).subscribe({
+          next: (res: any) => {
+            this.wallet.applyOptimisticDelta(res.payout);
+            this.wallet.refreshBalance().subscribe();
+          },
+          error: () => {}
+        });
+
+      }
+
+      // Fin UI
+      this.finished = true;
+      this.sessionId = null;
+      this.revealed.clear();
+      this.bombs.clear();
+      this.clearState();
+    }
+
+    // --- Cas 2 : aucun diamant -> perte automatique ---
+    if (hasSession && !hasRevealed) {
+
+      // Mode connecté : on notifie le backend pour clore proprement
+      if (this.isLoggedIn) {
+        this.api.reset().subscribe({
+          next: () => {},
+          error: () => {}
+        });
+      }
+
+      // Fin UI
+      this.finished = true;
+      this.sessionId = null;
+      this.revealed.clear();
+      this.bombs.clear();
+      this.clearState();
+    }
+
+    // --- navigation finale ---
+    if (this.pendingNavigation) {
+      const nav = this.pendingNavigation;
+      this.pendingNavigation = null;
+      this.router.navigateByUrl(nav);
+    }
+  }
+
+
+
+
+  private shouldBlockLeave(): boolean {
+    if (this.sessionId && !this.finished) {
+      return true;
+    }
+    return false;
+  }
+
+
+
+
   // =========================
   //         Helpers UI
   // =========================
@@ -528,6 +648,8 @@ export class MinesComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.walletSub?.unsubscribe();
+    window.removeEventListener('beforeunload', this.beforeUnloadHandler);
+
   }
 
   protected readonly Math = Math;
