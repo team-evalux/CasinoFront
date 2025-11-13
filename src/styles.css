@@ -334,51 +334,42 @@ body.fond-casino{
   height: 110px;
 }
 
-
-/* === Bouton flottant du chat global === */
-.chat-toggle {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: #ffd700;
-  border: none;
-  border-radius: 50%;
-  width: 60px;
-  height: 60px;
-  font-size: 28px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
-  cursor: pointer;
-  transition: transform 0.25s ease, right 0.45s ease;
-  z-index: 3000; /* Toujours au-dessus de tout */
+/* === Contraste lisible sur fond blanc pour l'historique === */
+.hist-card, .hist-page{
+  background:#fff;
+  color:#0b0f10;                  /* texte par défaut : noir */
 }
 
-.chat-toggle:hover {
-  transform: scale(1.1);
+/* Titres dans ces cartes/pages */
+.hist-card h3, .hist-card h4,
+.hist-page h2{
+  color:#0b0f10;
 }
 
-/* Quand le chat est ouvert, on décale le bouton à gauche */
-body.chat-ouvert .chat-toggle {
-  right: 380px; /* correspond à la largeur du panneau + marge */
+/* Sous-textes/dates plus sombres (au lieu de #666) */
+.hist-date,
+.hist-muted,
+.hist-mult {
+  color:#111827;                  /* gris très foncé */
+  opacity:.95;
 }
 
-/* --- Panneau du chat (pour contexte) --- */
-.chat-panel {
-  position: fixed;
-  top: 0;
-  right: -360px;
-  width: 360px;
-  height: 100vh;
-  background: #0b1015;
-  color: #f1f5f9;
-  display: flex;
-  flex-direction: column;
-  border-left: 2px solid #ffd700;
-  box-shadow: -6px 0 20px rgba(0, 0, 0, 0.6);
-  transition: right 0.45s ease;
-  z-index: 2500;
+/* Zone de droite (montants) */
+.hist-right{ text-align:right; min-width:120px; }
+
+/* CTA "Voir tout" sur fond blanc */
+.hist-see-all{
+  padding:6px 10px; border-radius:6px; border:1px solid #ddd;
+  background:#fff; color:#0b0f10; cursor:pointer;
 }
 
-.chat-panel.ouvert {
-  right: 0;
-}
+/* ✅ Fallback anti-#666 en inline style (sans toucher aux gains/pertes colorés) */
+.hist-card [style*="color:#666"],
+.hist-page [style*="color:#666"]{ color:#0b0f10 !important; }
 
+/* Badge coinflip (évite le débordement et reste lisible) */
+.pill-coin{
+  width:auto; min-width:34px; height:26px;
+  padding:0 8px; border-radius:999px;
+  font-size:.64rem; font-weight:800; line-height:1; color:#fff;
+}

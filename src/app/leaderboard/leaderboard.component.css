@@ -1,0 +1,170 @@
+.lb-wrap{
+  max-width: 1000px;
+  margin: 0 auto 28px;
+  padding: 0 14px;
+}
+
+/* Hero */
+.lb-hero{
+  margin: 16px 0 10px;
+  background: radial-gradient(1200px 400px at 30% -20%, rgba(255, 215, 0, .10), rgba(0,0,0,0)),
+  linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 14px;
+}
+
+.lb-hero__content{
+  padding: 16px;
+}
+
+.lb-hero h1{
+  margin: 0 0 6px;
+  font-size: 24px;
+}
+
+.lb-hero p{
+  margin: 0 0 10px;
+  color: #aeb9c8;
+  font-size: 13px;
+}
+
+.lb-hero__controls{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.inline{
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+  color: #dbe5f2;
+}
+
+.inline select{
+  background: #0a0f14;
+  color: #eaf1ff;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+
+.btn{
+  border: none;
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-weight: 600;
+  background: linear-gradient(90deg, #1f8cff, #45e0ff);
+  color: #051018;
+  cursor: pointer;
+}
+
+.btn.ghost{
+  background: transparent;
+  color: #e5eefb;
+  border: 1px solid rgba(255,255,255,.14);
+}
+
+.toggle{
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+  color: #e5eefb;
+}
+.toggle input{ transform: translateY(1px); }
+
+/* Carte tableau */
+.lb-card{
+  margin-top: 12px;
+  background: #0b1015;
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.table-wrap{
+  overflow: auto;
+}
+
+.lb-table{
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.lb-table th,
+.lb-table td{
+  padding: 10px 8px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+
+.lb-table th{
+  text-align: left;
+  font-weight: 700;
+  color: #aeb9c8;
+}
+
+.lb-table .right{ text-align: right; }
+
+.pseudo .pill{
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+}
+
+/* Médailles */
+.rang .medal {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  background: #121821;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  font-weight: 800;
+  color: #fff; /* chiffres blancs */
+  text-shadow: 0 0 4px rgba(255,255,255,0.8);
+}
+
+/* Médailles top 3 */
+.medal.gold {
+  background: radial-gradient(circle at 30% 30%, #fff7b0, #f5c400);
+  box-shadow: 0 0 25px rgba(255, 235, 120, 0.95),
+  0 0 40px rgba(255, 210, 50, 0.1);
+  border-color: rgba(255, 245, 180, 0.9);
+}
+
+.medal.silver {
+  background: radial-gradient(circle at 30% 30%, #f0f4ff, #aeb9d1);
+  box-shadow: 0 0 25px rgba(210, 220, 240, 0.9),
+  0 0 40px rgba(160, 180, 200, 0.1);
+  border-color: rgba(220, 230, 250, 0.9);
+}
+
+.medal.bronze {
+  background: radial-gradient(circle at 30% 30%, #ffd3a0, #c57a30);
+  box-shadow: 0 0 25px rgba(250, 180, 90, 0.9),
+  0 0 40px rgba(230, 140, 40, 0.1);
+  border-color: rgba(250, 200, 140, 0.9);
+}
+
+
+/* Messages */
+.msg{
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.12);
+  color: #eaf1ff;
+}
+
+.msg.error{
+  border-color: rgba(255, 90, 90, .5);
+  color: #ffb7b7;
+}
