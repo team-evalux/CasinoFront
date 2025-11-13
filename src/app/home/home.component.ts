@@ -46,6 +46,11 @@ export class HomeComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.mettreAJourProgressionHoraire();
     this.tickId = setInterval(() => this.mettreAJourProgressionHoraire(), 1000);
+
+    this.router.events.subscribe(() => {
+      window.scrollTo(0, 0);
+
+    });
   }
 
   ngOnDestroy(): void {

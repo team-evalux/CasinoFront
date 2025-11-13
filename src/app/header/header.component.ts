@@ -70,9 +70,13 @@ export class HeaderComponent implements OnInit, OnDestroy {
     // ✅ réagit aux changements d’auth (login/logout)
     this.authSub = this.authService.loggedIn$.subscribe(isIn => {
       if (isIn) {
+        this.wallet.connectSse();            // 🔥 AJOUTER
+        this.wallet.refreshBalance().subscribe();
+
         this.loadUser();
         this.fetchBonusStatus(); // 👉 déclenché immédiatement après login
       } else {
+        this.wallet.disconnectSse();
         this.bonusStatus = null;
         this.statusFetchedAt = 0;
       }
@@ -107,12 +111,16 @@ export class HeaderComponent implements OnInit, OnDestroy {
       }),
       finalize(() => { this.loading = false; }),
     ).subscribe({
-      next: (res) => {
-        this.bonusStatus = res;
-        this.statusFetchedAt = Date.now();
-        this.error = null;
-        this.ui.closeMenu();
-      },
+        next: (res) => {
+          this.bonusStatus = res;
+          this.statusFetchedAt = Date.now();
+
+          // ➤ PATCH : connexion SSE ici aussi
+          this.wallet.connectSse();
+          this.wallet.refreshBalance().subscribe();
+
+          this.ui.closeMenu();
+        },
       error: (err) => {
         this.error = err?.error || 'Identifiants invalides';
       },

@@ -127,19 +127,24 @@ export class WalletService {
         try {
           const data = JSON.parse(ev.data);
           if (data && typeof data.solde === 'number') {
-            // SSE authoritative -> on replace et on annule deltas optimistes
+
+            // ➤ PATCH : pour être sûr d’être 100% synchro avec le backend
             this.balanceSubject.next(data.solde);
+
+            // ➤ PATCH critique : on annule les deltas optimistes + on sécurise
             this.pendingDeltas.length = 0;
             if (this.reconcileTimer) {
               clearTimeout(this.reconcileTimer);
               this.reconcileTimer = undefined;
             }
+
+            // ➤ NOUVEAU : déclenche un refresh pour solidifier l’état
+            this.refreshBalance().subscribe();
           }
-        } catch (e) {
-          // ignore parse erreurs
-        }
+        } catch {}
       });
     });
+
 
     this.eventSource.onopen = () => {
       this.reconnectTimeout = 1000;
