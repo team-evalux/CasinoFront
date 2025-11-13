@@ -1,3 +1,5 @@
+/* src/chat/chat.component.css */
+
 /* === Panneau principal du chat === */
 .chat-panel {
   position: fixed;
@@ -81,7 +83,7 @@
 
 /* === Pseudo cliquable === */
 .pseudo {
-  color: #ffd36a;
+  color: #7dff6e;
   cursor: pointer;
   transition: color 0.2s ease;
 }
@@ -89,12 +91,15 @@
   color: #fff5c2;
   text-decoration: underline;
 }
+
 .pseudo.disabled {
-  color: #888;
   cursor: default;
-  text-decoration: none;
   pointer-events: none;
+  color: #ffd36a !important;  /* couleur premium */
+  font-weight: 700;
+  opacity: 1; /* pas de gris ! */
 }
+
 
 .contenu {
   display: block;
@@ -312,4 +317,44 @@
 .contenu {
   display: inline-block;
   margin-top: 4px;
+}
+
+
+.tip-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-max {
+  padding: 6px 10px;
+  background: #ffcc33;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #222;
+  transition: 0.2s;
+}
+
+.btn-max:hover {
+  background: #ffd966;
+}
+
+
+.close-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(212,175,55,0.7);
+  background: linear-gradient(180deg, #ffd36a, #a07c1a);
+  color: #1a1200;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.close-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 14px rgba(255,215,0,0.45);
 }
