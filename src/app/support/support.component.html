@@ -3,14 +3,12 @@
   <p>Signalez un problème, un bug ou une suggestion :</p>
 
   <form (ngSubmit)="envoyer()" #form="ngForm">
-    <label>Nom</label>
-    <input class="champ" maxlength="50" [(ngModel)]="nom" name="nom" required>
 
     <label>Email</label>
     <input class="champ" type="email" maxlength="100" [(ngModel)]="email" name="email" required>
 
     <label>Sujet</label>
-    <input class="champ" maxlength="100"[(ngModel)]="sujet" name="sujet">
+    <input class="champ" maxlength="100" [(ngModel)]="sujet" name="sujet">
 
     <label>Message</label>
     <textarea class="champ" maxlength="1000" [(ngModel)]="message" name="message" rows="5" required></textarea>
