@@ -86,4 +86,18 @@ export class AuthService {
   isLoggedIn(): boolean {
     return this.getToken() != null;
   }
+  getCurrentUser(): AuthResponse | null {
+    const raw = localStorage.getItem('user');
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as AuthResponse;
+    } catch {
+      return null;
+    }
+  }
+  hasRole(role: string): boolean {
+    const user = this.getCurrentUser();
+    if (!user || !user.role) return false;
+    return user.role.toUpperCase() === role.toUpperCase();
+  }
 }

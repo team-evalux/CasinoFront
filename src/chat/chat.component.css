@@ -1,0 +1,471 @@
+/* src/chat/chat.component.css */
+
+/* === Panneau principal du chat === */
+.chat-panel {
+  position: fixed;
+  top: 0;
+  right: -360px;
+  width: 360px;
+  height: 100vh;
+  background: linear-gradient(180deg, #0c1116, #0a0e12);
+  color: #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  border-left: 2px solid rgba(212,175,55,0.4);
+  box-shadow: -6px 0 20px rgba(0,0,0,0.6);
+  transition: right 0.45s ease;
+  z-index: 2500;
+}
+
+.chat-panel.ouvert {
+  right: 0;
+}
+
+/* === En-tête du chat === */
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(90deg, rgba(255,215,0,0.12), rgba(255,215,0,0.04));
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding: 10px 14px;
+}
+
+.chat-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffe37a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-header button {
+  background: transparent;
+  border: none;
+  color: #ffe37a;
+  font-size: 18px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.chat-header button:hover {
+  transform: scale(1.2);
+}
+
+/* === Zone des messages === */
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scroll-behavior: smooth;
+}
+
+.chat-message {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 8px 10px;
+  line-height: 1.3;
+  color: #e2e8f0;
+  font-size: 14px;
+  word-wrap: break-word;
+}
+
+.chat-message:hover {
+  border-color: rgba(255,211,106,0.3);
+  background: rgba(255,255,255,0.07);
+}
+
+/* === Pseudo cliquable === */
+.pseudo {
+  color: #7dff6e;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.pseudo:hover {
+  color: #fff5c2;
+  text-decoration: underline;
+}
+
+.pseudo.disabled {
+  cursor: default;
+  pointer-events: none;
+  color: #ffd36a !important;  /* couleur premium */
+  font-weight: 700;
+  opacity: 1; /* pas de gris ! */
+}
+
+
+.contenu {
+  display: block;
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+/* === Zone de saisie === */
+.chat-input {
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding: 10px;
+  display: flex;
+  gap: 8px;
+  background: rgba(12,16,20,0.9);
+}
+
+.chat-input input {
+  flex: 1;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: #0b1216;
+  color: #f1f5f9;
+  padding: 8px 10px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.chat-input input:focus {
+  border-color: #ffd36a;
+  box-shadow: 0 0 4px rgba(255,211,106,0.3);
+}
+
+.chat-input button {
+  background: linear-gradient(180deg, #ffd36a, #a07c1a);
+  border: 1px solid rgba(212,175,55,0.6);
+  border-radius: 8px;
+  color: #1a1200;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 8px 12px;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.chat-input button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 12px rgba(255,215,0,0.5);
+}
+
+/* === Message d’avertissement === */
+.chat-warning {
+  background: rgba(255, 90, 90, 0.1);
+  color: #ff9b9b;
+  border: 1px solid rgba(255, 90, 90, 0.4);
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin: 8px 10px;
+  font-size: 13px;
+  text-align: center;
+}
+
+/* === Scrollbar dorée === */
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+.chat-messages::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #ffd36a, #a07c1a);
+  border-radius: 4px;
+}
+
+/* === Bouton supprimer un message (admin) === */
+.delete-msg {
+  background: transparent;
+  border: none;
+  color: #ff7676;
+  font-size: 14px;
+  cursor: pointer;
+  margin-left: 8px;
+  transition: transform 0.15s ease, color 0.2s ease;
+}
+.delete-msg:hover {
+  color: #ff4d4d;
+  transform: scale(1.2);
+}
+
+/* === Bouton vider (admin) === */
+.clear-btn {
+  background: transparent;
+  border: none;
+  color: #ffd36a;
+  font-size: 14px;
+  padding: 10px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.clear-btn:hover {
+  color: #fff;
+}
+
+/* === Bouton du chat flottant === */
+.chat-toggle {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: linear-gradient(180deg, #ffd36a, #a07c1a);
+  border: 1px solid rgba(212,175,55,0.7);
+  border-radius: 50%;
+  width: 54px;
+  height: 54px;
+  font-size: 24px;
+  cursor: pointer;
+  color: #1a1200;
+  box-shadow: 0 0 20px rgba(255,215,0,0.4);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  z-index: 2600;
+}
+
+.chat-toggle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 30px rgba(255,215,0,0.6);
+}
+
+/* === Popup Tip === */
+.tip-popup {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2600;
+}
+
+.tip-box {
+  background: #0c1116;
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  border-radius: 12px;
+  padding: 20px;
+  color: #f1f5f9;
+  text-align: center;
+  width: 280px;
+  box-shadow: 0 0 20px rgba(255,215,0,0.3);
+  animation: tipFadeIn 0.25s ease-out;
+}
+
+@keyframes tipFadeIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.tip-box h4 {
+  margin-top: 0;
+  color: #ffd36a;
+}
+
+.tip-box p {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #e2e8f0;
+}
+
+.tip-box input {
+  width: 100%;
+  margin: 10px 0;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: #0b1216;
+  color: #fff;
+  text-align: center;
+}
+
+.tip-box .actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.tip-box button {
+  flex: 1;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.tip-box button:first-child {
+  background: linear-gradient(180deg, #ffd36a, #a07c1a);
+  color: #1a1200;
+}
+
+.tip-box button:first-child:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 12px rgba(255,215,0,0.5);
+}
+
+.tip-box button.close {
+  background: rgba(255,255,255,0.1);
+  color: #f1f5f9;
+}
+
+.tip-box .msg {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #a7f3d0;
+}
+
+/* === Améliorations diverses === */
+.chat-message strong {
+  font-weight: 600;
+}
+.contenu {
+  display: inline-block;
+  margin-top: 4px;
+}
+
+
+.tip-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-max {
+  padding: 6px 10px;
+  background: #ffcc33;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #222;
+  transition: 0.2s;
+}
+
+.btn-max:hover {
+  background: #ffd966;
+}
+
+
+.close-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(212,175,55,0.7);
+  background: linear-gradient(180deg, #ffd36a, #a07c1a);
+  color: #1a1200;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.close-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 14px rgba(255,215,0,0.45);
+}
+
+
+/* ======================================================================= */
+/*  VERSION MOBILE — <= 480px                                              */
+/* ======================================================================= */
+@media (max-width: 480px) {
+
+  /* === Le chat devient un panneau mobile en bas === */
+  .chat-panel {
+    right: 0 !important;
+    left: 0;
+    width: 100%;
+    height: 40vh;
+    bottom: -85vh;
+    top: auto;
+    border-left: none;
+    border-right: none;
+    border-top: 2px solid rgba(212,175,55,0.4);
+    border-radius: 14px 14px 0 0;
+    transition: bottom 0.35s ease;
+  }
+
+  .chat-panel.ouvert {
+    bottom: 0;
+  }
+
+  /* === Barre supérieure façon application mobile === */
+  .chat-header {
+    padding: 14px;
+    background: linear-gradient(180deg, rgba(255,215,0,0.18), rgba(255,215,0,0.05));
+    border-radius: 14px 14px 0 0;
+  }
+
+  .chat-header h3 {
+    font-size: 18px;
+  }
+
+  .close-btn {
+    font-size: 14px;
+    padding: 8px 16px;
+    border-radius: 10px;
+  }
+
+  /* === Messages optimisés mobile === */
+  .chat-messages {
+    padding: 10px;
+    gap: 12px;
+  }
+
+  .chat-message {
+    font-size: 15px;
+    padding: 10px 12px;
+    border-radius: 12px;
+  }
+
+  .pseudo {
+    font-size: 15px;
+  }
+
+  /* === Zone de saisie mobile === */
+  .chat-input {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .chat-input input {
+    padding: 12px;
+    font-size: 15px;
+  }
+
+  .chat-input button {
+    font-size: 15px;
+    padding: 12px 18px;
+  }
+
+  /* === Bouton flottant plus visible === */
+  .chat-toggle {
+    width: 60px;
+    height: 60px;
+    font-size: 28px;
+    bottom: 20px;
+    right: 20px;
+  }
+
+  /* === Popup Tip en version mobile === */
+  .tip-box {
+    width: 90%;
+    padding: 18px;
+  }
+
+  .tip-row {
+    flex-direction: row;
+  }
+
+  .tip-box input {
+    padding: 12px;
+    font-size: 16px;
+  }
+
+  .btn-max {
+    padding: 10px 14px;
+    font-size: 15px;
+  }
+
+  .actions button {
+    padding: 12px;
+    font-size: 15px;
+  }
+}
+
+

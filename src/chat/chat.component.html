@@ -1,0 +1,77 @@
+<button class="chat-toggle" *ngIf="isLogged && !ouvert"
+  (click)="toggle()">
+  💬
+</button>
+
+<div class="chat-panel" [class.ouvert]="ouvert">
+  <div class="chat-header">
+    <h3>Chat général</h3>
+    <button class="close-btn" (click)="toggle()">Fermer le chat</button>
+  </div>
+
+  <div class="chat-messages" #scrollZone>
+    <div *ngFor="let m of messages" class="chat-message">
+      <strong
+        class="pseudo"
+        (click)="m.pseudo !== currentPseudo && openTipPopup(m.pseudo)"
+        [class.disabled]="m.pseudo === currentPseudo"
+      >
+
+      {{ m.pseudo }}
+      </strong>
+      <span class="contenu">{{ m.contenu }}</span>
+
+      <button *ngIf="isAdmin" class="delete-msg" (click)="supprimerMessage(m.id)">✖</button>
+    </div>
+  </div>
+
+  <div *ngIf="!isLogged" class="chat-warning">
+    🔒 Connecte-toi pour participer au chat !
+  </div>
+
+  <div class="chat-input" *ngIf="isLogged">
+    <input
+      type="text"
+      [(ngModel)]="nouveauMessage"
+      maxlength="150"
+      placeholder="Écris ton message..."
+      (keyup.enter)="envoyer()"
+    />
+    <button (click)="envoyer()" [disabled]="chargement">Envoyer</button>
+  </div>
+
+  <button *ngIf="isAdmin" class="clear-btn" (click)="viderChat()">🧹 Vider</button>
+</div>
+
+<!-- Popup Tip -->
+<div class="tip-popup" *ngIf="popupVisible">
+  <div class="tip-box">
+    <h4>Tipper {{ targetPseudo }}</h4>
+
+    <p>Ton solde : <strong>{{ currentSolde }}</strong> crédits</p>
+    <p>Il peut recevoir : <strong>{{ maxReceivable }}</strong> crédits max</p>
+
+    <div class="tip-row">
+      <input
+        type="text"
+        [value]="tipMontant"
+        placeholder="Montant en crédits"
+        (input)="onTipInput($event)"
+      />
+
+
+
+      <button class="btn-max" (click)="tipMontant = maxReceivable">
+        MAX
+      </button>
+    </div>
+
+    <div class="actions">
+      <button (click)="envoyerTip()">Envoyer 💰</button>
+      <button class="close" (click)="closeTipPopup()">Annuler</button>
+    </div>
+
+    <p class="msg" *ngIf="tipMsg">{{ tipMsg }}</p>
+  </div>
+</div>
+
