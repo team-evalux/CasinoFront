@@ -84,7 +84,11 @@ export class ChatComponent implements OnInit, OnDestroy {
     });
 
     this.refresh();
-    this.pollSub = interval(5000).subscribe(() => this.refresh());
+    this.pollSub = interval(5000).subscribe(() => {
+      if (this.isLogged) {
+        this.refresh();
+      }
+    });
   }
 
   ngOnDestroy() {
@@ -129,6 +133,11 @@ export class ChatComponent implements OnInit, OnDestroy {
   }
 
   refresh() {
+    if (!this.isLogged) {
+      this.messages = []; // optionnel : vider l'affichage
+      return;
+    }
+
     this.http.get<ChatMessage[]>(this.base).subscribe(r => {
       this.messages = r;
       this.scrollBas();

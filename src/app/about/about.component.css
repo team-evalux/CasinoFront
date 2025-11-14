@@ -1,4 +1,4 @@
-/* src/app/about/about.component.css */
+/* Conteneur principal */
 .conteneur {
   max-width: 900px;
   margin: 40px auto;
@@ -10,8 +10,87 @@
 }
 a {
   color: #60a5fa;
-  text-decoration: none;
 }
 a:hover {
   text-decoration: underline;
 }
+
+/* --- TIMELINE --- */
+.timeline-horizontal {
+  margin-top: 30px;
+  width: 100%;
+}
+
+/* Ligne contenant les dots */
+.dots {
+  position: relative;
+  width: 100%;
+  height: 60px; /* augmente la hauteur pour éviter le débordement */
+  margin-top: 20px;
+  padding: 0 10px;
+}
+
+/* Dot aligné sur la barre */
+.dot {
+  width: 18px;
+  height: 18px;
+  background: #666;
+  border-radius: 50%;
+  cursor: pointer;
+  position: absolute;
+  bottom: 10px; /* remonte le dot au lieu de le coller au bord */
+  transform: translateX(-50%);
+  transition: 0.2s;
+  z-index: 3; /* devant la barre */
+}
+
+.dot.active {
+  background: #22c55e;
+  box-shadow: 0 0 12px #22c55e;
+}
+
+/* Label au-dessus */
+.dot-label {
+  position: absolute;
+  bottom: 32px; /* plus haut pour être dans la div */
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  color: #ddd;
+  font-size: 13px;
+  z-index: 4; /* devant tout */
+}
+
+/* Barre horizontale derrière les dots */
+.progress-line {
+  height: 4px;
+  width: 100%;
+  background: #333;
+  border-radius: 6px;
+  position: relative;
+  top: -21px; /* légère remontée */
+  z-index: 1; /* derrière les dots */
+}
+
+/* Barre verte */
+.progress-fill {
+  height: 4px;
+  background: #22c55e;
+  border-radius: 6px;
+}
+
+/* Box texte */
+.event-content-box {
+  margin-top: 30px;
+  background: #111;
+  padding: 25px;
+  border-radius: 10px;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+  .timeline-horizontal-wrapper {
+    padding: 0 20px;  /* espace intérieur propre */
+    position: relative;
+  }
+

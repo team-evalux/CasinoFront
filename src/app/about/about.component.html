@@ -1,6 +1,7 @@
 <!-- src/app/about/about.component.html -->
 <div class="conteneur">
   <h2>À propos d’Evalux Casino</h2>
+
   <p>
     Evalux Casino est un projet personnel développé par deux jeunes développeurs juniors passionnés.
     Ce site a été conçu comme un <strong>casino gratuit</strong> à but éducatif,
@@ -13,14 +14,58 @@
 
   <h3>Nos profils</h3>
   <ul>
-    <li><a href="https://www.linkedin.com/in/evan-durand/" target="_blank">LinkedIn - Dev 1</a></li>
-    <li><a href="https://www.linkedin.com/in/luxman-mahesan/" target="_blank">LinkedIn - Dev 2</a></li>
+    <li>
+      <a href="https://www.linkedin.com/in/evan-durand/" target="_blank">LinkedIn - Dev 1</a>
+    </li>
+    <li>
+      <a href="https://www.linkedin.com/in/luxman-mahesan/" target="_blank">LinkedIn - Dev 2</a>
+    </li>
   </ul>
 
   <h3>Contribuer</h3>
   <p>
     Si vous trouvez une faille, un bug ou un comportement étrange,
-    <strong>n’hésitez pas à nous le signaler</strong> depuis la page <a routerLink="/support">Support</a>.
-    Cela nous aide énormément à progresser.
+    <strong>n’hésitez pas à nous le signaler</strong> depuis la page
+    <a routerLink="/support">Support</a>.
   </p>
+
+  <hr />
+
+  <h2>📅 Roadmap du projet</h2>
+
+  <!-- TIMELINE HORIZONTALE -->
+  <div class="timeline-horizontal-wrapper">
+
+  <div class="timeline-horizontal">
+
+    <!-- Labels + Dots -->
+    <div class="dots">
+      <div *ngFor="let ev of events; let i = index"
+           class="dot"
+           [class.active]="ev.id === selectedId"
+           [style.left.%]="getDotPosition(i)"
+           (click)="selectDot(ev.id)">
+
+        <span class="dot-label">{{ ev.date }}</span>
+
+      </div>
+    </div>
+
+    <!-- Barre de progression -->
+    <div class="progress-line">
+      <div class="progress-fill" [style.width.%]="progressionPercent"></div>
+    </div>
+  </div>
+  </div>
+
+
+  <!-- CONTENU -->
+  <div class="event-content-box">
+    <h3>{{ selectedEvent.date }} — {{ selectedEvent.label }}</h3>
+
+    <ul>
+      <li *ngFor="let d of selectedEvent.details">{{ d }}</li>
+    </ul>
+  </div>
+
 </div>
