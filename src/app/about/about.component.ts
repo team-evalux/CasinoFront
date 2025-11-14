@@ -18,10 +18,13 @@ interface RoadmapEvent {
 })
 export class AboutComponent {
 
-  events: RoadmapEvent[] = [
+  events: ({
+    details: string[];
+    id: number;
+    label: string
+  })[] = [
     {
       id: 1,
-      date: "15/08/2025",
       label: "Début du projet",
       details: [
         "Création de la structure du projet",
@@ -32,7 +35,6 @@ export class AboutComponent {
     },
     {
       id: 2,
-      date: "18/11/2025",
       label: "Sortie de la V1",
       details: [
         "Jeux Pile ou Face, Machines à Sous, Mines,BlackJack multijoueur",
@@ -45,10 +47,9 @@ export class AboutComponent {
     },
     {
       id: 3,
-      date: "Fin 2025",
       label: "V2 + application mobile",
       details: [
-        "Sortie de l'application mobile",
+        "Sortie de l'application  mobile",
         "Boutique d'avatar",
         "Nouveau jeu"
       ]

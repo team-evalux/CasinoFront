@@ -46,7 +46,7 @@
            [style.left.%]="getDotPosition(i)"
            (click)="selectDot(ev.id)">
 
-        <span class="dot-label">{{ ev.date }}</span>
+        <span class="dot-label">{{ ev.label }}</span>
 
       </div>
     </div>
@@ -61,7 +61,7 @@
 
   <!-- CONTENU -->
   <div class="event-content-box">
-    <h3>{{ selectedEvent.date }} — {{ selectedEvent.label }}</h3>
+    <h3>{{ selectedEvent.label }}</h3>
 
     <ul>
       <li *ngFor="let d of selectedEvent.details">{{ d }}</li>
