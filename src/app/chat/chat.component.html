@@ -13,12 +13,12 @@
     <div *ngFor="let m of messages" class="chat-message">
       <strong
         class="pseudo"
-        (click)="m.pseudo !== currentPseudo && openTipPopup(m.pseudo)"
-        [class.disabled]="m.pseudo === currentPseudo"
+        (click)="!isSelf(m.pseudo) && openTipPopup(m.pseudo)"
+        [class.disabled]="isSelf(m.pseudo)"
       >
-
-      {{ m.pseudo }}
+        {{ m.pseudo }}
       </strong>
+
       <span class="contenu">{{ m.contenu }}</span>
 
       <button *ngIf="isAdmin" class="delete-msg" (click)="supprimerMessage(m.id)">✖</button>
