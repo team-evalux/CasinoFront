@@ -4,9 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Subscription, interval } from 'rxjs';
 
-import { AuthService } from '../app/services/auth.service';
-import { WalletService } from '../app/services/wallet.service';
-import { environment } from '../environments/environment';
+import { AuthService } from '../services/auth.service';
+import { WalletService } from '../services/wallet.service';
+import { environment } from '../../environments/environment';
+import { Client, StompSubscription } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
 
 interface ChatMessage {
   id: number;
@@ -14,6 +16,15 @@ interface ChatMessage {
   contenu: string;
   date: string;
 }
+
+type ChatEventType = 'MESSAGE' | 'DELETE' | 'CLEAR';
+
+interface ChatEvent {
+  type: ChatEventType;
+  message?: ChatMessage;
+  id?: number;
+}
+
 
 @Component({
   selector: 'app-chat',
@@ -47,26 +58,20 @@ export class ChatComponent implements OnInit, OnDestroy {
   popupVisible = false;
   targetPseudo = '';
 
-  private pollSub?: Subscription;
   private loginSub?: Subscription;
   private soldeSub?: Subscription;
+  private stompClient?: Client;
+  private chatSub?: StompSubscription;
+
 
   @ViewChild('scrollZone') scrollZone!: ElementRef<HTMLDivElement>;
 
   constructor() {
-
-    // ⭐ Récupération du pseudo identique à HomeComponent
-    const stored = localStorage.getItem('user');
-    if (stored) {
-      try {
-        const obj = JSON.parse(stored);
-        this.currentPseudo = obj?.pseudo?.trim() ?? '';
-      } catch {}
-    }
+    this.syncCurrentPseudoFromAuth();
   }
 
-  ngOnInit() {
 
+  ngOnInit() {
     this.soldeSub = this.wallet.balance$.subscribe(solde => {
       if (solde !== null) this.currentSolde = solde;
     });
@@ -75,26 +80,94 @@ export class ChatComponent implements OnInit, OnDestroy {
       this.isLogged = isLogged;
 
       if (isLogged) {
+        // 🔥 on resynchronise le pseudo dès qu’on est loggé
+        this.syncCurrentPseudoFromAuth();
+
         this.isAdmin = this.auth.hasRole('ADMIN');
         this.wallet.refreshBalance().subscribe();
+
+        // 🔥 connexion WS + historique une seule fois
+        this.connectWs();
+        this.refresh();
       } else {
         this.isAdmin = false;
         this.currentSolde = null;
-      }
-    });
-
-    this.refresh();
-    this.pollSub = interval(5000).subscribe(() => {
-      if (this.isLogged) {
-        this.refresh();
+        this.currentPseudo = '';      // reset propre
+        this.disconnectWs();
+        this.messages = [];
       }
     });
   }
 
   ngOnDestroy() {
-    this.pollSub?.unsubscribe();
     this.loginSub?.unsubscribe();
     this.soldeSub?.unsubscribe();
+    this.disconnectWs();
+  }
+
+
+  private buildWsUrl(token: string): string {
+    // apiBaseUrl = ex: "http://localhost:8080/api"
+    const apiBase = environment.apiBaseUrl;
+    const httpBase = apiBase.replace(/\/api\/?$/, '');
+    return `${httpBase}/ws?token=${encodeURIComponent(token)}`;
+  }
+
+  private connectWs() {
+    const token = this.auth.getToken();
+    if (!token) return;
+
+    // Si déjà connecté, on ne refait rien
+    if (this.stompClient?.active) return;
+
+    const wsUrl = this.buildWsUrl(token);
+
+    const client = new Client({
+      webSocketFactory: () => new SockJS(wsUrl),
+      reconnectDelay: 5000,
+      connectHeaders: {
+        Authorization: `Bearer ${token}`
+      },
+      debug: () => {} // ou console.log si tu veux voir les logs STOMP
+    });
+
+    client.onConnect = () => {
+      this.chatSub = client.subscribe('/topic/chat', msg => {
+        const event = JSON.parse(msg.body) as ChatEvent;
+        this.handleChatEvent(event);
+      });
+    };
+
+    client.onStompError = frame => {
+      console.error('STOMP error', frame.headers['message'], frame.body);
+    };
+
+    client.activate();
+    this.stompClient = client;
+  }
+
+  private disconnectWs() {
+    if (this.chatSub) {
+      this.chatSub.unsubscribe();
+      this.chatSub = undefined;
+    }
+    if (this.stompClient) {
+      this.stompClient.deactivate();
+      this.stompClient = undefined;
+    }
+  }
+
+  private handleChatEvent(ev: ChatEvent) {
+    if (ev.type === 'MESSAGE' && ev.message) {
+      // Ton GET renvoie du plus ancien au plus récent,
+      // donc on ajoute le nouveau à la fin.
+      this.messages = [...this.messages, ev.message];
+      this.scrollBas();
+    } else if (ev.type === 'DELETE' && ev.id != null) {
+      this.messages = this.messages.filter(m => m.id !== ev.id);
+    } else if (ev.type === 'CLEAR') {
+      this.messages = [];
+    }
   }
 
 
@@ -154,23 +227,39 @@ export class ChatComponent implements OnInit, OnDestroy {
       next: () => {
         this.nouveauMessage = '';
         this.chargement = false;
-        this.refresh();
       }
     });
   }
+
+  private syncCurrentPseudoFromAuth() {
+    const user = this.auth.getCurrentUser();
+    this.currentPseudo = user?.pseudo?.trim() ?? '';
+  }
+
+  isSelf(pseudo: string | null | undefined): boolean {
+    if (!pseudo) return false;
+
+    const p = pseudo.trim().toLowerCase();
+    const me = (this.currentPseudo || '').trim().toLowerCase();
+
+    return !!me && p === me;
+  }
+
 
   supprimerMessage(id: number) {
     if (!this.isAdmin) return;
     if (!confirm("Supprimer ce message ?")) return;
 
-    this.http.delete(`${this.base}/${id}`).subscribe(() => this.refresh());
+    this.http.delete(`${this.base}/${id}`).subscribe();
+    // Le ChatEvent.DELETE fera la mise à jour côté client
   }
 
   viderChat() {
     if (!this.isAdmin) return;
     if (!confirm("Vider le chat ?")) return;
 
-    this.http.delete(`${this.base}/clear`).subscribe(() => this.refresh());
+    this.http.delete(`${this.base}/clear`).subscribe();
+    // Le ChatEvent.CLEAR videra le tableau
   }
 
   private scrollBas() {
@@ -185,9 +274,8 @@ export class ChatComponent implements OnInit, OnDestroy {
   openTipPopup(pseudo: string) {
     if (!this.isLogged) return;
 
-    // ❌ Interdiction totale auto-tip
-    if (pseudo.trim().toLowerCase() === this.currentPseudo.trim().toLowerCase())
-      return;
+    // ❌ Interdiction totale auto-tip (safety front)
+    if (this.isSelf(pseudo)) return;
 
     this.targetPseudo = pseudo;
     this.tipMontant = 0;
