@@ -60,6 +60,10 @@
   <main class="bj-main" *ngIf="state as s" [attr.aria-hidden]="showCodeModal ? true : null">
     <!-- LEFT : dealer + seats -->
     <section class="game-area">
+      <div class="turn-banner" *ngIf="myTurn()">
+        🎯 C'est à toi de jouer !
+      </div>
+
       <!-- RESULT TOAST -->
       <div *ngIf="s.phase === 'PAYOUT' && resultMessage" class="result-toast">
         {{ resultMessage }}

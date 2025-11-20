@@ -401,6 +401,8 @@ export class BlackjackTableComponent implements OnInit, OnDestroy {
   myTurn(): boolean {
     const me = this.mySeat();
     if (!me || !this.state) return false;
+    if (this.state.phase !== 'PLAYING') return false;
+
     if (!(me.hand?.bet > 0)) return false;
     const idx = this.state.currentSeatIndex;
     return typeof idx === 'number'

@@ -251,18 +251,40 @@ export class RouletteComponent implements OnDestroy {
 
 
   startAutoSpin(count?: number) {
-    if (!this.isLoggedIn) { this.error = 'Veuillez vous connecter pour jouer.'; return; }
+    if (!this.isLoggedIn) {
+      this.error = 'Veuillez vous connecter pour jouer.';
+      return;
+    }
+
+    // Si aucune valeur → auto infini
+    if (count === undefined) {
+      this.autoSpinCount = null;
+    }
+    else {
+      const n = Number(count);
+      this.autoSpinCount = (isNaN(n) || n <= 0) ? null : n;
+    }
+
     this.autoSpinActive = true;
-    this.autoSpinCount = count ?? null;
-    if (this.lastSpinFinished) this.jouer(true);
+
+    if (this.lastSpinFinished) {
+      this.jouer(true);
+    }
   }
+
 
   stopAutoSpin() {
     this.autoSpinActive = false;
     this.autoSpinCount = null;
     this.currentPlaySub?.unsubscribe();
     this.clearPendingTimeouts();
+
+    // 🔥 très important
+    this.lastSpinFinished = true;
+    this.enCours = false;
+    this.wheelSpinning = false;
   }
+
 
   private clearPendingTimeouts() {
     while (this.pendingTimeouts.length) {
